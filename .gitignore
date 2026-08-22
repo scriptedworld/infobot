@@ -1,0 +1,22 @@
+# In-process and working files, including the message a commit is given with
+# -F. Gitignored so that naming it on the command line can never put it into
+# the commit it describes.
+.ephemera/
+
+# Session entry point: ephemeral by design, rewritten each session.
+START_HERE.md
+
+# Python's compiled cache. `bin/sigmund` carries no .py suffix, so its cache
+# lands as `bin/__pycache__/sigmundcpython-314.pyc`. Regenerated from the
+# source on demand, and stale the moment the source is edited without running.
+__pycache__/
+
+# Adopted jig links, and the run directories they produce. The links resolve
+# into toolbox; in a built image the same files arrive from the anvil layer
+# beneath, so a committed copy would be a third statement of one thing.
+bolt.*.yaml
+adapters/
+.bolt-*/
+
+# Adopted checker scripts, linked into bin/ from toolbox.
+bin/*.py
