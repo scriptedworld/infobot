@@ -1,4 +1,4 @@
-# sigmund, the project
+# infobot, the project
 
 The status line Claude Code renders at the bottom of the screen. It reads the
 session JSON on stdin and writes the rows that say where you are and how much of
@@ -22,7 +22,7 @@ is the Python interpreter starting.
 ## Why it is its own repository
 
 It came out of `silo`, which is the standing rules, the settings, the hooks and
-the written record: things a person reads. sigmund is a program, with its own
+the written record: things a person reads. infobot is a program, with its own
 requirements, its own gate and its own tests. Keeping it in silo meant one
 repository holding both, and it showed: silo's gate reads its own documents and
 never read `bin/statusline` at all, because lizard selects by file extension and
@@ -30,7 +30,7 @@ the script had none.
 
 ## Layout
 
-    bin/sigmund        the status line. Python today, Go when the port lands.
+    bin/infobot        the status line. Python today, Go when the port lands.
     REQUIREMENTS.md    what must be true of it
     NEXT_STEPS.md      what is not done
     docs/PROJECT.md    this file
@@ -40,11 +40,11 @@ the script had none.
 
 `silo/settings.json` names it by absolute path:
 
-    "statusLine": { "type": "command", "command": ".../sigmund/bin/sigmund",
+    "statusLine": { "type": "command", "command": ".../infobot/bin/infobot",
                     "refreshInterval": 10 }
 
 That file stays in silo, because it is Claude Code's configuration rather than
-sigmund's. sigmund does not read it.
+infobot's. infobot does not read it.
 
 ## The gate
 
@@ -54,7 +54,7 @@ nine Go checks and is the one that matters, because it judges coverage per file
 at 80% through an adapter that exists. The Python equivalent measures coverage
 and applies no threshold, which is the main reason the port is to Go.
 
-Adopting them is queued in `clank/tasks/sigmund/`.
+Adopting them is queued in `clank/tasks/infobot/`.
 
 ## What is decided, and what is open
 

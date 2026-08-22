@@ -2,7 +2,7 @@
 
 ## Queued
 
-The work is in `clank/tasks/sigmund/status-line/`, ordered by its ordinals:
+The work is in `clank/tasks/infobot/status-line/`, ordered by its ordinals:
 
     05  rewrite in Go, with the golden corpus beside it as the oracle
     10  write the test suite, which 05 makes possible
@@ -23,7 +23,7 @@ its own.
 
 ## Known and deliberately unfixed
 
-`bin/sigmund` renders two rows and holds every requirement in
+`bin/infobot` renders two rows and holds every requirement in
 `REQUIREMENTS.md` except FR-1.4, which it states about itself and does not hold:
 `main()` wraps the whole render in a bare `except`, so one bad field blanks both
 rows rather than one segment. `golden/malformed-resets.txt` in the task tree

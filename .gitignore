@@ -6,8 +6,8 @@
 # Session entry point: ephemeral by design, rewritten each session.
 START_HERE.md
 
-# Python's compiled cache. `bin/sigmund` carries no .py suffix, so its cache
-# lands as `bin/__pycache__/sigmundcpython-314.pyc`. Regenerated from the
+# Python's compiled cache. `bin/infobot` carries no .py suffix, so its cache
+# lands as `bin/__pycache__/infobotcpython-314.pyc`. Regenerated from the
 # source on demand, and stale the moment the source is edited without running.
 __pycache__/
 

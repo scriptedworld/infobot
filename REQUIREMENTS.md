@@ -1,10 +1,10 @@
-# sigmund, Requirements
+# infobot, Requirements
 
 What must be true of the status line. Moved out of `silo/REQUIREMENTS.md`
-section 4 when sigmund became its own repository, and renumbered as this
+section 4 when infobot became its own repository, and renumbered as this
 document's own.
 
-*Derives from:* `bin/sigmund`, and the payload shape read out of `claude`
+*Derives from:* `bin/infobot`, and the payload shape read out of `claude`
 2.1.233.
 
 Requirements are stated as observable properties. Each says what is true of a
@@ -15,9 +15,9 @@ one. `[A/D]` is both. `[?]` is an open question, recorded so it is not lost and
 carrying no test yet.
 
 > The traceability gate does not pass, and that is the honest state. Every
-> settled requirement below is uncovered, because sigmund has no test suite.
+> settled requirement below is uncovered, because infobot has no test suite.
 > Marking them `[?]` would make the gate green by lying about what is settled.
-> Closing the gap is `clank/tasks/sigmund/status-line/`.
+> Closing the gap is `clank/tasks/infobot/status-line/`.
 
 ## 1. What it reads and writes
 
@@ -52,5 +52,5 @@ carrying no test yet.
 
 | ID | Requirement | |
 |---|---|---|
-| FR-4.1 | sigmund has a test suite, so the requirements above are held to something and the traceability gate means what it says. The oracle already exists: `clank/tasks/sigmund/status-line/05-*/golden/` holds 18 captured cases, and `test-plan.md` beside it lists the properties each requirement wants asserted. | [?] |
+| FR-4.1 | infobot has a test suite, so the requirements above are held to something and the traceability gate means what it says. The oracle already exists: `clank/tasks/infobot/status-line/05-*/golden/` holds 18 captured cases, and `test-plan.md` beside it lists the properties each requirement wants asserted. | [?] |
 | FR-4.2 | The implementation language. Go is decided and the reasoning is in the task; this row closes when the port lands and the Python is gone. | [?] |
