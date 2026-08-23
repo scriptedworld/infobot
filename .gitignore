@@ -20,3 +20,6 @@ adapters/
 
 # Adopted checker scripts, linked into bin/ from toolbox.
 bin/*.py
+
+# ruff, run ad hoc until the Python jig is adopted.
+.ruff_cache/
