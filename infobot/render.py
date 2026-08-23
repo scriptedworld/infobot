@@ -117,10 +117,19 @@ WINDOW_CELLS = 10
 # seeing, so it pales out through white and into blue.
 FIVE_HOUR, SEVEN_DAY = 5 * 3600, 7 * 86400
 
-# Under this much of the window elapsed there is no pace to report: a percent
-# spent two minutes into five hours divides by almost nothing and reads as a
-# catastrophe. Silence is the honest answer that early.
-PACE_FLOOR = 0.05
+# How much of a window has to elapse before its verdict is shown in full. A
+# percent spent two minutes into five hours divides by almost nothing and
+# projects a catastrophe, so the judgement is faded in against green rather
+# than switched on: early it says nothing, and it arrives at its full colour
+# three hours into a five hour window.
+#
+# A fraction rather than a duration, so the seven day window matures at the
+# same point in its own life instead of after an afternoon.
+PACE_CONFIDENT = 0.6
+
+# An arithmetic floor only, to divide by. The fade above is what stops a wild
+# early projection from being believed; this stops it being infinite.
+PACE_MIN_ELAPSED = 0.01
 
 RESET = "\033[0m"
 
@@ -485,32 +494,46 @@ def limit_segment(emoji: str, label: str, window: dict | None, span: int,
     # Concern where it can be worked out, raw spend where it cannot: with no
     # reset time there is no window position, so the gauge falls back to
     # meaning what the context meter's colour means.
-    projected = pace(pct, resets_at, span)
-    tint = ramp(pct) if projected is None else pace_colour(projected)
+    elapsed = elapsed_fraction(resets_at, span)
+    tint = ramp(pct) if elapsed is None else pace_tint(pct, elapsed)
     gauge = (tinted(f"{pct:.0f}%", tint) if compact
              else bar(pct, WINDOW_CELLS, tint=tint))
     parts = [emoji, label, gauge, countdown(resets_at)]
     return " ".join(part for part in parts if part)
 
 
-def pace(pct: float, resets_at: float | None, span: int) -> float | None:
-    """The percentage this window is projected to reach by its reset.
-
-    None rather than a number when the window cannot say yet, so the caller
-    draws nothing instead of drawing a verdict it has not earned.
-    """
+def elapsed_fraction(resets_at: float | None, span: int) -> float | None:
+    """How far through the window we are, or None when that is unknowable."""
     if not resets_at or not span:
         return None
     remaining = float(resets_at) - time.time()
     if remaining <= 0:
         return None
-    elapsed = max(0.0, min(1.0, 1 - remaining / span))
-    if elapsed < PACE_FLOOR:
-        return None
-    return pct / elapsed
+    return max(0.0, min(1.0, 1 - remaining / span))
 
 
-def pace_colour(projected: float) -> str:
+def pace_tint(pct: float, elapsed: float) -> str:
+    """The window's verdict, faded toward green by how much it can say yet.
+
+    Two independent readings in one colour. Where the window is projected to
+    land decides the hue; how far through the window we are decides how much of
+    that hue is shown, against green for the rest.
+
+    Green is the right thing to fade toward rather than grey or nothing,
+    because green is this scale's "no comment" as well as its "on rate": both
+    mean there is nothing here to act on.
+    """
+    projected = pct / max(elapsed, PACE_MIN_ELAPSED)
+    # Squared, so the verdict stays quiet through the middle of the window and
+    # arrives late. Running hot with most of the window still ahead is not
+    # something to act on: the concern is coming up on the end and being about
+    # to run out. A linear fade is already half shouting at the halfway mark.
+    trust = min(1.0, elapsed / PACE_CONFIDENT) ** 2
+    r, g, b = _mix(GREEN, pace_rgb(projected), trust)
+    return f"\033[38;2;{r};{g};{b}m"
+
+
+def pace_rgb(projected: float) -> tuple:
     """Walk the diverging stops and interpolate between the two that bracket it.
 
     Outside the ends it clamps, so a window projected to land at 400% is the
@@ -520,11 +543,9 @@ def pace_colour(projected: float) -> str:
     lo_at, lo = PACE_STOPS[0]
     for hi_at, hi in PACE_STOPS[1:]:
         if projected <= hi_at:
-            r, g, b = _mix(lo, hi, (projected - lo_at) / (hi_at - lo_at))
-            return f"\033[38;2;{r};{g};{b}m"
+            return _mix(lo, hi, (projected - lo_at) / (hi_at - lo_at))
         lo_at, lo = hi_at, hi
-    r, g, b = PACE_STOPS[-1][1]
-    return f"\033[38;2;{r};{g};{b}m"
+    return PACE_STOPS[-1][1]
 
 
 def tinted(text: str, escape: str) -> str:
