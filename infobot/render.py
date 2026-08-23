@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """statusline -- what Claude Code shows at the bottom of the screen.
 
-Reads the session JSON on stdin and prints one line. Claude Code runs this on
-every event, so it stays a formatter: no network, no subprocesses, no file
-reads beyond stdin.
+Reads the session JSON on stdin and prints two rows. Claude Code runs this on
+every event, so it stays cheap: no network, one subprocess for the pane width,
+and one file tailed for the session's token usage. Nothing here waits on
+anything, and nothing here raises.
 
 WHAT THE INPUT CAN AND CANNOT ANSWER, from the documented schema:
 
@@ -34,7 +35,10 @@ import sys
 import time
 import unicodedata
 
+from infobot import pricing, usage
+
 BRAIN, HOURGLASS, CALENDAR = "🧠", "⏳", "📅"
+MONEY, BULLSEYE = "💵", "🎯"
 # Powerline thin separator from Iosevka Nerd Font, which kitty is configured
 # with (font_family "Iosevka Nerd Font", style Light). A plain │ is the fallback
 # anywhere the glyph is missing -- it is one character either way, so nothing
@@ -553,6 +557,46 @@ def tinted(text: str, escape: str) -> str:
     return text if plain() else f"{escape}{text}{RESET}"
 
 
+# Columns of clear space kept between the meter row and the cost pushed to its
+# right, so the two read as separate things rather than one long line.
+COST_GUTTER = 3
+
+
+def cost_forms(data: dict) -> tuple[str, str]:
+    """The cost segment at full length and shortened, from one read.
+
+    Both forms come from the same totals because working them out means
+    tailing a file, and doing that twice to decide which of two strings fits
+    would double the only expensive thing on the row.
+    """
+    figures = pricing.priced(usage.totals(data.get("session_id") or ""))
+    if not figures:
+        return "", ""
+    spent, saved = figures
+    total = f"{MONEY} {pricing.money(spent)}"
+    if saved <= 0:
+        return total, total
+    return f"{total}{sep()}{BULLSEYE} {dim('saved')} {pricing.money(saved)}", total
+
+
+def align_cost(lines: list[str], data: dict, width: int | None) -> list[str]:
+    """Push the cost to the right of the meter row, shortening it or dropping it.
+
+    It goes on the meter row rather than the identity row because the identity
+    row has already given its slack to the context bar. With no meter row there
+    is nowhere for it that is not somewhere else's space, so it is dropped.
+    """
+    if len(lines) < 2 or not width:
+        return lines
+    room = width - MARGIN - visible_width(lines[-1])
+    for segment in cost_forms(data):
+        gap = room - visible_width(segment)
+        if segment and gap >= COST_GUTTER:
+            lines[-1] += " " * gap + segment
+            break
+    return lines
+
+
 def model_part(data: dict) -> str:
     """The model, and the effort level when one is set."""
     model = (data.get("model") or {}).get("display_name") or (data.get("model") or {}).get("id")
@@ -646,7 +690,8 @@ def build(data: dict, home: str, width: int | None = None) -> list[str]:
     if width and rows[1] and row_width(rows[1]) > width - MARGIN:
         rows = compose(data, home, width, compact=True)
 
-    return rail([sep().join(row) for row in rows if row])
+    lines = rail([sep().join(row) for row in rows if row])
+    return align_cost(lines, data, width)
 
 
 def compose(data: dict, home: str, width: int | None, compact: bool) -> list[list[str]]:
