@@ -59,15 +59,19 @@ Adopting them is queued in `clank/tasks/infobot/`.
 ## Perishable: the pricing table
 
 `~/.config/infobot/pricing.json` carries the API rates the cost segment prices
-a session with, and the date they were taken. They drift: Sonnet 5's rate has
-an introductory price with an expiry, which is drift measured in days rather
-than releases.
+a session with, and the date they were taken.
 
-    source    https://platform.claude.com/docs/en/pricing.md
+    source    https://platform.claude.com/docs/en/about-claude/pricing
     max age   1 day
     on stale  re-read the source and rewrite the file, keeping the `taken` date
-              in step. A rate a person set deliberately is a preference and
-              stays; note it rather than overwriting it.
+              in step. Take whatever is current, promotional rates included:
+              the figure is what these prompts would have cost today, so a deal
+              running today belongs in it and is gone from it tomorrow.
+
+They do drift, and not only on a schedule. Sonnet 5 launched at an introductory
+$2/$10 with a rise to $3/$15 booked for September; the rise was then cancelled
+and the introductory rate became the standard one. A table refreshed on a clock
+gets that right without anyone noticing it happened.
 
 Nothing refreshes it today. A session cannot: the status line is a formatter
 that runs on every event and cannot make a network call. Filed against

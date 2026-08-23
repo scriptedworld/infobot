@@ -28,10 +28,10 @@ import os
 from pathlib import Path
 
 TAKEN = "2026-08-23"
-SOURCE = "https://platform.claude.com/docs/en/pricing.md"
+SOURCE = "https://platform.claude.com/docs/en/about-claude/pricing"
 
 
-# Input and output, dollars per million tokens.
+# Input and output, dollars per million tokens, read from SOURCE.
 RATES = {
     "claude-fable-5": (10.00, 50.00),
     "claude-mythos-5": (10.00, 50.00),
@@ -39,12 +39,19 @@ RATES = {
     "claude-opus-4-8": (5.00, 25.00),
     "claude-opus-4-7": (5.00, 25.00),
     "claude-opus-4-6": (5.00, 25.00),
-    "claude-sonnet-5": (3.00, 15.00),
+    "claude-opus-4-5": (5.00, 25.00),
+    "claude-opus-4-1": (15.00, 75.00),
+    "claude-opus-4-0": (15.00, 75.00),
+    "claude-sonnet-5": (2.00, 10.00),
     "claude-sonnet-4-6": (3.00, 15.00),
+    "claude-sonnet-4-5": (3.00, 15.00),
+    "claude-sonnet-4-0": (3.00, 15.00),
     "claude-haiku-4-5": (1.00, 5.00),
+    "claude-3-5-haiku-20241022": (0.80, 4.00),
 }
 
-# Multipliers on the input rate. A cache read is CHARGED, at a tenth: it is 90%
+# Multipliers on the input rate, uniform across models: the per-model cache
+# columns at SOURCE are these applied. A cache read is CHARGED, at a tenth: 90%
 # off, not free, and on a long session it is the largest single line. A write
 # costs more than a fresh input token, which is why the two are priced apart
 # rather than lumped together as "cache".
@@ -74,12 +81,17 @@ def table() -> dict:
             "cache_read": CACHE_READ, "cache_write": CACHE_WRITE}
 
 
-def priced(totals: dict) -> tuple[float, float] | None:
-    """Dollars spent, and dollars the cache took off, or None if unpriceable.
+def priced(totals: dict) -> tuple[float, float, bool] | None:
+    """Dollars spent, dollars the cache took off, and whether that is all of it.
 
     `totals` is keyed by model, each holding the token counts as the transcript
-    records them. A model with no rate makes the whole figure a guess, so the
-    answer is None rather than a total that quietly omits part of the session.
+    records them, and each is charged at its own rate: a session that ran work
+    on several models is the sum of them, not an average.
+
+    A model with no rate is left out and the total is flagged incomplete rather
+    than abandoned. One unknown model should cost the reader the exactness of
+    the figure, not the figure. None comes back only when nothing at all could
+    be priced.
 
     The saving is the honest counterfactual: every cached token, read or
     written, charged at the plain input rate instead. That is what the session
@@ -91,10 +103,12 @@ def priced(totals: dict) -> tuple[float, float] | None:
     read_rate = rate_table.get("cache_read", CACHE_READ)
     write_rates = rate_table.get("cache_write", CACHE_WRITE)
     spent = saved = 0.0
+    complete = True
     for model, counts in totals.items():
         rates = rate_table["rates"].get(model)
         if not rates:
-            return None
+            complete = False
+            continue
         rate_in, rate_out = rates
         cached = 0
         spent += counts.get("input_tokens", 0) / 1e6 * rate_in
@@ -107,13 +121,17 @@ def priced(totals: dict) -> tuple[float, float] | None:
         cached += reads
         spent += reads / 1e6 * rate_in * read_rate
         saved += cached / 1e6 * rate_in
-    return spent, saved - _cache_cost(totals, rate_table)
+    if not spent:
+        return None
+    return spent, saved - _cache_cost(totals, rate_table), complete
 
 
 def _cache_cost(totals: dict, rate_table: dict) -> float:
     """What the cached tokens actually cost, reads and writes together."""
     cost = 0.0
     for model, counts in totals.items():
+        if model not in rate_table["rates"]:
+            continue
         rate_in = rate_table["rates"][model][0]
         for field, multiplier in rate_table.get("cache_write", CACHE_WRITE).items():
             cost += counts.get(field, 0) / 1e6 * rate_in * multiplier

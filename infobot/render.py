@@ -572,8 +572,10 @@ def cost_forms(data: dict) -> tuple[str, str]:
     figures = pricing.priced(usage.totals(data.get("session_id") or ""))
     if not figures:
         return "", ""
-    spent, saved = figures
-    total = f"{MONEY} {pricing.money(spent)}"
+    spent, saved, complete = figures
+    # A trailing plus says the session ran a model the table has no rate for, so
+    # the figure is a floor rather than a total.
+    total = f"{MONEY} {pricing.money(spent)}" + ("" if complete else "+")
     if saved <= 0:
         return total, total
     return f"{total}{sep()}{BULLSEYE} {dim('saved')} {pricing.money(saved)}", total
