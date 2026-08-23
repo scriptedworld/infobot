@@ -88,5 +88,12 @@ Decided: Go, and the reasoning is in the task rather than restated here.
 Decided: the binary is built inside this repository and reached through a
 symlink in `dotfiles/bin`, which is what `bolt`, `converge` and `update` do.
 
+Decided: two rows, not three. A third was considered for exceptional states, a
+stale rate table or a promotion in effect, and declined. A row that appears only
+when there is something to say moves the prompt every time it comes and goes,
+and one that is always there spends the space on nothing most of the time.
+Those states belong on the segment that is already there, the way an unpriced
+model already appends a plus to say the figure is a floor.
+
 Open: whether the two rows should be one, whether the countdown wants its own
 colour scale running toward green as a reset nears, and FR-4.1, the test suite.
