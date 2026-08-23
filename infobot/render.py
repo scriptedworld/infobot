@@ -83,6 +83,24 @@ FILLED, EMPTY = "▰", "▱"
 # the session id is what gets cut because it is last.
 BAR_FALLBACK, BAR_MIN, MARGIN = 50, 8, 3
 
+# The rate limit windows get a fixed small gauge rather than a share of the
+# slack. They are checked occasionally, not watched, so 10% a cell is enough
+# resolution, and a fixed width keeps the row from moving under them as the
+# context bar above grows. Under a narrow pane the gauge gives way to the
+# percentage it was drawing, which costs six columns less.
+WINDOW_CELLS = 10
+
+# A filled circle for how far through the window we are, drawn from the reset
+# time and the window's own length. The lengths come from the payload's field
+# names, `five_hour` and `seven_day`, and the fraction is clamped, so a clock
+# that disagrees produces an empty circle rather than a wrong one.
+#
+# It sits beside the consumption gauge deliberately: spent against elapsed is
+# the reading that says whether the number matters. Half spent a fifth of the
+# way in is a problem; half spent with the circle nearly full is not.
+ARC = "○◔◑◕●"
+FIVE_HOUR, SEVEN_DAY = 5 * 3600, 7 * 86400
+
 RESET = "\033[0m"
 
 # TRUECOLOR. FACT 2026-08-19: COLORTERM=truecolor and CLAUDE_CODE_TMUX_TRUECOLOR=1
@@ -403,26 +421,52 @@ def fitted(cw: dict, others: list[str], at: int, width: int | None) -> str:
     return context_segment(cw, cells) if cells else bare
 
 
-def limit_segment(emoji: str, label: str, window: dict | None) -> str:
-    """Percentage and countdown. No token counts exist for these windows."""
+def limit_segment(emoji: str, label: str, window: dict | None, span: int,
+                  compact: bool = False) -> str:
+    """A gauge and a countdown. No token counts exist for these windows.
+
+    The percentage is drawn rather than printed. It is the same bar as the
+    context window's, on the same ramp, so 80% is the same shade wherever it
+    appears and one glance reads all three meters. At WINDOW_CELLS the bar
+    resolves to 10% a cell, which is the resolution a window checked
+    occasionally wants: these are the infrequent detail, not the number watched
+    while working.
+
+    The countdown stays as a number because a bar cannot carry it, and because
+    it is what makes the gauge actionable: half spent with four hours to go
+    reads very differently from half spent with ten minutes to go.
+
+    It is deliberately UNCOLOURED rather than colourless by oversight. It wants
+    its own scale and probably an inverted one: a reset getting closer is good
+    news, so it would run TOWARD green as it nears zero, which is the opposite
+    direction to consumption. Undecided, so left plain rather than guessed at.
+    """
     if not window:
         return ""
     pct = window.get("used_percentage")
     if pct is None:
         return ""
-    left = countdown(window.get("resets_at"))
     pct = float(pct)
-    # ONLY the percentage takes the ramp -- the same ramp the context segment
-    # uses, so 80% is the same shade wherever it appears. The label, the word
-    # "consumed" and the countdown stay plain: they are not the measurement.
-    #
-    # The countdown is deliberately UNCOLOURED rather than colourless by
-    # oversight. It wants its own scale and probably an inverted one -- a reset
-    # getting closer is good news, so it would run TOWARD green as it nears
-    # zero, which is the opposite direction to consumption. Undecided, so left
-    # plain rather than guessed at.
-    body = f"{label} {colour(pct, f'{pct:.0f}%')} {dim('consumed')}"
-    return f"{emoji} {body}" + (f" {dim('resets')} {left}" if left else "")
+    resets_at = window.get("resets_at")
+    gauge = colour(pct, f"{pct:.0f}%") if compact else bar(pct, WINDOW_CELLS)
+    parts = [emoji, label, gauge, countdown(resets_at), arc(resets_at, span)]
+    return " ".join(part for part in parts if part)
+
+
+def arc(resets_at: float | None, span: int) -> str:
+    """How far through the window we are, as a circle filling toward the reset.
+
+    Empty at the start of a window and full just before it turns over, which is
+    the opposite direction to the countdown beside it and the same direction as
+    the gauge: both fill as the window is used up.
+    """
+    if not resets_at or not span:
+        return ""
+    remaining = float(resets_at) - time.time()
+    if remaining <= 0:
+        return ""
+    elapsed = max(0.0, min(1.0, 1 - remaining / span))
+    return ARC[round(elapsed * (len(ARC) - 1))]
 
 
 def model_part(data: dict) -> str:
@@ -455,14 +499,14 @@ def session_part(data: dict) -> str:
     return f"⟨{str(sid)[:8]}⟩" if sid else ""
 
 
-def limit_parts(data: dict) -> list[str]:
+def limit_parts(data: dict, compact: bool = False) -> list[str]:
     """The two rate limit windows, each dropped when its data is absent."""
     limits = data.get("rate_limits") or {}
     return [
         seg
         for seg in (
-            limit_segment(HOURGLASS, "5hr", limits.get("five_hour")),
-            limit_segment(CALENDAR, "7d", limits.get("seven_day")),
+            limit_segment(HOURGLASS, "5hr", limits.get("five_hour"), FIVE_HOUR, compact),
+            limit_segment(CALENDAR, "7d", limits.get("seven_day"), SEVEN_DAY, compact),
         )
         if seg
     ]
@@ -509,14 +553,27 @@ def build(data: dict, home: str, width: int | None = None) -> list[str]:
     an empty list when its data is missing, so absence is dropped here by one
     filter rather than by a condition per segment.
     """
+    rows = compose(data, home, width, compact=False)
+    # The gauges give way to the percentages they draw rather than letting the
+    # row run past the budget, which is the rule the context bar follows too.
+    # Measured after composing rather than before, because the context segment
+    # relocates onto this row when row one cannot hold it, and that is exactly
+    # the case where the row is too long.
+    if width and rows[1] and row_width(rows[1]) > width - MARGIN:
+        rows = compose(data, home, width, compact=True)
+
+    return rail([sep().join(row) for row in rows if row])
+
+
+def compose(data: dict, home: str, width: int | None, compact: bool) -> list[list[str]]:
+    """The two rows as lists of parts, before they are joined."""
     identity = [part for part in (model_part(data), *path_parts(data, home)) if part]
     tail = [part for part in (session_part(data),) if part]
-    usage = limit_parts(data)
+    usage = limit_parts(data, compact)
 
     place_context(data.get("context_window") or {}, identity, tail, usage, width)
     identity += tail
-
-    return rail([sep().join(row) for row in (identity, usage) if row])
+    return [identity, usage]
 
 
 def main() -> int:
