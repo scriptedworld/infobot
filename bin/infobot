@@ -60,25 +60,6 @@ RAIL_TOP, RAIL_MID, RAIL_END, RAIL_ONE = "\u256d\u2500 ", "\u251c\u2500 ", "\u25
 # of a fixed handful. At 40 cells that is 2.5% each.
 FILLED, EMPTY = "▰", "▱"
 
-# The percentage rides inside the bar, in a window six columns wide, which is
-# what " 100% " needs. The number is anchored to the RIGHT of that window, so
-# the % sign lands in the same column whether it reads 4, 15 or 100 and never
-# shifts about as a digit comes or goes.
-#
-# What the number does not use stays bar. A blank cell travels immediately
-# ahead of the digits to keep the parallelograms off them, and everything left
-# of that is drawn as the cell it would have been, so the picture keeps going
-# behind the number instead of a hole opening in front of it.
-#
-# LABEL_MIN is where a bar stops being a bar with a number in it and becomes a
-# number with a few parallelograms beside it. The label costs six columns of
-# the bar it sits in, so this leaves at least eight to draw with. Under it the
-# bar carries no label and the percentage goes back into the text, which is
-# also what happens when there is no bar at all: the reading has to survive
-# losing the picture.
-LABEL_W = 4
-LABEL_MIN = LABEL_W + 10
-
 # Unknown width means tmux could not be asked, so there is nothing to subtract
 # from and 50 is a chosen number rather than a fit.
 #
@@ -229,40 +210,22 @@ def visible_width(text: str) -> int:
     )
 
 
-def bar(pct: float, cells: int = BAR_FALLBACK, label: str = "") -> str:
+def bar(pct: float, cells: int = BAR_FALLBACK) -> str:
     """A proportional bar whose fill fades along the ramp, cell by cell.
 
     Each cell is coloured for the percentage IT stands for, not for the bar's
     total: the first is green because it means 2%, and the last filled one
-    matches the colour of the label because they mean the same thing. So the
-    fade is a fixed property of the bar and only its length moves.
+    matches the colour of the number beside it because they mean the same
+    thing. So the fade is a fixed property of the bar and only its length moves.
 
-    The label is laid INTO the bar rather than beside it, so it costs no
-    columns of its own, and it sits in the bar's middle whatever the fill is
-    doing.
+    The bar is never cut into. The percentage is printed with the counts, where
+    it can be read as a number rather than found among the parallelograms.
     """
     pct = max(0.0, min(100.0, pct))
     if cells <= 0:
         return ""
     full = round(pct / 100 * cells)
     glyphs = [FILLED] * full + [EMPTY] * (cells - full)
-    styles: list[str] = [""] * cells
-
-    field = f" {label} " if label else ""
-    window = LABEL_W + 2
-    if field and window <= cells:
-        # The window is centred in the WHOLE bar, so it holds still and the
-        # fill passes under it. Centring it in the fill instead would slide it
-        # rightward as the session ran, which is motion carrying no
-        # information: the boundary already says how full the bar is, and the
-        # number is there to be found in the same place every time.
-        #
-        # Then the field is pushed to the window's right edge, which is what
-        # pins the % and leaves the slack in front of the number as bar.
-        start = (cells - window) // 2 + window - len(field)
-        for i, char in enumerate(field):
-            glyphs[start + i] = char
-            styles[start + i] = ramp(pct)
 
     if plain():
         return "".join(glyphs)
@@ -273,7 +236,7 @@ def bar(pct: float, cells: int = BAR_FALLBACK, label: str = "") -> str:
     out: list[str] = []
     held = ""
     for i, glyph in enumerate(glyphs):
-        style = styles[i] or (ramp((i + 1) / cells * 100) if i < full else EMPTY_COLOUR)
+        style = ramp((i + 1) / cells * 100) if i < full else EMPTY_COLOUR
         if style != held:
             # RESET first, always. ALARM carries bold and a background as well
             # as a colour, so a bare colour change after it leaves both of them
@@ -403,14 +366,11 @@ def context_segment(cw: dict, cells: int = BAR_FALLBACK) -> str:
         # missing data.
         used = float(size) * float(pct) / 100
     pct = float(pct)
-    # The percentage is stated once. In the bar when the bar can hold it, in
-    # the text when it cannot, and never in both places.
-    if cells >= LABEL_MIN:
-        meter = bar(pct, cells, f"{pct:.0f}%")
-        counts = colour(pct, f"{tokens(used)}/{tokens(size)} consumed")
-    else:
-        meter = bar(pct, cells)
-        counts = colour(pct, f"{tokens(used)}/{tokens(size)} ({pct:.0f}% consumed)")
+    # The percentage sits with the counts, where it reads as one measurement
+    # rather than as a number to be found inside the picture of it. The bar is
+    # left whole.
+    meter = bar(pct, cells)
+    counts = colour(pct, f"{tokens(used)}/{tokens(size)} ({pct:.0f}% consumed)")
     # Joined rather than interpolated, so dropping the bar drops its separating
     # space with it instead of leaving a gap the emoji makes conspicuous.
     return " ".join(part for part in (BRAIN, meter, counts) if part)
@@ -429,27 +389,18 @@ def fitted(cw: dict, others: list[str], at: int, width: int | None) -> str:
     so what gets measured is the line as it will be printed rather than a sum
     of pieces that forgets the separators.
 
-    Measured repeatedly rather than solved, because the segment's own width is
-    not a fixed function of the bar's: a bar wide enough to carry the label
-    takes the percentage out of the text and hands back the columns it was
-    using, and a bar grown into those columns can cross that threshold itself.
-    Each pass hands over exactly the slack the last one left, and one more cell
-    is one more column, so it settles in two.
+    One pass, because the rest of the segment is the same width whatever the
+    bar does: one more cell is one more column and nothing else moves.
     """
     if not width:
         return context_segment(cw, BAR_FALLBACK)
 
-    cells, segment = 0, context_segment(cw, 0)
-    for _ in range(3):
-        # A bar arrives with the space that separates it from the rest, which
-        # the bar-less form does not have.
-        spare = width - MARGIN - row_width(others[:at] + [segment] + others[at:])
-        spare -= 0 if cells else 1
-        if spare <= 0 or cells + spare < BAR_MIN:
-            break
-        cells += spare
-        segment = context_segment(cw, cells)
-    return segment
+    # The bar also brings the space that separates it from the counts, which
+    # the bar-less form measured here does not have.
+    bare = context_segment(cw, 0)
+    spare = width - MARGIN - row_width(others[:at] + [bare] + others[at:]) - 1
+    cells = spare if spare >= BAR_MIN else 0
+    return context_segment(cw, cells) if cells else bare
 
 
 def limit_segment(emoji: str, label: str, window: dict | None) -> str:
