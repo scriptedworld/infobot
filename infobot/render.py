@@ -90,16 +90,37 @@ BAR_FALLBACK, BAR_MIN, MARGIN = 50, 8, 3
 # percentage it was drawing, which costs six columns less.
 WINDOW_CELLS = 10
 
-# A filled circle for how far through the window we are, drawn from the reset
-# time and the window's own length. The lengths come from the payload's field
-# names, `five_hour` and `seven_day`, and the fraction is clamped, so a clock
-# that disagrees produces an empty circle rather than a wrong one.
+# PACE, expressed as where this window LANDS. Spend divided by how far through
+# the window you are, which projects the percentage you arrive at when it
+# resets. The window lengths come from the payload's own field names,
+# `five_hour` and `seven_day`.
 #
-# It sits beside the consumption gauge deliberately: spent against elapsed is
-# the reading that says whether the number matters. Half spent a fifth of the
-# way in is a problem; half spent with the circle nearly full is not.
-ARC = "○◔◑◕●"
+# Projected arrival rather than a ratio, because a ratio puts its neutral point
+# in the wrong place: "exactly on pace" means arriving at exactly 100%, which
+# is running out, not being fine. 80% spent with an hour left of five is on
+# pace by that reading and is plainly a warning.
+#
+# It colours the gauge rather than adding a glyph beside it, so the bar carries
+# two readings at once without costing a column: its LENGTH is how much is
+# spent, and its COLOUR is whether that is a problem. A glyph would also have
+# to quantise a continuous number into a handful of steps.
+#
+# The scale DIVERGES, with green in the middle rather than at an end, because
+# the context meter and a rate limit window are not asking the same question.
+# Full is the alarm for the context window. Here, arriving full exactly as the
+# window resets is the best outcome there is: nothing ran out and nothing went
+# unused, so it gets the green.
+#
+# Both directions away from that centre are wrong, in opposite ways, so they
+# get opposite ends. Above it the window empties early and runs yellow into
+# red. Below it the allowance goes unspent, which is not a fault but is worth
+# seeing, so it pales out through white and into blue.
 FIVE_HOUR, SEVEN_DAY = 5 * 3600, 7 * 86400
+
+# Under this much of the window elapsed there is no pace to report: a percent
+# spent two minutes into five hours divides by almost nothing and reads as a
+# catastrophe. Silence is the honest answer that early.
+PACE_FLOOR = 0.05
 
 RESET = "\033[0m"
 
@@ -132,6 +153,15 @@ PATH_COLOUR = "\033[38;2;0;165;149m"
 # picked by eye: $encom_dimcyan, one step up from the deepcyan the i3 bar uses
 # for `inactive_workspace`.
 EMPTY_COLOUR = "\033[38;2;0;95;95m"  # $encom_dimcyan #005f5f
+
+# The pace stops, here because they are built from the palette above.
+PACE_STOPS = (
+    (0.0, (70, 140, 235)),      # blue: the window is barely being touched
+    (70.0, (220, 225, 230)),    # white: under-spending it
+    (100.0, GREEN),             # lands exactly full as it resets
+    (125.0, YELLOW),            # empties a fifth of the way early
+    (150.0, RED),               # empties a third of the way early
+)
 
 
 def cyan(text: str) -> str:
@@ -228,7 +258,7 @@ def visible_width(text: str) -> int:
     )
 
 
-def bar(pct: float, cells: int = BAR_FALLBACK) -> str:
+def bar(pct: float, cells: int = BAR_FALLBACK, tint: str = "") -> str:
     """A proportional bar whose fill fades along the ramp, cell by cell.
 
     Each cell is coloured for the percentage IT stands for, not for the bar's
@@ -238,6 +268,10 @@ def bar(pct: float, cells: int = BAR_FALLBACK) -> str:
 
     The bar is never cut into. The percentage is printed with the counts, where
     it can be read as a number rather than found among the parallelograms.
+
+    A tint overrides the fade and paints every filled cell one colour. The rate
+    limit gauges use it to mean something the fade cannot: not where each cell
+    sits, but whether the whole reading is a problem.
     """
     pct = max(0.0, min(100.0, pct))
     if cells <= 0:
@@ -254,7 +288,7 @@ def bar(pct: float, cells: int = BAR_FALLBACK) -> str:
     out: list[str] = []
     held = ""
     for i, glyph in enumerate(glyphs):
-        style = ramp((i + 1) / cells * 100) if i < full else EMPTY_COLOUR
+        style = (tint or ramp((i + 1) / cells * 100)) if i < full else EMPTY_COLOUR
         if style != held:
             # RESET first, always. ALARM carries bold and a background as well
             # as a colour, so a bare colour change after it leaves both of them
@@ -448,25 +482,54 @@ def limit_segment(emoji: str, label: str, window: dict | None, span: int,
         return ""
     pct = float(pct)
     resets_at = window.get("resets_at")
-    gauge = colour(pct, f"{pct:.0f}%") if compact else bar(pct, WINDOW_CELLS)
-    parts = [emoji, label, gauge, countdown(resets_at), arc(resets_at, span)]
+    # Concern where it can be worked out, raw spend where it cannot: with no
+    # reset time there is no window position, so the gauge falls back to
+    # meaning what the context meter's colour means.
+    projected = pace(pct, resets_at, span)
+    tint = ramp(pct) if projected is None else pace_colour(projected)
+    gauge = (tinted(f"{pct:.0f}%", tint) if compact
+             else bar(pct, WINDOW_CELLS, tint=tint))
+    parts = [emoji, label, gauge, countdown(resets_at)]
     return " ".join(part for part in parts if part)
 
 
-def arc(resets_at: float | None, span: int) -> str:
-    """How far through the window we are, as a circle filling toward the reset.
+def pace(pct: float, resets_at: float | None, span: int) -> float | None:
+    """The percentage this window is projected to reach by its reset.
 
-    Empty at the start of a window and full just before it turns over, which is
-    the opposite direction to the countdown beside it and the same direction as
-    the gauge: both fill as the window is used up.
+    None rather than a number when the window cannot say yet, so the caller
+    draws nothing instead of drawing a verdict it has not earned.
     """
     if not resets_at or not span:
-        return ""
+        return None
     remaining = float(resets_at) - time.time()
     if remaining <= 0:
-        return ""
+        return None
     elapsed = max(0.0, min(1.0, 1 - remaining / span))
-    return ARC[round(elapsed * (len(ARC) - 1))]
+    if elapsed < PACE_FLOOR:
+        return None
+    return pct / elapsed
+
+
+def pace_colour(projected: float) -> str:
+    """Walk the diverging stops and interpolate between the two that bracket it.
+
+    Outside the ends it clamps, so a window projected to land at 400% is the
+    same red as one landing at 150: once it will not last, by how much it will
+    not last stops changing what to do about it.
+    """
+    lo_at, lo = PACE_STOPS[0]
+    for hi_at, hi in PACE_STOPS[1:]:
+        if projected <= hi_at:
+            r, g, b = _mix(lo, hi, (projected - lo_at) / (hi_at - lo_at))
+            return f"\033[38;2;{r};{g};{b}m"
+        lo_at, lo = hi_at, hi
+    r, g, b = PACE_STOPS[-1][1]
+    return f"\033[38;2;{r};{g};{b}m"
+
+
+def tinted(text: str, escape: str) -> str:
+    """One colour over a whole span, closed with a reset."""
+    return text if plain() else f"{escape}{text}{RESET}"
 
 
 def model_part(data: dict) -> str:
