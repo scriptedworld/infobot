@@ -56,6 +56,28 @@ and applies no threshold, which is the main reason the port is to Go.
 
 Adopting them is queued in `clank/tasks/infobot/`.
 
+## Perishable: the pricing table
+
+`~/.config/infobot/pricing.json` carries the API rates the cost segment prices
+a session with, and the date they were taken. They drift: Sonnet 5's rate has
+an introductory price with an expiry, which is drift measured in days rather
+than releases.
+
+    source    https://platform.claude.com/docs/en/pricing.md
+    max age   1 day
+    on stale  re-read the source and rewrite the file, keeping the `taken` date
+              in step. A rate a person set deliberately is a preference and
+              stays; note it rather than overwriting it.
+
+Nothing refreshes it today. A session cannot: the status line is a formatter
+that runs on every event and cannot make a network call. Filed against
+agent-support as `clank/inbox/agent-support/grok-could-refresh-perishable-data`,
+because `/grok` runs at the start of most sessions and is the natural place for
+a check that has to happen often and costs nothing when the file is fresh.
+
+The seed copy in `infobot/pricing.py` is the fallback, so a fresh clone renders
+with no config file and no network.
+
 ## What is decided, and what is open
 
 Decided: Go, and the reasoning is in the task rather than restated here.
