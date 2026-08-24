@@ -1,6 +1,6 @@
 """What a session would have cost through the API, at list rates.
 
-Jeff is on a subscription, so nothing here is a bill. It is the counterfactual:
+I am on a subscription, so nothing here is a bill. It is the counterfactual:
 what the same tokens would have come to had they gone through the API, which is
 the only figure that makes the cache worth anything visible.
 

@@ -4,7 +4,7 @@
 
 The work is in `clank/tasks/infobot/`:
 
-    status-line/05  rewrite in Go        .questions -- the language is Jeff's call
+    status-line/05  rewrite in Go        .questions -- the language is my call
     status-line/10  write the test suite .ready
     status-line/20  a failing segment costs one segment, not the row (FR-1.4)
     session-cost/10 what the session would have cost  .complete
@@ -12,7 +12,7 @@ The work is in `clank/tasks/infobot/`:
 Task 10 was drafted against the Python and still says `# COVERS:`. If the port
 happens it becomes `//`; if it does not, it is already right.
 
-## The decision waiting on Jeff
+## The decision waiting on me
 
 **Go or stay on Python.** Written up in full in `status-line/05`. Short form: two
 of the four arguments for the port did not survive checking, the gate now reads

@@ -10,7 +10,7 @@ document's own.
 Requirements are stated as observable properties. Each says what is true of a
 run, not how anything is arranged.
 
-**Status markers.** `[A]` traces to a statement of Jeff's. `[D]` is derived from
+**Status markers.** `[A]` traces to something I said. `[D]` is derived from
 one. `[A/D]` is both. `[?]` is an open question, recorded so it is not lost and
 carrying no test yet.
 
