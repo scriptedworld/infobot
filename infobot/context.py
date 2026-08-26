@@ -147,3 +147,16 @@ def _scalar(value: object) -> str:
         text = repr(value)
         return text if "." in text or "e" in text else text + ".0"
     return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def forget(session_id: str) -> None:
+    """Drop this session's state file.
+
+    Called when the session ends. Nothing will read it again: it reports a
+    context window that no longer exists, and a reader finding it later would
+    have no way to tell a live session from a finished one.
+    """
+    try:
+        path(session_id).unlink(missing_ok=True)
+    except OSError:
+        pass

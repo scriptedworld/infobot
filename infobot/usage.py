@@ -4,15 +4,13 @@ The status line's payload carries no cumulative usage, but Claude Code writes a
 usage record per assistant message into the session transcript, and the payload
 carries the session id that names it.
 
-THIS IS THE ONE PLACE INFOBOT READS A FILE IT WAS NOT HANDED. It is deliberate
-and it is bounded: a stat on every render, a parse only of what has been
-appended since the last one. A full re-sum of a 2.7MB transcript measured 21ms
-to 29ms against a render budget of 33ms, and it grows for the life of the
-session, so re-summing every time is not affordable and tailing is.
+THIS IS THE ONE PLACE INFOBOT READS A FILE IT WAS NOT HANDED, and it is bounded:
+a stat on every render, a parse only of what has been appended since the last
+one. A full re-sum of a 2.7MB transcript measured 21ms to 29ms against a render
+budget of 33ms, and it grows for the life of the session.
 
 Every read is guarded. A missing transcript, an unreadable state file, a half
-written line: each returns no totals rather than raising, because a status line
-that raises shows nothing at all.
+written line: each returns no totals rather than raising.
 """
 
 from __future__ import annotations
@@ -42,8 +40,12 @@ def state_dir() -> Path:
     return Path(root) / "infobot"
 
 
-def transcripts(session_id: str) -> list[Path]:
+def transcripts(session_id: str, root: Path | None = None) -> list[Path]:
     """Every transcript the session bills for: its own, and its subagents'.
+
+    `root` is where the projects live, taken as an argument so a test can point
+    it at a fixture tree rather than patching the module. FR-4.4. It defaults to
+    the real one, which is the only thing the status line ever passes.
 
     Found by name rather than by rebuilding a path. The directory is a slug of
     the working directory, but a session may have been started somewhere other
@@ -51,36 +53,32 @@ def transcripts(session_id: str) -> list[Path]:
     reconstructed from `workspace.current_dir`.
 
     THE SUBAGENTS ARE NOT OPTIONAL. Each runs in its own transcript under
-    `<session>/subagents/`, and on a session that delegates they are not a
-    rounding error: measured on one, they were 51% of output tokens and 33% of
-    cache reads. Counting only the main transcript halves the bill.
+    `<session>/subagents/`, and on one measured session they were 51% of output
+    tokens and 33% of cache reads.
 
-    NEITHER ARE THE TRANSCRIPTS A CLEAR LEFT BEHIND. `/clear` closes one
-    transcript and opens another under a NEW `sessionId`, so a name match alone
-    would follow only one side of it. Measured on a cleared session: the old
-    transcript's last record and the new one's first are two minutes apart, and
-    the new one's first user record is the `/clear` command itself.
+    NEITHER ARE THE TRANSCRIPTS A CLEAR LEFT BEHIND. `/clear` opens a new
+    transcript under a NEW `sessionId`, so a name match alone follows one side
+    of it. The two ids point opposite ways, so transcripts are grouped by ROOT:
+    a transcript's recorded origin where it has one, its own name where it does
+    not. Every transcript sharing a root is one session's spending, whichever id
+    the payload handed over.
 
-    Two ids run through a cleared session and they point opposite ways. Every
-    record carries `sessionId`, which is the transcript's OWN id and changes at
-    the clear. Records after the clear also carry a snake_case `session_id`
-    holding the id of the session it came from. Since the status line's payload
-    may hand over either one, transcripts are grouped by ROOT: a transcript's
-    recorded origin where it has one, its own name where it does not. Every
-    transcript sharing a root is one session's spending, whichever id was
-    asked about.
+    docs/LESSONS/a-session-is-more-than-one-transcript.md has the measurements.
     """
     if not session_id:
         return []
+    root = root or PROJECTS
     try:
-        named = list(PROJECTS.glob(f"*/{session_id}.jsonl"))
+        named = list(root.glob(f"*/{session_id}.jsonl"))
         # Scoped to the project the session belongs to. A clear opens its new
         # transcript beside the old one, so the search never leaves that
         # directory, and the cost is proportional to one project's sessions
         # rather than to every session ever recorded on the machine.
-        pool = list(named[0].parent.glob("*.jsonl")) if named else list(PROJECTS.glob("*/*.jsonl"))
-        root = _root(named[0]) if named else session_id
-        found = [p for p in pool if _root(p) == root or p.stem == root]
+        pool = list(named[0].parent.glob("*.jsonl")) if named else list(root.glob("*/*.jsonl"))
+        # `origin` is the SESSION's root, which is a different thing from the
+        # `root` above: that one is where the projects live.
+        origin = _root(named[0]) if named else session_id
+        found = [p for p in pool if _root(p) == origin or p.stem == origin]
         return found + [sub for p in found
                         for sub in p.parent.glob(f"{p.stem}/subagents/*.jsonl")]
     except OSError:
@@ -105,17 +103,22 @@ def _root(path: Path) -> str:
     return path.stem
 
 
-def totals(session_id: str) -> dict:
+def totals(session_id: str, root: Path | None = None) -> dict:
     """Token counts for the session, keyed by model. Empty when unknowable.
 
     State is per file rather than one running sum, because subagent transcripts
     appear part way through a session and a single offset cannot say which of
     them a total already includes.
+
+    `root` is passed through to transcripts(). The OFFSETS it writes are not
+    covered by it: they follow `XDG_STATE_HOME`, so a test giving a fixture root
+    should move that too, or the offsets it records land beside the real ones and
+    a later render skips bytes it never counted.
     """
     state = _load(session_id).get("files", {})
     seen: dict = {}
     changed = False
-    for path in transcripts(session_id):
+    for path in transcripts(session_id, root):
         key = str(path)
         try:
             size = path.stat().st_size
@@ -201,5 +204,18 @@ def _save(session_id: str, state: dict) -> None:
         directory = state_dir()
         directory.mkdir(parents=True, exist_ok=True)
         (directory / f"{session_id}.json").write_text(json.dumps(state))
+    except OSError:
+        pass
+
+
+def forget(session_id: str) -> None:
+    """Drop this session's offsets.
+
+    Called when the session ends. The offsets record how far into each
+    transcript the last render read, which is worth nothing once nothing will
+    render again, and they accumulate one file per session forever otherwise.
+    """
+    try:
+        (state_dir() / f"{session_id}.json").unlink(missing_ok=True)
     except OSError:
         pass

@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+"""The SessionEnd entry point, and nothing else.
+
+Claude Code runs the status line once per transcript entry and never again once
+a session ends, so nothing would remove what the last render left behind. One
+file per session, forever, is what this exists to prevent.
+
+The same split as `bin/infobot`: this file resolves the import and delegates.
+The path is resolved from this file rather than from the working directory,
+because Claude Code invokes a hook by absolute path from wherever the session
+happened to be.
+
+Reads the hook payload on standard input and exits 0 whatever it is given. A
+cleanup that fails is litter; a cleanup that raises is a hook failure reported
+to somebody who was closing their terminal.
+"""
+
+import json
+import sys
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from infobot import context, usage  # noqa: E402
+
+
+def main() -> int:
+    try:
+        data = json.load(sys.stdin)
+    except Exception:
+        return 0
+    if not isinstance(data, dict):
+        return 0
+
+    session = data.get("session_id")
+    # A session id names one file each. Anything else, including a path
+    # separator smuggled through the payload, is refused rather than joined
+    # onto a directory this walks with unlink.
+    if not isinstance(session, str) or not session or "/" in session or ".." in session:
+        return 0
+
+    context.forget(session)
+    usage.forget(session)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
