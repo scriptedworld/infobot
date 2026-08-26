@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""statusline -- what Claude Code shows at the bottom of the screen.
+"""statusline: what Claude Code shows at the bottom of the screen.
 
 Reads the session JSON on stdin and prints two rows. Claude Code runs this on
 every event, so it stays cheap: no network, one subprocess for the pane width,
@@ -9,8 +9,8 @@ anything, and nothing here raises.
 WHAT THE INPUT CAN AND CANNOT ANSWER, from the documented schema:
 
   context_window   gives token counts AND a percentage, so used/total is real.
-                   used_percentage counts INPUT ONLY -- input + cache_creation +
-                   cache_read, never output -- so the counts shown here use the
+                   used_percentage counts INPUT ONLY: input + cache_creation +
+                   cache_read, never output, so the counts shown here use the
                    same formula. Mixing them would print a percentage that does
                    not match its own numerator.
 
@@ -21,10 +21,9 @@ WHAT THE INPUT CAN AND CANNOT ANSWER, from the documented schema:
 
 EVERY FIELD IS OPTIONAL. rate_limits appears only for Claude.ai subscribers and
 only after the first API response; either window can be absent on its own;
-used_percentage can be null early in a session. A status line that raises is a
-status line that shows nothing at all, so every read is guarded and a missing
-segment is dropped rather than printed as zero -- zero is a claim, absence is
-not.
+used_percentage can be null early in a session. A status line that raises shows
+nothing at all, so every read is guarded and a missing segment is dropped rather
+than printed as zero. Zero is a claim, absence is not.
 """
 from __future__ import annotations
 
@@ -35,56 +34,49 @@ import sys
 import time
 import unicodedata
 
-from infobot import pricing, usage
+from infobot import context, pricing, usage
 
 BRAIN, HOURGLASS, CALENDAR = "🧠", "⏳", "📅"
 MONEY, BULLSEYE = "💵", "🎯"
 # Powerline thin separator from Iosevka Nerd Font, which kitty is configured
 # with (font_family "Iosevka Nerd Font", style Light). A plain │ is the fallback
-# anywhere the glyph is missing -- it is one character either way, so nothing
-# shifts.
+# anywhere the glyph is missing, one character either way, so nothing shifts.
 SEP_GLYPH = "\ue0b1"
 SEP_COLOUR = "\033[38;2;70;80;85m"   # dim, so it divides without competing
-DIM = "\033[38;2;120;130;135m"       # connective words -- present, not read
+DIM = "\033[38;2;120;130;135m"       # connective words: present, not read
 
 # The left rail, out of oh-my-zsh's multiline prompt: a rounded corner opening
-# the block, a rounded one closing it, and a tee for any row between. It does
-# one useful thing besides looking like something -- it says the two rows are
-# one block rather than two neighbours, which matters when the row above is
-# full width and the row below is half of it.
+# the block, a rounded one closing it, and a tee for any row between. It says
+# the two rows are one block rather than two neighbours, which matters when the
+# row above is full width and the row below is half of it.
 #
 # A lone row gets the stub instead. \u256d with no \u2570 under it reads as a block that
-# failed to finish, which is a worse thing to say than nothing.
+# failed to finish.
 RAIL_TOP, RAIL_MID, RAIL_END, RAIL_ONE = "\u256d\u2500 ", "\u251c\u2500 ", "\u2570\u2500 ", "\u2576\u2500 "
 
 # The glyphs Claude Code draws in its own compaction meter, so the two read as
-# one instrument rather than two dialects. They carry no sub-cell steps the way
-# the eighth-blocks did, so every bit of resolution now comes from the cell
-# count -- which is why the bar takes whatever columns row one has left instead
-# of a fixed handful. At 40 cells that is 2.5% each.
+# one instrument. They carry no sub-cell steps the way the eighth-blocks did, so
+# every bit of resolution comes from the cell count, which is why the bar takes
+# whatever columns row one has left. At 40 cells that is 2.5% each.
 FILLED, EMPTY = "▰", "▱"
 
 # Unknown width means tmux could not be asked, so there is nothing to subtract
 # from and 50 is a chosen number rather than a fit.
 #
 # BAR_MIN is the width below which the bar is DROPPED rather than clamped to.
-# Clamping was the obvious thing and it is wrong: in a 120-column pane a long
-# path leaves six columns, so an eight-cell floor overflows and the row wraps,
-# which costs the whole line to save a bar that at 12% a cell was not saying
-# much anyway. The counts and the percentage stay either way.
+# Clamping overflows: in a 120-column pane a long path leaves six columns, so an
+# eight-cell floor wraps the row, costing the whole line to save a bar that at
+# 12% a cell was not saying much. The counts and the percentage stay either way.
 #
-# MARGIN is not one column of politeness, it is what Claude Code keeps for
-# itself, and the pane width is NOT the budget.
-#
-# FACT 2026-08-22: a row this script measured at 222 columns, which tmux agrees
-# is 222 and does not wrap in a 223-column pane, still came back truncated:
+# MARGIN is what Claude Code keeps for itself, so the pane width is NOT the
+# budget. A row measured at 222 columns, which tmux agrees is 222 and which does
+# not wrap in a 223-column pane, still came back truncated:
 #
 #   ...107k/1.0M (11% consumed) ▏ ⟨a5e58a…
 #
-# The renderer indents the status line two columns and then keeps 220, putting
-# its ellipsis in the 220th. So the reserve is three: two for the indent and
-# one it leaves at the right. Anything longer is not wrapped, it is cut, and
-# the session id is what gets cut because it is last.
+# The renderer indents two columns and then keeps 220, putting its ellipsis in
+# the 220th, so the reserve is three. Anything longer is cut rather than
+# wrapped, and the session id goes first because it is last.
 BAR_FALLBACK, BAR_MIN, MARGIN = 50, 8, 3
 
 # The rate limit windows get a fixed small gauge rather than a share of the
@@ -94,53 +86,33 @@ BAR_FALLBACK, BAR_MIN, MARGIN = 50, 8, 3
 # percentage it was drawing, which costs six columns less.
 WINDOW_CELLS = 10
 
-# PACE, expressed as where this window LANDS. Spend divided by how far through
-# the window you are, which projects the percentage you arrive at when it
-# resets. The window lengths come from the payload's own field names,
-# `five_hour` and `seven_day`.
+# PACE is where a window LANDS: spend divided by how far through the window you
+# are, projecting the percentage it arrives at when it resets. It colours the
+# gauge rather than adding a glyph, so the bar carries two readings without
+# costing a column, its LENGTH the spend and its COLOUR the verdict. The scale
+# diverges with green in the middle, and the reasoning is in
+# docs/DECISIONS/a-rate-limit-gauge-is-coloured-by-pace.md.
 #
-# Projected arrival rather than a ratio, because a ratio puts its neutral point
-# in the wrong place: "exactly on pace" means arriving at exactly 100%, which
-# is running out, not being fine. 80% spent with an hour left of five is on
-# pace by that reading and is plainly a warning.
-#
-# It colours the gauge rather than adding a glyph beside it, so the bar carries
-# two readings at once without costing a column: its LENGTH is how much is
-# spent, and its COLOUR is whether that is a problem. A glyph would also have
-# to quantise a continuous number into a handful of steps.
-#
-# The scale DIVERGES, with green in the middle rather than at an end, because
-# the context meter and a rate limit window are not asking the same question.
-# Full is the alarm for the context window. Here, arriving full exactly as the
-# window resets is the best outcome there is: nothing ran out and nothing went
-# unused, so it gets the green.
-#
-# Both directions away from that centre are wrong, in opposite ways, so they
-# get opposite ends. Above it the window empties early and runs yellow into
-# red. Below it the allowance goes unspent, which is not a fault but is worth
-# seeing, so it pales out through white and into blue.
+# The window lengths come from the payload's own field names.
 FIVE_HOUR, SEVEN_DAY = 5 * 3600, 7 * 86400
 
 # How much of a window has to elapse before its verdict is shown in full. A
 # percent spent two minutes into five hours divides by almost nothing and
-# projects a catastrophe, so the judgement is faded in against green rather
-# than switched on: early it says nothing, and it arrives at its full colour
-# three hours into a five hour window.
-#
-# A fraction rather than a duration, so the seven day window matures at the
-# same point in its own life instead of after an afternoon.
+# projects a catastrophe, so the judgement fades in against green rather than
+# switching on. A fraction rather than a duration, so the seven day window
+# matures at the same point in its own life instead of after an afternoon.
 PACE_CONFIDENT = 0.6
 
-# An arithmetic floor only, to divide by. The fade above is what stops a wild
-# early projection from being believed; this stops it being infinite.
+# An arithmetic floor only, to divide by. The fade above stops a wild early
+# projection from being believed; this stops it being infinite.
 PACE_MIN_ELAPSED = 0.01
 
 RESET = "\033[0m"
 
-# TRUECOLOR. FACT 2026-08-19: COLORTERM=truecolor and CLAUDE_CODE_TMUX_TRUECOLOR=1
-# is set in settings.json, which is exactly what defeats Claude Code's habit of
-# capping colour at the 256 palette when it sees $TMUX. A 24-bit escape reaches
-# the terminal intact, so the ramp can be continuous instead of stepped.
+# TRUECOLOR. COLORTERM=truecolor and CLAUDE_CODE_TMUX_TRUECOLOR=1 are set in
+# settings.json, which is what defeats Claude Code's habit of capping colour at
+# the 256 palette when it sees $TMUX. A 24-bit escape reaches the terminal
+# intact, so the ramp can be continuous instead of stepped.
 #
 # Two straight lines rather than one. Green to yellow across the long stretch
 # where nothing is happening, then yellow to red compressed into 75-90, so the
@@ -153,18 +125,15 @@ ALARM_AT = 90.0
 ALARM = "\033[1;38;2;250;240;120;48;2;180;25;25m"   # bold pale yellow on deep red
 
 # The ENCOM teal, the same value the i3 bar and claws use ($encom_teal,
-# #00a595). Taking it from the existing palette rather than picking a cyan means
-# the status line reads as part of the desktop instead of beside it.
+# #00a595), so the status line reads as part of the desktop instead of beside it.
 PATH_COLOUR = "\033[38;2;0;165;149m"
 
 # The unused cells are an outline glyph and NO background. ▱ carries its own
-# shape, so it reads as an empty slot unaided, and a background behind it would
-# fill the gaps between the parallelograms and turn the tail of the bar into a
-# solid slab -- the very thing the outline is there to avoid.
+# shape, and a background behind it would fill the gaps between the
+# parallelograms and turn the tail of the bar into a solid slab.
 #
-# The value comes from the ENCOM palette in the i3 config rather than being
-# picked by eye: $encom_dimcyan, one step up from the deepcyan the i3 bar uses
-# for `inactive_workspace`.
+# The value is $encom_dimcyan from the i3 config, one step up from the deepcyan
+# the i3 bar uses for `inactive_workspace`.
 EMPTY_COLOUR = "\033[38;2;0;95;95m"  # $encom_dimcyan #005f5f
 
 # The pace stops, here because they are built from the palette above.
@@ -222,28 +191,89 @@ def colour(pct: float, text: str) -> str:
 def terminal_width() -> int | None:
     """Columns, or None when it genuinely cannot be known.
 
-    FACT 2026-08-20: every ordinary route fails here. Claude Code captures
-    stdout, so fds 0, 1 and 2 all raise OSError; COLUMNS is unset; /dev/tty is
-    "No such device or address"; and `shutil.get_terminal_size()` therefore
-    returns its fabricated 80x24 fallback.
+    Every ordinary route fails here. Claude Code captures stdout, so fds 0, 1
+    and 2 all raise OSError; COLUMNS is unset; /dev/tty is "No such device or
+    address"; and `shutil.get_terminal_size()` therefore returns its fabricated
+    80x24 fallback.
 
     THAT FALLBACK IS THE TRAP. Believing it would truncate a 223-column pane to
-    80 -- worse than not adapting at all. So the shutil default is never used:
-    tmux is asked directly, and anything else returns None, meaning "render the
-    full form and let the caller fit it".
+    80, worse than not adapting at all. So the shutil default is never used:
+    whatever owns the pane is asked directly, and a host that cannot be asked
+    returns None, meaning "render the full form and let the caller fit it".
 
-    Measured at 3.2ms, which is affordable once per render.
+    The hosts are tried INNERMOST FIRST. tmux running inside a herdr pane draws
+    this line in the tmux pane, which is the narrower of the two, so tmux
+    answers whenever it is there and herdr answers when it is not. Each route
+    costs one subprocess of a few milliseconds and only the winning one runs.
     """
+    return tmux_width() or herdr_width()
+
+
+def ask(argv: list[str]) -> str:
+    """Put a question to a host and hand back its stdout, stripped.
+
+    It RAISES on a missing binary or a timeout, and each caller catches, because
+    what a failure means is the caller's to say: for a width route it means the
+    width is unknown, which is a rendering decision rather than an error.
+
+    subprocess is imported here rather than at the top so a render with no host
+    to ask does not pay for it, which is every render outside a multiplexer.
+    """
+    import subprocess
+
+    out = subprocess.run(argv, capture_output=True, text=True, timeout=2)
+    return out.stdout.strip()
+
+
+def tmux_width() -> int | None:
+    """Pane columns from tmux, measured at 3.2ms and affordable once per render."""
     if not os.environ.get("TMUX"):
         return None
     try:
-        import subprocess
+        return int(ask(["tmux", "display-message", "-p", "#{pane_width}"])) or None
+    except Exception:
+        return None
 
-        out = subprocess.run(
-            ["tmux", "display-message", "-p", "#{pane_width}"],
-            capture_output=True, text=True, timeout=2,
-        )
-        return int(out.stdout.strip()) or None
+
+def herdr_width() -> int | None:
+    """Pane columns from herdr, measured at 2-4ms, the same order as tmux.
+
+    `pane layout` is the only command carrying a rectangle: `pane current` and
+    `pane get` describe the pane in full and never say how wide it is. It
+    answers for the CALLING PANE'S WHOLE TAB, so the pane has to be picked out
+    of the list it returns, and HERDR_PANE_ID is what names it.
+
+    A tab holding exactly one pane answers whatever id that pane carries. It is
+    the one case where not matching the id costs nothing, because there is only
+    one rectangle it could be, and it covers an id in the environment that no
+    longer names the pane the process now sits in. Every other mismatch is
+    reported unknown rather than guessed at, which is FR-3.3 again.
+
+    A ZOOMED PANE'S RECTANGLE IS THE UNZOOMED ONE. `zoomed` goes true and every
+    rect in the reply stays exactly where it was, so a pane zoomed out of a
+    two-way split reports half the columns it is drawn in and the row comes out
+    half the width it could be. The tab's `area` is the width to use, and the
+    zoomed pane is the focused one: zooming the neighbour moved `focused_pane_id`
+    to it and left this pane hidden, which is the case where the unzoomed
+    rectangle is the right answer because it is what unzooming restores.
+
+    HERDR_BIN_PATH is preferred over the name because it pins the version that
+    owns this pane, and because PATH in a status line subprocess is whatever
+    Claude Code inherited rather than whatever a shell would have built.
+    """
+    pane = os.environ.get("HERDR_PANE_ID")
+    if not pane:
+        return None
+    try:
+        binary = os.environ.get("HERDR_BIN_PATH") or "herdr"
+        layout = json.loads(ask([binary, "pane", "layout", "--current"]))["result"]["layout"]
+        panes = layout["panes"]
+        mine = [p for p in panes if p.get("pane_id") == pane]
+        if not mine and len(panes) == 1:
+            mine = panes
+        if layout.get("zoomed") and mine[0]["pane_id"] == layout.get("focused_pane_id"):
+            return int(layout["area"]["width"]) or None
+        return int(mine[0]["rect"]["width"]) or None
     except Exception:
         return None
 
@@ -257,11 +287,11 @@ def visible_width(text: str) -> int:
     Sizing the bar by subtraction only works if the subtrahend is what the
     terminal will actually draw. `len()` is not that: it counts every byte of
     an escape sequence as a column and the emoji as one column when they take
-    two. Both errors run the same way, toward a bar too wide for the line.
+    two. Both errors run toward a bar too wide for the line.
 
-    Ambiguous-width characters -- ▰ and ▱ among them -- are counted as one,
-    which is what kitty draws them as. A terminal configured to treat ambiguous
-    as wide would need this changed, and would double the bar.
+    Ambiguous-width characters, ▰ and ▱ among them, are counted as one, which is
+    what kitty draws them as. A terminal configured to treat ambiguous as wide
+    would need this changed, and would double the bar.
     """
     return sum(
         0 if unicodedata.combining(ch)
@@ -316,17 +346,16 @@ def bar(pct: float, cells: int = BAR_FALLBACK, tint: str = "") -> str:
 def plain() -> bool:
     """NO_COLOR is honoured for EVERY escape, not just the obvious ones.
 
-    An earlier version hardcoded the separator and the bar's brackets as
-    constants, so `NO_COLOR=1` stripped the segments while leaving those
-    behind -- output that was neither coloured nor clean.
+    A hardcoded separator or bracket survives `NO_COLOR=1` stripping the
+    segments around it, giving output that is neither coloured nor clean.
     """
     return bool(os.environ.get("NO_COLOR"))
 
 
 def dim(text: str) -> str:
     # An empty span would still emit an open and a reset with nothing between,
-    # which is invisible but wasteful -- and it happens at both ends of the bar,
-    # where the fill or the track is empty.
+    # which happens at both ends of the bar where the fill or the track is
+    # empty.
     if not text or plain():
         return text
     return f"{DIM}{text}{RESET}"
@@ -364,16 +393,20 @@ def tokens(n: float) -> str:
     return f"{n:.0f}"
 
 
-def countdown(resets_at: float | None) -> str:
+def countdown(resets_at: float | None, now=time.time) -> str:
     """Time until reset, as the largest two units that are non-zero.
 
-    Returns "" when the timestamp is missing or already past -- a countdown
-    reading "0m" would suggest a reset is imminent when it has in fact already
-    happened and the number is simply stale.
+    Returns "" when the timestamp is missing or already past. A countdown
+    reading "0m" suggests a reset is imminent when it has already happened and
+    the number is simply stale.
+
+    `now` is the clock, taken as an argument so a test can fix the instant and
+    assert a string rather than a shape. FR-4.3. Nothing calls it with anything
+    but the default outside a test.
     """
     if not resets_at:
         return ""
-    remaining = int(float(resets_at) - time.time())
+    remaining = int(float(resets_at) - now())
     if remaining <= 0:
         return ""
     d, remaining = divmod(remaining, 86400)
@@ -400,37 +433,18 @@ def context_segment(cw: dict, cells: int = BAR_FALLBACK) -> str:
     `cells` of 0 drops the bar and keeps the numbers, which is both what a pane
     too narrow to carry a bar gets and how build() measures the room for one.
 
-    PREFERENCE 2026-08-20: the WHOLE span is coloured here, while the rate-limit
-    segments colour only their number. That asymmetry is deliberate and is not
-    an oversight to tidy up. The context window is the thing watched constantly
-    while working; the other two are infrequent details. A wider block of colour
-    makes the loud one loud.
+    The WHOLE span is coloured here, while the rate-limit segments colour only
+    their number. That asymmetry is deliberate: the context window is watched
+    constantly while working and the other two are infrequent details, so a
+    wider block of colour makes the loud one loud.
     """
-    size = cw.get("context_window_size")
-    pct = cw.get("used_percentage")
-    if not size:
+    # One formula, shared with the file `context.write` leaves behind, so a
+    # bar reading 56% cannot sit beside a file saying something else. What it
+    # does with an absent count or an absent percentage is described there.
+    measured = context.figures(cw)
+    if not measured:
         return ""
-
-    # Match used_percentage's own formula: input side only. current_usage is the
-    # authority when present; total_input_tokens is the fallback.
-    usage = cw.get("current_usage") or {}
-    if usage:
-        used = sum(
-            float(usage.get(k) or 0)
-            for k in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")
-        )
-    else:
-        used = float(cw.get("total_input_tokens") or 0)
-
-    if pct is None:
-        pct = (used / float(size)) * 100 if size else 0
-    elif not used:
-        # Counts absent but a percentage present. Deriving the count from the
-        # percentage keeps the two halves agreeing; printing the literal 0 gave
-        # "0/200k 3%", which reads as a bug in the status line rather than as
-        # missing data.
-        used = float(size) * float(pct) / 100
-    pct = float(pct)
+    used, size, pct = measured
     # The percentage sits with the counts, where it reads as one measurement
     # rather than as a number to be found inside the picture of it. The bar is
     # left whole.
@@ -468,25 +482,26 @@ def fitted(cw: dict, others: list[str], at: int, width: int | None) -> str:
     return context_segment(cw, cells) if cells else bare
 
 
-def limit_segment(emoji: str, label: str, window: dict | None, span: int,
-                  compact: bool = False) -> str:
+def limit_segment(label: str, window: dict | None, span: int,
+                  compact: bool = False, now=time.time) -> str:
     """A gauge and a countdown. No token counts exist for these windows.
+
+    `label` carries the emoji and the name together because they are one fixed
+    string at both call sites, and because the clock has to be a parameter
+    (FR-4.3) and the complexity gate allows five of them.
 
     The percentage is drawn rather than printed. It is the same bar as the
     context window's, on the same ramp, so 80% is the same shade wherever it
-    appears and one glance reads all three meters. At WINDOW_CELLS the bar
-    resolves to 10% a cell, which is the resolution a window checked
-    occasionally wants: these are the infrequent detail, not the number watched
-    while working.
+    appears and one glance reads all three meters. At WINDOW_CELLS it resolves
+    to 10% a cell, which is what a window checked occasionally wants.
 
     The countdown stays as a number because a bar cannot carry it, and because
     it is what makes the gauge actionable: half spent with four hours to go
     reads very differently from half spent with ten minutes to go.
 
-    It is deliberately UNCOLOURED rather than colourless by oversight. It wants
-    its own scale and probably an inverted one: a reset getting closer is good
-    news, so it would run TOWARD green as it nears zero, which is the opposite
-    direction to consumption. Undecided, so left plain rather than guessed at.
+    It is deliberately UNCOLOURED. It wants its own scale and probably an
+    inverted one, running TOWARD green as it nears zero, since a reset getting
+    closer is good news. Undecided, so left plain rather than guessed at.
     """
     if not window:
         return ""
@@ -498,19 +513,19 @@ def limit_segment(emoji: str, label: str, window: dict | None, span: int,
     # Concern where it can be worked out, raw spend where it cannot: with no
     # reset time there is no window position, so the gauge falls back to
     # meaning what the context meter's colour means.
-    elapsed = elapsed_fraction(resets_at, span)
+    elapsed = elapsed_fraction(resets_at, span, now)
     tint = ramp(pct) if elapsed is None else pace_tint(pct, elapsed)
     gauge = (tinted(f"{pct:.0f}%", tint) if compact
              else bar(pct, WINDOW_CELLS, tint=tint))
-    parts = [emoji, label, gauge, countdown(resets_at)]
+    parts = [label, gauge, countdown(resets_at, now)]
     return " ".join(part for part in parts if part)
 
 
-def elapsed_fraction(resets_at: float | None, span: int) -> float | None:
+def elapsed_fraction(resets_at: float | None, span: int, now=time.time) -> float | None:
     """How far through the window we are, or None when that is unknowable."""
     if not resets_at or not span:
         return None
-    remaining = float(resets_at) - time.time()
+    remaining = float(resets_at) - now()
     if remaining <= 0:
         return None
     return max(0.0, min(1.0, 1 - remaining / span))
@@ -523,15 +538,14 @@ def pace_tint(pct: float, elapsed: float) -> str:
     land decides the hue; how far through the window we are decides how much of
     that hue is shown, against green for the rest.
 
-    Green is the right thing to fade toward rather than grey or nothing,
-    because green is this scale's "no comment" as well as its "on rate": both
-    mean there is nothing here to act on.
+    Green rather than grey or nothing, because green is this scale's "no
+    comment" as well as its "on rate", and both mean there is nothing to act on.
     """
     projected = pct / max(elapsed, PACE_MIN_ELAPSED)
     # Squared, so the verdict stays quiet through the middle of the window and
     # arrives late. Running hot with most of the window still ahead is not
-    # something to act on: the concern is coming up on the end and being about
-    # to run out. A linear fade is already half shouting at the halfway mark.
+    # something to act on, and a linear fade is already half shouting at the
+    # halfway mark.
     trust = min(1.0, elapsed / PACE_CONFIDENT) ** 2
     r, g, b = _mix(GREEN, pace_rgb(projected), trust)
     return f"\033[38;2;{r};{g};{b}m"
@@ -562,14 +576,16 @@ def tinted(text: str, escape: str) -> str:
 COST_GUTTER = 3
 
 
-def cost_forms(data: dict) -> tuple[str, str]:
+def cost_forms(data: dict, root=None) -> tuple[str, str]:
     """The cost segment at full length and shortened, from one read.
 
     Both forms come from the same totals because working them out means
     tailing a file, and doing that twice to decide which of two strings fits
     would double the only expensive thing on the row.
+
+    `root` reaches usage.totals() so a test can price a fixture tree. FR-4.4.
     """
-    figures = pricing.priced(usage.totals(data.get("session_id") or ""))
+    figures = pricing.priced(usage.totals(data.get("session_id") or "", root))
     if not figures:
         return "", ""
     spent, saved, complete = figures
@@ -629,14 +645,14 @@ def session_part(data: dict) -> str:
     return f"⟨{str(sid)[:8]}⟩" if sid else ""
 
 
-def limit_parts(data: dict, compact: bool = False) -> list[str]:
+def limit_parts(data: dict, compact: bool = False, now=time.time) -> list[str]:
     """The two rate limit windows, each dropped when its data is absent."""
     limits = data.get("rate_limits") or {}
     return [
         seg
         for seg in (
-            limit_segment(HOURGLASS, "5hr", limits.get("five_hour"), FIVE_HOUR, compact),
-            limit_segment(CALENDAR, "7d", limits.get("seven_day"), SEVEN_DAY, compact),
+            limit_segment(f"{HOURGLASS} 5hr", limits.get("five_hour"), FIVE_HOUR, compact, now),
+            limit_segment(f"{CALENDAR} 7d", limits.get("seven_day"), SEVEN_DAY, compact, now),
         )
         if seg
     ]
@@ -649,12 +665,9 @@ def place_context(cw: dict, identity: list[str], tail: list[str], usage: list[st
     Row one is where it belongs, but only if row one can hold it with no bar at
     all. A narrow split or a long path puts it over the budget before a single
     cell of bar is added, and then it goes to the meter row rather than being
-    truncated: what truncation eats is the end of the row, which is the session
-    id.
+    truncated: what truncation eats is the end of the row, the session id.
 
-    Both lists are appended to in place, because the caller's two rows are the
-    only thing this decides between and returning a pair of them reads worse
-    than saying which one it chose.
+    Both lists are appended to in place.
     """
     if not context_segment(cw, 0):
         return
@@ -664,7 +677,7 @@ def place_context(cw: dict, identity: list[str], tail: list[str], usage: list[st
         usage.insert(0, fitted(cw, usage, 0, width))
 
 
-def build(data: dict, home: str, width: int | None = None) -> list[str]:
+def build(data: dict, home: str, width: int | None = None, now=time.time) -> list[str]:
     """Two rows, composed from segments that each render themselves.
 
     Claude Code renders each printed line as its own row. The context window is
@@ -679,28 +692,28 @@ def build(data: dict, home: str, width: int | None = None) -> list[str]:
 
     A row with nothing in it is omitted rather than printed blank: early in a
     session the context and rate-limit fields are all absent, and a stray empty
-    row is a visible gap that looks like a fault. Each part above returns "" or
-    an empty list when its data is missing, so absence is dropped here by one
-    filter rather than by a condition per segment.
+    row looks like a fault. Each part above returns "" or an empty list when its
+    data is missing, so one filter here handles absence for every segment.
     """
-    rows = compose(data, home, width, compact=False)
+    rows = compose(data, home, width, False, now)
     # The gauges give way to the percentages they draw rather than letting the
     # row run past the budget, which is the rule the context bar follows too.
     # Measured after composing rather than before, because the context segment
     # relocates onto this row when row one cannot hold it, and that is exactly
     # the case where the row is too long.
     if width and rows[1] and row_width(rows[1]) > width - MARGIN:
-        rows = compose(data, home, width, compact=True)
+        rows = compose(data, home, width, True, now)
 
     lines = rail([sep().join(row) for row in rows if row])
     return align_cost(lines, data, width)
 
 
-def compose(data: dict, home: str, width: int | None, compact: bool) -> list[list[str]]:
+def compose(data: dict, home: str, width: int | None, compact: bool,
+            now=time.time) -> list[list[str]]:
     """The two rows as lists of parts, before they are joined."""
     identity = [part for part in (model_part(data), *path_parts(data, home)) if part]
     tail = [part for part in (session_part(data),) if part]
-    usage = limit_parts(data, compact)
+    usage = limit_parts(data, compact, now)
 
     place_context(data.get("context_window") or {}, identity, tail, usage, width)
     identity += tail
@@ -715,6 +728,11 @@ def main() -> int:
         return 0
     if not isinstance(data, dict):
         return 0
+
+    # Guarded inside `write`, and called before the render so a payload the bar
+    # cannot draw still leaves its numbers on disk.
+    context.write(data)
+
     try:
         for row in build(data, os.path.expanduser("~"), terminal_width()):
             print(row)
