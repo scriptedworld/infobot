@@ -9,24 +9,24 @@ and tells you what state it is in. It replaces `milton`.
 
 ## What it is FOR
 
-One job: turn the session payload into rows. It is a formatter, and that is a
-constraint rather than a description. No network, no file reads beyond stdin,
-and one subprocess, which is `tmux display-message` for the pane width and is
-required because every other route to the width fails under Claude Code. See
-FR-3.3.
+One job: turn the session payload into rows. Formatter is a constraint, not a
+description. No network, and one subprocess to ask whoever owns the pane how
+wide it is, required because every other route to the width fails under Claude
+Code. tmux and herdr are both answered; see FR-3.3. The files it opens are the
+rate table and the session's own transcripts, both for the cost segment and
+both named in this document.
 
-It runs on every Claude Code event, so its startup cost is paid constantly.
-That is the reason the port to Go is queued: 19ms of the current 33ms per render
-is the Python interpreter starting.
+It runs on every Claude Code event, so its startup cost is paid constantly, and
+19ms of the current 33ms per render is the Python interpreter starting. That is
+why the port to Go is queued.
 
 ## Why it is its own repository
 
-It came out of `silo`, which is the standing rules, the settings, the hooks and
-the written record: things a person reads. infobot is a program, with its own
-requirements, its own gate and its own tests. Keeping it in silo meant one
-repository holding both, and it showed: silo's gate reads its own documents and
-never read `bin/statusline` at all, because lizard selects by file extension and
-the script had none.
+It came out of `silo`, which holds the standing rules, the settings, the hooks
+and the written record: things a person reads. infobot is a program, with its
+own requirements, its own gate and its own tests. Keeping it in silo showed:
+silo's gate never read `bin/statusline` at all, because lizard selects by file
+extension and the script had none.
 
 ## Layout
 
@@ -68,32 +68,39 @@ a session with, and the date they were taken.
               the figure is what these prompts would have cost today, so a deal
               running today belongs in it and is gone from it tomorrow.
 
-They do drift, and not only on a schedule. Sonnet 5 launched at an introductory
+They drift, and not only on a schedule. Sonnet 5 launched at an introductory
 $2/$10 with a rise to $3/$15 booked for September; the rise was then cancelled
-and the introductory rate became the standard one. A table refreshed on a clock
-gets that right without anyone noticing it happened.
+and the introductory rate became the standard one.
 
-Nothing refreshes it today. A session cannot: the status line is a formatter
-that runs on every event and cannot make a network call. Filed against
-agent-support as `clank/inbox/agent-support/grok-could-refresh-perishable-data`,
-because `/grok` runs at the start of most sessions and is the natural place for
-a check that has to happen often and costs nothing when the file is fresh.
+Nothing refreshes it today, and the status line cannot: it is a formatter that
+runs on every event and makes no network call. Filed against agent-support as
+`clank/inbox/agent-support/grok-could-refresh-perishable-data`, because `/grok`
+runs at the start of most sessions and costs nothing when the file is fresh.
 
 The seed copy in `infobot/pricing.py` is the fallback, so a fresh clone renders
 with no config file and no network.
 
 ## What is decided, and what is open
 
-Decided: Go, and the reasoning is in the task rather than restated here.
+Decided: Go, and as of 2026-08-26 the timing too, which was the part that stayed
+open long after the language did not. The port runs leaf-first across
+`clank/tasks/infobot/status-line/`, one file per task with its tests beside it,
+and the Python keeps rendering until the last of them. The argument is in task
+05 rather than restated here.
+
 Decided: the binary is built inside this repository and reached through a
 symlink in `dotfiles/bin`, which is what `bolt`, `converge` and `update` do.
+That choice is what FR-1.13 is about: a build that has not run and a symlink that
+dangles fail exactly as a blank line, the same way a missing import would, so the
+port must be able to say it is not built.
 
-Decided: two rows, not three. A third was considered for exceptional states, a
-stale rate table or a promotion in effect, and declined. A row that appears only
-when there is something to say moves the prompt every time it comes and goes,
-and one that is always there spends the space on nothing most of the time.
-Those states belong on the segment that is already there, the way an unpriced
-model already appends a plus to say the figure is a floor.
+Decided: two rows, not three. A third for exceptional states, a stale rate table
+or a promotion in effect, was declined. A row that appears only when there is
+something to say moves the prompt every time it comes and goes, and one always
+there spends the space on nothing most of the time. Those states belong on the
+segment already present, the way an unpriced model appends a plus to say the
+figure is a floor.
 
-Open: whether the two rows should be one, whether the countdown wants its own
-colour scale running toward green as a reset nears, and FR-4.1, the test suite.
+Open: section 4 of `REQUIREMENTS.md`, FR-4.1 to FR-4.7. Each open question is a
+requirement with an id rather than a line of prose, so closing one is a test or
+a decision against a row that exists.
