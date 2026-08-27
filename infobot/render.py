@@ -122,7 +122,24 @@ YELLOW = (235, 220, 40)
 RED = (225, 45, 45)
 PIVOT = 75.0
 ALARM_AT = 90.0
-ALARM = "\033[1;38;2;250;240;120;48;2;180;25;25m"   # bold pale yellow on deep red
+ALARM_TOP = 100.0            # where the alarm has arrived in full
+
+# The alarm FADES IN across 90 to 100 rather than switching on at 90.
+#
+# Its foreground starts at RED, which is exactly where the ramp below it
+# arrives, so nothing jumps at the boundary: the last yellow-to-red cell and the
+# first alarm cell are the same colour. It then runs to a pale yellow.
+#
+# Its background starts at BLACK and fills to a deep red. Against a dark
+# terminal an all-black background reads as no background at all, so the
+# inversion arrives gradually instead of slamming on, and by 100 it is the full
+# yellow-on-red that cannot be mistaken for part of the ramp.
+#
+# Bold is the one part that cannot fade, so it is on across the whole band. It
+# is also the least of the three: the background is what carries the message.
+BLACK = (0, 0, 0)
+ALARM_FG = (250, 240, 120)   # pale yellow, the far end of the foreground fade
+ALARM_BG = (180, 25, 25)     # deep red, the far end of the background fade
 
 # The ENCOM teal, the same value the i3 bar and claws use ($encom_teal,
 # #00a595), so the status line reads as part of the desktop instead of beside it.
@@ -164,12 +181,28 @@ def ramp(pct: float) -> str:
     shares a colour.
     """
     if pct >= ALARM_AT:
-        return ALARM
+        return alarm(pct)
     if pct <= PIVOT:
         r, g, b = _mix(GREEN, YELLOW, pct / PIVOT)
     else:
         r, g, b = _mix(YELLOW, RED, (pct - PIVOT) / (ALARM_AT - PIVOT))
     return f"\033[38;2;{r};{g};{b}m"
+
+
+def alarm(pct: float) -> str:
+    """The alarm style at `pct`, faded in from the top of the ramp.
+
+    At ALARM_AT it is RED on black, which is the colour the ramp beneath it
+    arrives at and a background a dark terminal does not show, so the boundary
+    has nothing to see. At ALARM_TOP it is pale yellow on deep red.
+
+    Both ends interpolate together, so the background filling in and the
+    foreground brightening are one movement rather than two.
+    """
+    into = min(1.0, max(0.0, (pct - ALARM_AT) / (ALARM_TOP - ALARM_AT)))
+    r, g, b = _mix(RED, ALARM_FG, into)
+    back = _mix(BLACK, ALARM_BG, into)
+    return f"\033[1;38;2;{r};{g};{b};48;2;{back[0]};{back[1]};{back[2]}m"
 
 
 def colour(pct: float, text: str) -> str:
@@ -179,8 +212,9 @@ def colour(pct: float, text: str) -> str:
     if pct >= ALARM_AT:
         # Inverted rather than merely red: past this point the message is not
         # "high" but "about to matter", and a hue change alone stops being seen
-        # after the twentieth time.
-        return f"{ALARM}{text}{RESET}"
+        # after the twentieth time. Faded in across the band rather than
+        # switched on, so the counts and the bar's last cells move together.
+        return f"{alarm(pct)}{text}{RESET}"
     if pct <= PIVOT:
         r, g, b = _mix(GREEN, YELLOW, pct / PIVOT)
     else:
@@ -333,9 +367,11 @@ def bar(pct: float, cells: int = BAR_FALLBACK, tint: str = "") -> str:
     for i, glyph in enumerate(glyphs):
         style = (tint or ramp((i + 1) / cells * 100)) if i < full else EMPTY_COLOUR
         if style != held:
-            # RESET first, always. ALARM carries bold and a background as well
-            # as a colour, so a bare colour change after it leaves both of them
-            # switched on for the rest of the line.
+            # RESET first, always. The alarm style carries bold and a
+            # background as well as a colour, so a bare colour change after it
+            # leaves both of them switched on for the rest of the line. It also
+            # changes on EVERY cell through the fade, so this runs per cell up
+            # there rather than per run.
             out.append(RESET + style)
             held = style
         out.append(glyph)

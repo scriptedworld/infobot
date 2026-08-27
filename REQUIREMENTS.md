@@ -123,6 +123,7 @@ merely sits near another one gets its own number.
 |---|---|---|
 | FR-6.1 | The consumption ramp is two straight lines, green to yellow from 0 to 75 and yellow to red from 75 to 90, so the colour moves fastest exactly where a glance needs to tell 80 from 88. | [A/D] |
 | FR-6.2 | At 90 and above the style inverts rather than merely reddening. Past that point the message is not "high" but "about to matter", and a hue change alone stops being seen after the twentieth time. | [A] |
+| FR-6.2a | The inversion FADES IN across 90 to 100 rather than switching on at 90. At 90 the foreground is the red the ramp beneath it arrives at and the background is black, so a dark terminal sees no boundary at all; at 100 it is pale yellow on deep red. Both ends move together, so the background filling in and the foreground brightening are one movement. Bold is the one part that cannot fade and is on across the whole band. | [A] |
 | FR-6.3 | Each filled cell is coloured for the percentage IT stands for and not for the bar's total, so the fade is a fixed property of the bar and only its length moves. | [D] |
 | FR-6.4 | The last filled cell carries the same colour as the number printed beside it, within one cell of rounding, because they mean the same thing. | [D] |
 | FR-6.5 | Every run of cells sharing a style opens with a reset before the style. The alarm style carries bold and a background as well as a foreground, so a bare colour change after it leaves both switched on for the rest of the line. | [D] |
