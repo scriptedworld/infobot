@@ -130,14 +130,22 @@ ALARM_TOP = 100.0            # where the alarm has arrived in full
 # arrives, so nothing jumps at the boundary: the last yellow-to-red cell and the
 # first alarm cell are the same colour. It then runs to a pale yellow.
 #
-# Its background starts at BLACK and fills to a deep red. Against a dark
-# terminal an all-black background reads as no background at all, so the
-# inversion arrives gradually instead of slamming on, and by 100 it is the full
-# yellow-on-red that cannot be mistaken for part of the ramp.
+# Its background starts at the TERMINAL'S OWN and fills to a deep red, so the
+# first frame of the fade paints nothing a reader can see and the inversion
+# arrives instead of slamming on. By 100 it is the full yellow-on-red that
+# cannot be mistaken for part of the ramp.
+#
+# BLACK IS NOT INVISIBLE, which is the trap this walked into first. The palette
+# here is Tokyo Night, #1a1b26 at full opacity in kitty and inherited by herdr,
+# so a pure black background is a dark notch against it: a seam exactly where
+# the fade exists to have none. Matching the backdrop is what makes it vanish.
+#
+# It follows the desktop's palette rather than being picked, which is FR-6.11,
+# so a theme change moves it. Read it out of `kitty.conf` if that happens.
 #
 # Bold is the one part that cannot fade, so it is on across the whole band. It
 # is also the least of the three: the background is what carries the message.
-BLACK = (0, 0, 0)
+BACKDROP = (26, 27, 38)      # #1a1b26, the terminal's own background
 ALARM_FG = (250, 240, 120)   # pale yellow, the far end of the foreground fade
 ALARM_BG = (180, 25, 25)     # deep red, the far end of the background fade
 
@@ -192,16 +200,16 @@ def ramp(pct: float) -> str:
 def alarm(pct: float) -> str:
     """The alarm style at `pct`, faded in from the top of the ramp.
 
-    At ALARM_AT it is RED on black, which is the colour the ramp beneath it
-    arrives at and a background a dark terminal does not show, so the boundary
-    has nothing to see. At ALARM_TOP it is pale yellow on deep red.
+    At ALARM_AT it is RED on the terminal's own background, which is the colour
+    the ramp beneath it arrives at and a background nothing can see, so the
+    boundary has nothing to show. At ALARM_TOP it is pale yellow on deep red.
 
     Both ends interpolate together, so the background filling in and the
     foreground brightening are one movement rather than two.
     """
     into = min(1.0, max(0.0, (pct - ALARM_AT) / (ALARM_TOP - ALARM_AT)))
     r, g, b = _mix(RED, ALARM_FG, into)
-    back = _mix(BLACK, ALARM_BG, into)
+    back = _mix(BACKDROP, ALARM_BG, into)
     return f"\033[1;38;2;{r};{g};{b};48;2;{back[0]};{back[1]};{back[2]}m"
 
 
