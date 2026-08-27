@@ -52,8 +52,10 @@ the very next thing anyone would have picked up.
 **What the port does NOT do, which FR-1.13 exists to catch.** Go retires FR-1.12
 and FR-1.12a and does not retire the class behind them. An import that may not
 resolve becomes a build that may not have run or a symlink that may dangle, and
-both fail identically, as a blank line nobody is told about. `~/bin/bolt` dangles
-on this machine right now. That is a real trade, not a free win, and task 05
+both fail identically, as a blank line nobody is told about. `~/bin/bolt` is the
+worked example: the symlink was laid on 20 August, its target was absent through
+26 August, and a binary appeared under it at 11:51 on the 27th. Nothing
+announced either transition. That is a real trade, not a free win, and task 05
 builds the answer to it before anything else.
 
 If the display starts moving again, this is wrong and the old reasoning returns
@@ -82,10 +84,18 @@ task promotes the ones it needs; task 20 accounts for whatever is left.
 `bolt.python-std-quality.yaml` are not. Expect ruff, mypy, pylint, vulture and
 interrogate to have opinions the first time they run.
 
-**bolt itself is being rewritten**, so the gate is run by invoking the checkers
-directly rather than through `bolt -c bolt.common-quality.yaml`.
-`~/.projects/bolt` tracks three files and no Go source, and `~/bin/bolt`
-dangles.
+**The gate runs through bolt again**, and its command line changed. The jig is a
+positional argument and flags come before it:
+
+    bolt --output-dir .ephemera/<dir> common-quality .
+
+**bolt exits 0 whenever the run completed**, whatever the tools concluded, so
+the verdict is `success` in the `result.yaml` it names on the last line. The
+summary line above it counts executions rather than failures: a run with one
+failing check of three prints `failed: 3 execution(s)`. Read the artifact.
+
+Invoking the three checkers directly still works and is the fallback while bolt
+is being rebuilt.
 
 ## Known and deliberately unfixed
 
@@ -94,14 +104,19 @@ blanks both rows rather than one segment. `golden/malformed-resets.txt` captures
 that behaviour, so task 20 fixing it shows up as a deliberate diff.
 
 The golden corpus is bound to the pane it was captured in. Every case that gets
-a width bakes those columns into its bar, so `check` is green in a 197-column
-herdr pane and red in any other, and a wholesale DIFFERS means "captured
-somewhere else" before it means a regression. Re-capture with `capture-golden.py`
-when the pane changes, and read the individual diffs to be sure it is only the
-bar that moved. Pinning the width would need a route that takes it from the
-environment, which was weighed and declined: the case for it is the corpus, and
-the corpus is meant to be replaced by the suite in task 10, which can pass a
-width to `build()` and needs nothing from the environment at all.
+a width bakes those columns into its bar, so `check` is green in the 191-column
+herdr pane it was last captured in and red in any other, and a wholesale DIFFERS
+means "captured somewhere else" before it means a regression. Re-capture with
+`capture-golden.py` when the pane changes, and read the individual diffs to be
+sure it is only the bar that moved. `.ephemera/check-golden-drift.py 191` sorts
+them into bar length, styling only and REGRESSED, which is the distinction that
+matters: a pure colour change leaves the glyph count untouched, so a check that
+strips glyphs files it under "the pane moved" and a reader stops looking.
+
+Pinning the width would need a route that takes it from the environment, which
+was weighed and declined: the case for it is the corpus, and the corpus is meant
+to be replaced by the suite in tasks 16 and 18, which can pass a width to
+`build()` and needs nothing from the environment at all.
 
 ## Open questions
 
