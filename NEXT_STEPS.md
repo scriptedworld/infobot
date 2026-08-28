@@ -251,7 +251,33 @@ it; the column that varies is `silently changed`, where the four ranked 0, 0, 1
 and 3. That is the column FR-1.11r is about.
 
 The FR-1.11o announcement is owed to silo, whose board reads this file, and to
-wrench, which holds the other half of the pin.
+wrench, which holds the other half of the pin. Both sent, and silo verified that
+`bin/board:29` is that grep character for character, anchors and captures only,
+and needs no change.
+
+**Two things wrench raised after the fix, one of which changes the link's cost.**
+
+FACT 2026-08-28, `.ephemera/wrench-parity/separators.go`: U+2028, U+2029,
+U+FEFF, U+00A0 and U+200B sit outside C0/DEL/C1 and are emitted raw. wrench
+notes Go escapes the first three. They round trip unaltered through **both**
+parsers available to check, PyYAML and go-yaml, so leaving them raw satisfies
+FR-1.11r as written: nothing rejects them and nothing alters them. The range is
+not widened on a spelling difference with no defect behind it.
+
+The residual risk is stated rather than measured: U+2028 and U+2029 are line
+separators by Unicode semantics, so a parser entitled to treat them as line
+breaks would split a record, which is the newline failure with a different code
+point. Neither parser tested does. A third might.
+
+**Go names thirteen escapes where this uses `\xNN`,** including `\e`, `\0` and
+`\N` for U+0085. Both spellings are correct and they interoperate in both
+directions, measured by wrench. But it means **linking would change infobot's
+bytes on those thirteen points**, and `TestCanonicalForm` holds none of them, so
+the fixture would pass without noticing. That is a real cost of the link that
+was not on the list before, and it is smaller than what it replaced.
+
+wrench's `parity/50` proposes publishing the spelling as a table rather than
+inheriting whichever library each pack binds, which is where this belongs.
 
 **That settles the measurement and not the decision.** Linking changes FR-1.11p
 from two emitters pinned by two fixtures into one emitter with a conformance
