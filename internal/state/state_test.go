@@ -1,0 +1,241 @@
+package state_test
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/scriptedworld/infobot/internal/payload"
+	"github.com/scriptedworld/infobot/internal/state"
+)
+
+var stamp = time.Date(2026, 8, 26, 16, 25, 52, 0,
+	time.FixedZone("", -7*3600))
+
+// write runs Write into a scratch state directory and hands back the file.
+//
+// XDG_STATE_HOME is moved for every test that renders. A test that does not
+// move it drops a file into the real state directory naming a session that
+// never existed, and no SessionEnd will ever be handed it.
+func write(t *testing.T, data payload.Map) string {
+	t.Helper()
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	state.Write(data, stamp)
+	path := state.Path(data.Str("session_id"))
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("no state file written: %v", err)
+	}
+	return string(raw)
+}
+
+func full() payload.Map {
+	return payload.Map{
+		"session_id": "abcd-1234",
+		"model":      map[string]any{"display_name": `Opus 5 "1M" \ context`},
+		"effort":     map[string]any{"level": "xhigh"},
+		"workspace":  map[string]any{"current_dir": "/home/ancient/.projects/infobot"},
+		"context_window": map[string]any{
+			"context_window_size": 1000000.0,
+			"used_percentage":     48.2,
+			"current_usage":       map[string]any{"input_tokens": 480000.0},
+		},
+	}
+}
+
+// COVERS: FR-1.11g, FR-1.11o | property
+//
+// The exact bytes, because the form is a published interface: silo's board
+// matches anchored patterns on the quoted key and the single space after the
+// colon, and takes the number bare. This is also wrench's fixture, so the two
+// repositories agree on one dialect.
+func TestCanonicalForm(t *testing.T) {
+	want := `"context_percent": 48.2
+"context_remaining": 520000
+"context_size": 1000000
+"context_used": 480000
+"cwd": "/home/ancient/.projects/infobot"
+"effort": "xhigh"
+"model": "Opus 5 \"1M\" \\ context"
+"session": "abcd-1234"
+"written": "2026-08-26T16:25:52-07:00"
+`
+	if got := write(t, full()); got != want {
+		t.Errorf("canonical form drifted.\ngot:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+// COVERS: FR-1.11g | property
+//
+// A key whose value is empty is omitted rather than written blank, so a reader
+// tells "not said" from "said to be nothing".
+func TestEmptyValuesAreOmitted(t *testing.T) {
+	got := write(t, payload.Map{"session_id": "bare"})
+	for _, key := range []string{"cwd", "model", "effort", "context_used"} {
+		if strings.Contains(got, `"`+key+`"`) {
+			t.Errorf("%q written for a payload that carries none:\n%s", key, got)
+		}
+	}
+	// session and written are always there.
+	for _, key := range []string{"session", "written"} {
+		if !strings.Contains(got, `"`+key+`"`) {
+			t.Errorf("%q missing, which is always written:\n%s", key, got)
+		}
+	}
+}
+
+// COVERS: FR-1.11b | property
+func TestFileIsReadableByOtherPrograms(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	state.Write(full(), stamp)
+	info, err := os.Stat(state.Path("abcd-1234"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mode := info.Mode().Perm(); mode != 0o644 {
+		t.Errorf("mode = %o, want 644", mode)
+	}
+}
+
+// COVERS: FR-1.11b | property
+//
+// Written whole or not at all, and the temporary is gone either way, so a
+// directory of state files never accumulates half-written ones beside the real.
+func TestNoTemporaryIsLeftBehind(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_STATE_HOME", dir)
+	state.Write(full(), stamp)
+	entries, err := os.ReadDir(filepath.Join(dir, "infobot"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 {
+		var names []string
+		for _, e := range entries {
+			names = append(names, e.Name())
+		}
+		t.Errorf("state directory holds %v, want the one file", names)
+	}
+}
+
+// COVERS: FR-1.11 | negative
+func TestNoSessionIdWritesNothing(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_STATE_HOME", dir)
+	state.Write(payload.Map{"model": map[string]any{"display_name": "Opus 5"}}, stamp)
+	if _, err := os.Stat(filepath.Join(dir, "infobot")); err == nil {
+		entries, _ := os.ReadDir(filepath.Join(dir, "infobot"))
+		if len(entries) != 0 {
+			t.Errorf("wrote %d files for a payload with no session id", len(entries))
+		}
+	}
+}
+
+// COVERS: FR-2.5, FR-2.6 | property
+//
+// current_usage is the authority and total_input_tokens the fallback, and the
+// counts are the INPUT side only: output is never in the context percentage.
+func TestFiguresCountsTheInputSideOnly(t *testing.T) {
+	got, ok := state.Figures(payload.Map{
+		"context_window_size": 200000.0,
+		"current_usage": map[string]any{
+			"input_tokens":                20000.0,
+			"cache_creation_input_tokens": 5000.0,
+			"cache_read_input_tokens":     1000.0,
+			"output_tokens":               99999.0,
+		},
+		"total_input_tokens": 1.0,
+	})
+	if !ok {
+		t.Fatal("Figures said the window could not be measured")
+	}
+	if got.Used != 26000 {
+		t.Errorf("Used = %v, want 26000 with output excluded", got.Used)
+	}
+}
+
+// COVERS: FR-2.6 | positive
+func TestFiguresFallsBackToTotalInputTokens(t *testing.T) {
+	got, ok := state.Figures(payload.Map{
+		"context_window_size": 200000.0,
+		"total_input_tokens":  50000.0,
+	})
+	if !ok || got.Used != 50000 {
+		t.Errorf("Used = %v, want the fallback 50000", got.Used)
+	}
+}
+
+// COVERS: FR-2.7 | property
+//
+// A percentage without counts derives the counts, and counts without a
+// percentage derive the percentage. Printing the literal zero gave
+// "0/200k (3% consumed)", which reads as a fault rather than as data.
+func TestFiguresDerivesWhicheverHalfIsMissing(t *testing.T) {
+	fromPct, _ := state.Figures(payload.Map{
+		"context_window_size": 200000.0,
+		"used_percentage":     25.0,
+	})
+	if fromPct.Used != 50000 {
+		t.Errorf("Used = %v, want 50000 derived from the percentage", fromPct.Used)
+	}
+	fromCounts, _ := state.Figures(payload.Map{
+		"context_window_size": 200000.0,
+		"current_usage":       map[string]any{"input_tokens": 50000.0},
+	})
+	if fromCounts.Percent != 25 {
+		t.Errorf("Percent = %v, want 25 derived from the counts", fromCounts.Percent)
+	}
+}
+
+// COVERS: FR-1.3 | negative
+func TestFiguresRefusesAWindowWithNoSize(t *testing.T) {
+	for _, cw := range []payload.Map{
+		nil,
+		{},
+		{"context_window_size": 0.0},
+		{"used_percentage": 40.0},
+	} {
+		if _, ok := state.Figures(cw); ok {
+			t.Errorf("Figures measured %v, which carries no size", cw)
+		}
+	}
+}
+
+// COVERS: FR-1.11h | edge
+//
+// context_remaining is never negative, and context_percent is neither floored
+// nor capped, so a reader sees an over-full window as over-full.
+func TestOverFullWindowClampsRemainingButNotPercent(t *testing.T) {
+	got := write(t, payload.Map{
+		"session_id": "over",
+		"context_window": map[string]any{
+			"context_window_size": 100.0,
+			"used_percentage":     130.0,
+			"current_usage":       map[string]any{"input_tokens": 130.0},
+		},
+	})
+	if !strings.Contains(got, `"context_remaining": 0`) {
+		t.Errorf("remaining went negative:\n%s", got)
+	}
+	if !strings.Contains(got, `"context_percent": 130`) {
+		t.Errorf("percent was capped:\n%s", got)
+	}
+}
+
+// COVERS: FR-1.11e | positive
+func TestForgetRemovesTheStateFile(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	state.Write(full(), stamp)
+	path := state.Path("abcd-1234")
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("nothing to forget: %v", err)
+	}
+	state.Forget("abcd-1234")
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Error("state file survived Forget")
+	}
+	// Forgetting twice is not an error.
+	state.Forget("abcd-1234")
+}

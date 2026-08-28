@@ -1,24 +1,40 @@
-#!/usr/bin/env python3
-"""The status line's entry point, and nothing else.
+#!/bin/sh
+# The status line's entry point. Claude Code names this path in settings.json,
+# so this file is committed and the binary beside it is not.
+#
+# THIS EXISTS TO SATISFY FR-1.13, and it is the trade the Go port makes rather
+# than a convenience. Python retired the interpreter hazard and did not retire
+# the class behind it: an import that might not resolve became a build that
+# might not have run. Both fail the same way, as a blank line nobody is told
+# about, and a status line has no other tell. It is drawn or it is not, and a
+# blank one is indistinguishable from a quiet session.
+#
+# `~/bin/bolt` is the worked example. Its symlink was laid on 20 August, its
+# target was absent through the 26th, and a binary appeared under it at 11:51
+# on the 27th. Neither transition announced itself. For six days the only way
+# to tell was to run the thing and read what came back.
+#
+# So an absent binary says so, in the place the line would have been.
+set -u
 
-The render lives in `infobot/render.py`, where a test can import it and a
-checker can read it. This file only resolves that import and delegates, which
-is the same split `silo/docs/PATTERNS/go-command-entry-points.md` describes for
-Go: a body written in an entry point can only be reached by running the binary.
+here=$(dirname "$0")
+binary="$here/statusline"
 
-The path is resolved from this file rather than from the working directory,
-because Claude Code invokes it by absolute path from wherever the session
-happens to be. No install step, no virtualenv, nothing that can be half
-present: the status line has to render or it shows nothing at all.
-"""
+if [ -x "$binary" ]; then
+    exec "$binary"
+fi
 
-import sys
-from pathlib import Path
+# Claude Code is writing the payload into this process. Exiting without reading
+# it hands the writer an EPIPE for a condition that is ours, not theirs.
+cat >/dev/null 2>&1 || true
 
-# Before the import, or the first run leaves a __pycache__ beside the source.
-sys.dont_write_bytecode = True
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from infobot.render import main  # noqa: E402
-
-sys.exit(main())
+# The same rail and dim cyan the render uses, so this reads as the status line
+# saying something rather than as a stray error. NO_COLOR is honoured here too:
+# a hardcoded escape surviving the stripping of everything around it is exactly
+# what FR-3.8 exists to prevent.
+if [ -n "${NO_COLOR:-}" ]; then
+    printf '%s\n' "-- infobot is not built: go build -o bin/statusline ./cmd/statusline"
+else
+    printf '\033[38;2;0;95;95m╶─ \033[0m\033[38;2;225;45;45minfobot is not built\033[0m \033[38;2;120;130;135mgo build -o bin/statusline ./cmd/statusline\033[0m\n'
+fi
+exit 0

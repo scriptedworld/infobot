@@ -23,3 +23,9 @@ bin/*.py
 
 # ruff, run ad hoc until the Python jig is adopted.
 .ruff_cache/
+
+# The built binaries. bin/infobot and bin/forget-session are committed shims
+# that exec these; an absent binary is reported rather than rendering blank,
+# which is FR-1.13 and the reason the shims are the committed half.
+bin/statusline
+bin/forget
