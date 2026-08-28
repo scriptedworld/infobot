@@ -16,9 +16,10 @@ Code. tmux and herdr are both answered; see FR-3.3. The files it opens are the
 rate table and the session's own transcripts, both for the cost segment and
 both named in this document.
 
-It runs on every Claude Code event, so its startup cost is paid constantly, and
-19ms of the current 33ms per render is the Python interpreter starting. That is
-why the port to Go is queued.
+It runs on every Claude Code event, so its startup cost is paid constantly. That
+is what the Go port was for: 30.6ms per render became 4.5ms, measured over 30
+renders of the same payload in a herdr pane on 2026-08-28. Most of what went was
+the interpreter starting.
 
 ## Why it is its own repository
 
@@ -30,11 +31,21 @@ extension and the script had none.
 
 ## Layout
 
-    bin/infobot        the status line. Python today, Go when the port lands.
+    bin/infobot        a shell shim. Committed, and execs bin/statusline.
+    bin/forget-session the same, for the SessionEnd hook, execs bin/forget.
+    bin/statusline     the built binary. Gitignored.
+    bin/forget         the built cleanup. Gitignored.
+    cmd/               two entry points, one delegating call each
+    internal/          the program: render, state, usage, pricing, payload, num
+    Makefile           build, test, cover, gate
     REQUIREMENTS.md    what must be true of it
     NEXT_STEPS.md      what is not done
     docs/PROJECT.md    this file
-    START_HERE.md      the session handoff. Untracked, rewritten each session.
+
+**The committed half is the shim and the built half is not**, which is FR-1.13
+rather than a packaging preference. Claude Code names `bin/infobot` in
+`settings.json`, and a binary that has not been built is a blank line nobody is
+told about. The shim is what turns that silence into a row saying so.
 
 ## How it is invoked
 
@@ -48,13 +59,19 @@ infobot's. infobot does not read it.
 
 ## The gate
 
-No jig is adopted yet. `toolbox/bolt.common-quality.yaml` gives traceability,
-the suppression register and complexity; `bolt.go-std-quality.yaml` adds the
-nine Go checks and is the one that matters, because it judges coverage per file
-at 80% through an adapter that exists. The Python equivalent measures coverage
-and applies no threshold, which is the main reason the port is to Go.
+`make gate` runs it: the tests, then complexity, traceability and the
+suppression register. `bolt common-quality .` runs the last three through the
+jig, and note that bolt exits 0 whenever the RUN completed, so the verdict is
+`success` in the `result.yaml` it names rather than the exit status.
 
-Adopting them is queued in `clank/tasks/infobot/`.
+`bolt.go-std-quality.yaml` is not adopted yet. It is the one that matters,
+because it judges coverage per file at 80% through an adapter that exists.
+`make cover` applies that bar by hand meanwhile. **The entry points are measured
+rather than excluded**: they are one delegating call each and the test process
+cannot reach them, so they are built with `go build -cover`, run, and their
+profile read. Both are at 100% that way.
+
+Adopting the jig is queued in `clank/tasks/infobot/`.
 
 ## Perishable: the pricing table
 
@@ -77,22 +94,25 @@ runs on every event and makes no network call. Filed against agent-support as
 `clank/inbox/agent-support/grok-could-refresh-perishable-data`, because `/grok`
 runs at the start of most sessions and costs nothing when the file is fresh.
 
-The seed copy in `infobot/pricing.py` is the fallback, so a fresh clone renders
-with no config file and no network.
+The seed copy in `internal/pricing/pricing.go` is the fallback, so a fresh clone
+renders with no config file and no network.
 
 ## What is decided, and what is open
 
-Decided: Go, and as of 2026-08-26 the timing too, which was the part that stayed
-open long after the language did not. The port runs leaf-first across
-`clank/tasks/infobot/status-line/`, one file per task with its tests beside it,
-and the Python keeps rendering until the last of them. The argument is in task
-05 rather than restated here.
+Done rather than decided: Go. The port landed on 2026-08-28 and the Python is
+gone. It was checked against the 18-case golden corpus in
+`clank/tasks/infobot/status-line/05-*/golden/`, which reads 17 of 18 identical;
+the eighteenth is `malformed-resets`, and it differs because the Python wrapped
+the whole render in a bare `except` so one bad field blanked both rows. That was
+FR-1.4's known gap, captured deliberately so that fixing it would show up here
+as a diff. It does.
 
-Decided: the binary is built inside this repository and reached through a
-symlink in `dotfiles/bin`, which is what `bolt`, `converge` and `update` do.
-That choice is what FR-1.13 is about: a build that has not run and a symlink that
-dangles fail exactly as a blank line, the same way a missing import would, so the
-port must be able to say it is not built.
+Decided: the binary is built inside this repository and Claude Code reaches it
+through the committed shim, rather than through a symlink in `dotfiles/bin`
+which is what `bolt`, `converge` and `update` do. The difference is FR-1.13. A
+symlink cannot report its own target's absence, and neither can a missing
+binary, so the thing `settings.json` names has to be something that is always
+there and can look.
 
 Decided: two rows, not three. A third for exceptional states, a stale rate table
 or a promotion in effect, was declined. A row that appears only when there is
@@ -101,6 +121,7 @@ there spends the space on nothing most of the time. Those states belong on the
 segment already present, the way an unpriced model appends a plus to say the
 figure is a floor.
 
-Open: section 4 of `REQUIREMENTS.md`, FR-4.1 to FR-4.7. Each open question is a
-requirement with an id rather than a line of prose, so closing one is a test or
-a decision against a row that exists.
+Open: section 4 of `REQUIREMENTS.md`. Each open question is a requirement with
+an id rather than a line of prose, so closing one is a test or a decision
+against a row that exists. FR-4.2, which language and when, closed on 2026-08-28
+and is in the Retired table; the rest stand.

@@ -30,12 +30,12 @@ its own right with its own test.
 | FR-1.1 | The status line reads the session JSON on standard input and writes complete rows to standard output. | [D] |
 | FR-1.2 | It exits 0 whatever it is given, and puts no traceback in the status bar. | [D] |
 | FR-1.3 | Every field of the payload is optional. A segment whose data is absent is dropped, never rendered as zero. | [A/D] |
-| FR-1.4 | A failure confined to one segment costs only that segment. Not held today: `main()` wraps the whole render in a bare `except`, so one bad field costs every row. | [D] |
+| FR-1.4 | A failure confined to one segment costs only that segment. A field that cannot be read is absent data, so what carried it is dropped and the rest of the row survives. | [D] |
 | FR-1.5 | A row with no parts in it is omitted rather than printed blank. | [D] |
 | FR-1.6 | No path makes a network call. | [A/D] |
 | FR-1.7 | The only files opened are the rate table, the session's own transcripts, the offsets file, and the status file FR-1.11 leaves behind. | [D] |
 | FR-1.8 | One subprocess per render at most, and only to ask a host how wide the pane is. The route that answers runs and the others do not. | [D] |
-| FR-1.9 | It runs from any working directory, with no install step, no virtualenv and nothing that can be half present. The entry point resolves the module from its own location rather than from the working directory. | [D] |
+| FR-1.9 | It runs from any working directory, with nothing that can be half present. Claude Code invokes it by absolute path from wherever the session happens to be, so the entry point resolves what it runs from its OWN location rather than from the working directory or from `PATH`. | [D] |
 | FR-1.11 | Every render leaves the session's context state on disk, at one path named by session id beside the offsets, for programs other than infobot to read. | [A] |
 | FR-1.11a | The bar and the file come through one measurement. | [D] |
 | FR-1.11b | The file is written whole or not at all, to a temporary renamed into place. A write that fails costs nothing and leaves nothing behind. | [D] |
@@ -172,8 +172,7 @@ are settled requirements about the shape of the code; the rest are questions.
 |---|---|---|
 | FR-4.3 | The clock is a parameter, so FR-2.4, FR-7.4 and FR-7.9 are asserted against a fixed instant. It defaults to `time.time` and reaches `countdown()`, `elapsed_fraction()`, `limit_segment()`, `compose()` and `build()`. | [D] |
 | FR-4.4 | The transcript root is a parameter and the rate table and the offsets follow the XDG variables, so section 8 is tested against a fixture tree with nothing patched. A test giving a root must move `XDG_STATE_HOME` too, or the offsets it writes land beside the real ones. | [D] |
-| FR-4.1 | infobot has a test suite, so the requirements above are held to something and the traceability gate means what it says. The work is split across tasks 10, 12, 14 and 16, by section. | [?] |
-| FR-4.2 | The implementation language, and the timing. Both settled 2026-08-26: Go, starting now, leaf-first across tasks 05 to 20 with the Python rendering until the last of them. This row closes when the Python is gone. | [?] |
+| FR-4.1 | Every settled requirement is cited by a test that asserts it, so the traceability gate means what it says. The suite exists and 78 of 107 are covered; the gate names the rest, and this row closes when it does not. | [?] |
 | FR-4.5 | Whether the identity row and the meter row should be one row. Two rows is settled against three, which is a different question. | [?] |
 | FR-4.6 | Whether the countdown gets its own colour scale, probably inverted: a reset getting closer is good news, which is the opposite direction to consumption. | [?] |
 | FR-4.7 | Whether the cost segment carries a staleness marker. The rate table records the date it was taken and nothing reads it. | [?] |
@@ -199,3 +198,4 @@ to something unrelated.
 | FR-1.11m | 2026-08-27 | A failed write leaves nothing behind. Folded into FR-1.11b. |
 | FR-1.12 | 2026-08-27 | Standard library only, so it ran under whatever `python3` resolved to. A property of the Python runtime, retired ahead of the Go port. The hazard it guarded against does not retire with it; FR-1.13 carries that. |
 | FR-1.12a | 2026-08-27 | The interpreter floor, 3.8, set by `Path.unlink(missing_ok=True)`. Retired with FR-1.12, which it qualified. |
+| FR-4.2 | 2026-08-28 | Which language, and when. It was a question with an id rather than a line of prose so that closing it would be a change to a row. Answered and closed the same day it was acted on: Go, and the Python is gone. What the port traded is not retired with it and is FR-1.13. |
