@@ -100,11 +100,29 @@ an outside consumer because its float behaviour is unspecified and disagrees
 with its other two packs. Its recommendation was to keep the emitter that
 already works, and that is what infobot does.
 
-So there are two emitters permanently, and two tests that never meet.
-**Editing `TestCanonicalForm` to make it pass is how the pin comes undone**,
-which is the only way it can.
+**Both of those reasons have since expired, so "permanently" was wrong.** Told
+on 2026-08-28 that wrench's YAML is implemented and can be relied on, and the
+surface is there: `github.com/scriptedworld/wrench` exposes
+`yamlCodec.Encode(any) ([]byte, error)` in `yaml.go`, and `488e723 feat(gate):
+wrench is green` retires the blocked `gate/05` that was the reason it could not
+promise an import path.
 
-`clank/tasks/infobot/one-emitter/10-*.cancelled` carries the full answer.
+**What has not been checked is the half that decides it.** The second objection
+was that the float behaviour is unspecified and disagrees with wrench's other
+two packs, and FR-1.11q exists because `1e+06` is a legal spelling of a million
+that a reader matching `[0-9.]+` captures as `1`. So the question is whether
+`Encode` reproduces the canonical bytes exactly, exponent rule included, and
+that is a measurement nobody has taken. Until it is taken the emitter here
+stays.
+
+Two emitters and two tests that never meet, then, for now rather than for good.
+**Editing `TestCanonicalForm` to make it pass is still how the pin comes
+undone**, and that holds whichever way the measurement goes: if wrench's encoder
+matches, the test stops being a second emitter's assertion and becomes the
+conformance check on a linked one.
+
+`clank/tasks/infobot/one-emitter/10-*.cancelled` carries the answer as it stood,
+and its premise is what changed rather than its reasoning.
 
 **A number is never spelled with an exponent.** FR-1.11q. `1e+06` is a legal
 spelling of a million and a reader matching `[0-9.]+` captures `1` from it, so
