@@ -49,8 +49,9 @@ Python suite for 113 requirements, immediately before a port that throws a suite
 away. That is far more waste than the three interpreter requirements, and it was
 the very next thing anyone would have picked up.
 
-**What the port does NOT do, which FR-1.13 exists to catch.** Go retires FR-1.12
-and FR-1.12a and does not retire the class behind them. An import that may not
+**What the port does NOT do, which FR-1.13 exists to catch.** FR-1.12 and
+FR-1.12a are retired already, on 2026-08-27 rather than at task 20, and
+retiring them does not retire the class behind them. An import that may not
 resolve becomes a build that may not have run or a symlink that may dangle, and
 both fail identically, as a blank line nobody is told about. `~/bin/bolt` is the
 worked example: the symlink was laid on 20 August, its target was absent through
