@@ -39,7 +39,7 @@ func TestMoneyPrintsThePrecisionTheNumberDeserves(t *testing.T) {
 // COVERS: FR-8.11 | positive
 func TestPriceChargesEachModelAtItsOwnRate(t *testing.T) {
 	both := map[string]map[string]float64{
-		"claude-opus-5":  {"input_tokens": 1e6},
+		"claude-opus-5":    {"input_tokens": 1e6},
 		"claude-haiku-4-5": {"input_tokens": 1e6},
 	}
 	got, ok := pricing.Price(both)
@@ -60,7 +60,7 @@ func TestPriceChargesEachModelAtItsOwnRate(t *testing.T) {
 // One unknown model costs the exactness of the figure and not the figure.
 func TestPriceFlagsAnUnknownModelWithoutAbandoningTheTotal(t *testing.T) {
 	mixed := map[string]map[string]float64{
-		"claude-opus-5":       {"input_tokens": 1e6},
+		"claude-opus-5":            {"input_tokens": 1e6},
 		"some-model-nobody-priced": {"input_tokens": 1e6},
 	}
 	got, ok := pricing.Price(mixed)

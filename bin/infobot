@@ -1,26 +1,37 @@
 #!/bin/sh
-# The status line's entry point. Claude Code names this path in settings.json,
-# so this file is committed and the binary beside it is not.
+# The status line's entry point. Claude Code names a path to this file in
+# settings.json, so this file is committed and the binary beside it is not.
 #
-# THIS EXISTS TO SATISFY FR-1.13, and it is the trade the Go port makes rather
-# than a convenience. Python retired the interpreter hazard and did not retire
-# the class behind it: an import that might not resolve became a build that
-# might not have run. Both fail the same way, as a blank line nobody is told
-# about, and a status line has no other tell. It is drawn or it is not, and a
-# blank one is indistinguishable from a quiet session.
+# RESOLVE SYMLINKS BEFORE LOOKING FOR THE BINARY. Claude Code reaches this
+# through `silo/bin/statusline`, which is a symlink to this file. `dirname "$0"`
+# on the symlink's own path gives silo/bin, so the binary this looked for was
+# silo/bin/statusline, which is the symlink, which is this script. It exec'd
+# itself, forever.
 #
-# `~/bin/bolt` is the worked example. Its symlink was laid on 20 August, its
-# target was absent through the 26th, and a binary appeared under it at 11:51
-# on the 27th. Neither transition announced itself. For six days the only way
-# to tell was to run the thing and read what came back.
+# That ran for 35 minutes across ten sessions on 2026-08-28 and cost every
+# session its state file, silently: the loop never reaches the render, so there
+# is no output, and a status line that prints nothing looks like a quiet one.
+# The Python this replaced called Path(__file__).resolve(), which follows
+# symlinks, and the port dropped that without noticing it was load-bearing.
 #
-# So an absent binary says so, in the place the line would have been.
+# THIS EXISTS TO SATISFY FR-1.13, and it is the trade the Go port makes. An
+# import that might not resolve became a build that might not have run, and both
+# fail the same way, as a blank line nobody is told about. A status line has no
+# other tell: it is drawn or it is not, and a blank one is indistinguishable
+# from a quiet session. So an absent binary says so, in the place the line would
+# have been.
 set -u
 
-here=$(dirname "$0")
+# readlink -f resolves every link in the chain and gives an absolute path.
+self=$(readlink -f "$0" 2>/dev/null) || self=$0
+[ -n "$self" ] || self=$0
+here=$(dirname "$self")
 binary="$here/statusline"
 
-if [ -x "$binary" ]; then
+# Belt and braces. If the resolution above ever fails and lands back on this
+# script, say the binary is missing rather than exec into a loop. A wrong answer
+# is recoverable and a fork bomb across every session is not.
+if [ -x "$binary" ] && [ "$(readlink -f "$binary" 2>/dev/null)" != "$self" ]; then
     exec "$binary"
 fi
 

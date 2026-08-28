@@ -13,10 +13,12 @@
 # counts them finds it.
 set -u
 
-here=$(dirname "$0")
+self=$(readlink -f "$0" 2>/dev/null) || self=$0
+[ -n "$self" ] || self=$0
+here=$(dirname "$self")
 binary="$here/forget"
 
-if [ -x "$binary" ]; then
+if [ -x "$binary" ] && [ "$(readlink -f "$binary" 2>/dev/null)" != "$self" ]; then
     exec "$binary"
 fi
 

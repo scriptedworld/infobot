@@ -97,8 +97,8 @@ func TestVisibleWidthMeasuresWhatTheTerminalDraws(t *testing.T) {
 		{"\033[38;2;1;2;3mx\033[0m", 1},
 		{"🧠", 2},
 		{"🧠 x", 4},
-		{"▰▱", 2},   // ambiguous, counted as one each
-		{"╭─ ", 3},  // the rail
+		{"▰▱", 2},  // ambiguous, counted as one each
+		{"╭─ ", 3}, // the rail
 		{"⟨abcd⟩", 6},
 	} {
 		if got := render.VisibleWidth(c.in); got != c.want {
@@ -306,13 +306,13 @@ func TestRowsFitInsideTheBudget(t *testing.T) {
 	isolate(t)
 	for _, width := range []int{80, 120, 191, 223} {
 		rows := render.Build(payload.Map{
-			"session_id": "a5e58a4d-2a4e-4774-aa6c-1e7745721df6",
-			"model":      map[string]any{"display_name": "Opus 5"},
-			"workspace":  map[string]any{"current_dir": "/home/me/.projects/silo"},
+			"session_id":     "a5e58a4d-2a4e-4774-aa6c-1e7745721df6",
+			"model":          map[string]any{"display_name": "Opus 5"},
+			"workspace":      map[string]any{"current_dir": "/home/me/.projects/silo"},
 			"context_window": window(48),
 			"rate_limits": map[string]any{
-				"five_hour":  map[string]any{"used_percentage": 34.0, "resets_at": at(3600)},
-				"seven_day":  map[string]any{"used_percentage": 62.0, "resets_at": at(86400)},
+				"five_hour": map[string]any{"used_percentage": 34.0, "resets_at": at(3600)},
+				"seven_day": map[string]any{"used_percentage": 62.0, "resets_at": at(86400)},
 			},
 		}, "/home/me", width, clock)
 		for i, row := range rows {

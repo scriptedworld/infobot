@@ -55,9 +55,9 @@ func TestTranscriptsFindTheSessionByName(t *testing.T) {
 // output tokens and 33% of cache reads.
 func TestTranscriptsIncludeSubagents(t *testing.T) {
 	root := tree(t, map[string]string{
-		"-p/s.jsonl":                       record("m", `"input_tokens":1`),
-		"-p/s/subagents/agent-a.jsonl":     record("m", `"input_tokens":1`),
-		"-p/s/subagents/agent-b.jsonl":     record("m", `"input_tokens":1`),
+		"-p/s.jsonl":                   record("m", `"input_tokens":1`),
+		"-p/s/subagents/agent-a.jsonl": record("m", `"input_tokens":1`),
+		"-p/s/subagents/agent-b.jsonl": record("m", `"input_tokens":1`),
 	})
 	if got := usage.Transcripts("s", root); len(got) != 3 {
 		t.Errorf("Transcripts found %d, want the session and both subagents: %v", len(got), got)

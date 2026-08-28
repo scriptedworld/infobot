@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // shimIn copies the committed shim into a scratch directory, optionally with a
@@ -88,6 +89,83 @@ func TestAbsentBinaryHonoursNoColor(t *testing.T) {
 	}
 	if !strings.Contains(out, "infobot is not built") {
 		t.Errorf("output = %q, want the message to survive too", out)
+	}
+}
+
+// COVERS: FR-1.9 | regression
+//
+// REACHED THROUGH A SYMLINK, the shim must resolve to where the REAL file is
+// and find the binary there.
+//
+// Claude Code reaches the status line through `silo/bin/statusline`, a symlink
+// to `infobot/bin/infobot`. `dirname "$0"` on the symlink's own path gives
+// silo/bin, so the binary the shim looked for was silo/bin/statusline, which is
+// the symlink, which is the shim. It exec'd itself.
+//
+// That ran for 35 minutes across ten sessions on 2026-08-28 and the only
+// visible symptom was every session's state file ceasing to update. The loop
+// never reaches the render, so nothing is printed, and a status line printing
+// nothing is indistinguishable from a quiet one.
+//
+// The Python this replaced called Path(__file__).resolve(), which follows
+// symlinks. The port dropped it without noticing it was load-bearing.
+func TestShimReachedThroughASymlinkDoesNotExecItself(t *testing.T) {
+	real, code := shimIn(t, "infobot", true)
+	if code != 0 || !strings.Contains(real, "RAN-THE-BINARY") {
+		t.Fatalf("direct call already broken: %q", real)
+	}
+
+	// A symlink to the shim, in a directory holding nothing else, which is the
+	// shape silo/bin has.
+	root, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := os.ReadFile(filepath.Join(root, "bin", "infobot"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	home := t.TempDir()
+	shim := filepath.Join(home, "infobot")
+	if err := os.WriteFile(shim, source, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	stub := "#!/bin/sh\ncat >/dev/null\necho RAN-THE-BINARY\n"
+	if err := os.WriteFile(filepath.Join(home, "statusline"), []byte(stub), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	elsewhere := t.TempDir()
+	link := filepath.Join(elsewhere, "statusline")
+	if err := os.Symlink(shim, link); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := exec.Command(link)
+	cmd.Stdin = strings.NewReader(`{"session_id":"symlink-check"}`)
+	// A loop would run until this fires rather than failing, so the timeout is
+	// the assertion as much as the output is.
+	done := make(chan struct{})
+	var out []byte
+	var runErr error
+	go func() {
+		out, runErr = cmd.Output()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		_ = cmd.Process.Kill()
+		t.Fatal("the shim did not terminate: it is exec'ing itself through the symlink")
+	}
+	if runErr != nil {
+		var exit *exec.ExitError
+		if !asExitError(runErr, &exit) {
+			t.Fatal(runErr)
+		}
+	}
+	if !strings.Contains(string(out), "RAN-THE-BINARY") {
+		t.Errorf("through a symlink the shim produced %q, want the binary beside the real file", out)
 	}
 }
 
