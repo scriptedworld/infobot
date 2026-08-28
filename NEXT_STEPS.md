@@ -122,19 +122,41 @@ surface is there: `github.com/scriptedworld/wrench` exposes
 wrench is green` retires the blocked `gate/05` that was the reason it could not
 promise an import path.
 
-**What has not been checked is the half that decides it.** The second objection
-was that the float behaviour is unspecified and disagrees with wrench's other
-two packs, and FR-1.11q exists because `1e+06` is a legal spelling of a million
-that a reader matching `[0-9.]+` captures as `1`. So the question is whether
-`Encode` reproduces the canonical bytes exactly, exponent rule included, and
-that is a measurement nobody has taken. Until it is taken the emitter here
-stays.
+**FACT 2026-08-28: the measurement is taken, and `Encode` reproduces the
+canonical form exactly.** The probe is `.ephemera/wrench-parity`, a module with
+a `replace` onto the local wrench, run with `go run .`:
 
-Two emitters and two tests that never meet, then, for now rather than for good.
+    the whole TestCanonicalForm fixture   byte-identical
+
+That covers quoted keys, one key to a line, the single space after the colon,
+key ordering, `48.2` unrounded, `1000000` with no exponent, and `"` and `\`
+escaped as infobot escapes them.
+
+**The edges the fixture never reaches were checked too, and they are the ones
+that mattered.** `context_percent` is the only float emitted, it is rounded to
+one place, and the fixture's 48.2 never exercises a whole number. infobot's
+`decimal()` formats with `'f'`, which never uses an exponent, then appends `.0`
+where there is no decimal point, so a percentage landing on 100 stays a float
+for whoever reads it back. wrench agrees on every one:
+
+    0 -> 0.0        100 -> 100.0      7 -> 7.0        0.1 -> 0.1
+    1000000 -> 1000000                10000000 -> 10000000
+    1000000.0 -> 1000000.0            9007199254740992 unchanged
+
+So the second objection is answered rather than assumed away. wrench's float
+behaviour was called unspecified when it declined; on the values this form
+actually carries it is specified and it agrees.
+
+**That settles the measurement and not the decision.** Linking changes FR-1.11p
+from two emitters pinned by two fixtures into one emitter with a conformance
+check, which is a change to how the published form is produced and belongs to
+wrench's session as much as this one. FR-1.11o makes announcing it an obligation.
+
 **Editing `TestCanonicalForm` to make it pass is still how the pin comes
-undone**, and that holds whichever way the measurement goes: if wrench's encoder
-matches, the test stops being a second emitter's assertion and becomes the
-conformance check on a linked one.
+undone.** If the link is taken, that test stops being a second emitter's
+assertion and becomes the conformance check on a linked one, which is a better
+outcome than either option that was on the table. Until then it is load-bearing
+exactly as it stands.
 
 `clank/tasks/infobot/one-emitter/10-*.cancelled` carries the answer as it stood,
 and its premise is what changed rather than its reasoning.
