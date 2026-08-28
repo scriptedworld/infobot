@@ -3,7 +3,9 @@
 ## The port landed
 
 Go, 2026-08-28. The Python is gone, `bin/infobot` is a committed shim that execs
-the built binary, and a render went from 30.6ms to 4.5ms.
+the built binary, and a real render went from 40.4ms to 11.8ms. `docs/PROJECT.md`
+carries the full figures and says why the render measured alone is a different
+and larger number.
 
 What checked it, because a rewrite is only as good as what it was held against:
 
@@ -11,6 +13,12 @@ What checked it, because a rewrite is only as good as what it was held against:
     parity probes     the state file, the countdown and the cost, Python to Go
     the wrench fixture  byte for byte, from both ends
     go test           109 of 109 requirements cited by a test that asserts them
+
+The first three predate the Go. They were captured from the Python, which had no
+suite in this repository and was not therefore unchecked: the corpus was built
+to be the port's oracle, and about 200 assertions in `.ephemera/check-*.py` went
+with it. That harness was throwaway and is gone, and its cases are now in
+`go test`.
 
 The eighteenth corpus case is `malformed-resets` and it differs on purpose. The
 Python wrapped the whole render in a bare `except`, so one unreadable field

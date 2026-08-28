@@ -17,9 +17,34 @@ rate table and the session's own transcripts, both for the cost segment and
 both named in this document.
 
 It runs on every Claude Code event, so its startup cost is paid constantly. That
-is what the Go port was for: 30.6ms per render became 4.5ms, measured over 30
-renders of the same payload in a herdr pane on 2026-08-28. Most of what went was
-the interpreter starting.
+is what the Go port was for. Two figures, because they measure different things
+and only the second is what a session pays:
+
+    render alone          Python 25.2ms   Go  4.0ms   6.3x
+    a real event          Python 40.4ms   Go 11.8ms   3.4x
+    peak RSS              Python 17.5MB   Go   ~9MB
+
+Medians over 40 to 50 renders of one payload, interleaved, 2026-08-28. To
+re-measure, the pre-port Python comes back out of git and runs beside the
+binary:
+
+    git show cd24fb4^:infobot/render.py    and its four siblings
+
+Any working copy of that lives in `.ephemera/perf/`, which is gitignored, so a
+fresh clone re-derives it rather than finding it.
+
+The first row is the corpus payload, which carries no cost segment, and it is
+the 30.6 to 4.5 this document used to quote on its own. The second row adds the
+two things a real render does and the corpus omits: a pane width to fit to, and
+a live session id, which sends the cost segment to find that session's
+transcript under `~/.claude/projects`. That search is about 15ms in either
+language, it was ported as it stood, and it is now roughly 60% of what a Go
+render spends. Most of what the port removed was the interpreter starting, and
+what is left is dominated by file search rather than by language.
+
+Go's RSS is polled from `/proc`, and a process this short-lived can be missed at
+its peak, so 9MB is a floor. Python's is exact because it lives long enough to
+sample.
 
 ## Why it is its own repository
 
@@ -106,6 +131,26 @@ the eighteenth is `malformed-resets`, and it differs because the Python wrapped
 the whole render in a bare `except` so one bad field blanked both rows. That was
 FR-1.4's known gap, captured deliberately so that fixing it would show up here
 as a diff. It does.
+
+**The corpus predates the port and was captured from the Python**, by
+`capture-golden.py` beside it, whose first line calls itself the oracle for the
+port. The Python carried no suite in this repository: no test file, no test
+target, nothing the gate ran. It was not unvalidated, and reading the absent
+suite as an absent oracle is the mistake the corpus exists to prevent. What it
+had was that corpus, a drift checker whose clean run at width 197 on 2026-08-26
+is what proved the display had stopped moving, and about 200 assertions across
+`.ephemera/check-*.py` covering transcript tailing and the pricing arithmetic.
+The harness was throwaway by design and is gone; the cases and their expected
+values came across into the Go tests, which is what capturing them was for.
+
+**Two things are absent from every corpus case by construction**, and both are
+in `capture-golden.py`'s header. No `resets_at`, because the countdown is
+computed from the wall clock and any case carrying one drifts by a minute and
+stops being golden. No cost segment, because the session id names a transcript
+whose totals grow as a session runs, so the corpus uses an id no transcript
+answers to. A case is therefore the cheapest render available and not a
+representative one. Timing the binary against it measures the render with the
+segment that reads files left out.
 
 Decided: the binary is built inside this repository and Claude Code reaches it
 through the committed shim, rather than through a symlink in `dotfiles/bin`
