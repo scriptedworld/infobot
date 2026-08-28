@@ -139,20 +139,44 @@ have to be decided rather than silenced.
 a session with, and the date they were taken.
 
     source    https://platform.claude.com/docs/en/about-claude/pricing
-    max age   1 day
+    max age   3 days
     on stale  re-read the source and rewrite the file, keeping the `taken` date
               in step. Take whatever is current, promotional rates included:
               the figure is what these prompts would have cost today, so a deal
               running today belongs in it and is gone from it tomorrow.
 
+**Those three lines are an interface, not a description.** The coordinator reads
+them and runs the declaration rather than inventing one, so restructuring this
+block changes somebody else's behaviour and gets announced the way FR-1.11o's
+form does.
+
+It said one day until 2026-08-28. Three is the honest number rather than a
+loosening: the file was found five days stale that day, so the one-day figure
+had been violated by 400% and was aspirational. A window that is actually
+honoured is worth more than a shorter one that is not, and the refresh needs a
+person, which is what makes a tight window expensive.
+
+The cost of the window is bounded and small. The figure is a counterfactual on a
+subscription, what these prompts would have cost through the API, so a wrong
+rate misprices a number nobody is billed for. Measured 2026-08-28: re-reading
+after five days changed nothing at all, all fifteen models and all three cache
+multipliers identical.
+
 They drift, and not only on a schedule. Sonnet 5 launched at an introductory
 $2/$10 with a rise to $3/$15 booked for September; the rise was then cancelled
-and the introductory rate became the standard one.
+and the introductory rate became the standard one. **That is the case for a
+person doing this rather than a fetch**, and it is not an argument about
+frequency: the announcement of a cancelled rise sat beside the table, so a
+refresh reading only the table could not have told a cancelled increase from an
+unapplied one at any interval.
 
-Nothing refreshes it today, and the status line cannot: it is a formatter that
-runs on every event and makes no network call. Filed against agent-support as
-`clank/inbox/agent-support/grok-could-refresh-perishable-data`, because `/grok`
-runs at the start of most sessions and costs nothing when the file is fresh.
+Nothing here refreshes it, and the status line cannot: it is a formatter that
+runs on every event and makes no network call. It sits with the coordinator, in
+`/mc`, rather than with `/grok` where this was first filed. The reason is
+contention: `/grok` runs at the start of every session and after every clear
+across every project, so a refresh there points a dozen sessions at one file and
+one web page at once, none aware of the others and none holding a lock. There is
+one coordinator, so it is the single writer.
 
 The seed copy in `internal/pricing/pricing.go` is the fallback, so a fresh clone
 renders with no config file and no network.
