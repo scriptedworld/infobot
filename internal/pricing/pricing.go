@@ -14,6 +14,13 @@
 // Sonnet 5 carrying an introductory rate with an expiry is the case that wants
 // a person, not a fetch.
 //
+// That case has since resolved, and how it resolved is the argument. The
+// introductory $2/$10 became the standard price and the $3/$15 rise booked for
+// September was cancelled. A fetch reading only the table would have carried
+// the right numbers by luck; what said the rise was cancelled was a sentence
+// beside the table, and a scheduled refresh that had run in September without
+// one would have had no way to tell a cancelled increase from an unapplied one.
+//
 // The table below is the seed and the fallback, so a fresh clone renders with
 // no config file and no network. Both carry the date they were taken.
 //
@@ -29,7 +36,7 @@ import (
 )
 
 const (
-	Taken  = "2026-08-23"
+	Taken  = "2026-08-28"
 	Source = "https://platform.claude.com/docs/en/about-claude/pricing"
 )
 
