@@ -234,8 +234,60 @@ func scalar(v value) string {
 	if !v.quoted {
 		return v.rendered
 	}
-	escaped := strings.ReplaceAll(v.text, `\`, `\\`)
-	return `"` + strings.ReplaceAll(escaped, `"`, `\"`) + `"`
+	var out strings.Builder
+	out.WriteByte('"')
+	for _, r := range v.text {
+		out.WriteString(escape(r))
+	}
+	out.WriteByte('"')
+	return out.String()
+}
+
+// escape spells one rune for a double-quoted scalar, which is FR-1.11r.
+//
+// THE FORM WAS NEVER THE LIMIT. A double-quoted YAML scalar carries the whole
+// C-style escape set and stays on one line, so it is a JSON string with more in
+// it, and it is the style this file already emitted. Escaping two characters
+// out of the set was under-implementation rather than a format that could not
+// say the value.
+//
+// The ranges are the ones a strict reader treats specially. C0 and DEL and C1
+// are rejected outright bar three, and those three are the dangerous ones:
+// `\n`, `\r` and U+0085 are accepted raw and each comes back as a SPACE. So the
+// characters a parser lets through are exactly the ones it corrupts, which is
+// why this belongs in the emitter rather than being left to a stricter reader.
+//
+// Measured before and after, 70 code points through the built binary,
+// `.ephemera/ctrl-sweep.py`: 6 ok, 61 unreadable and 3 silently changed became
+// 70 ok. The 61 was the parser's rule rather than a score, so what this moves
+// is the third column, which is the one FR-1.11r is about.
+//
+// `\xNN` names a code point rather than a byte, so it is right for C1 as well
+// as C0. Nothing outside these ranges is touched, and no value that held none
+// of them renders differently than it did before.
+func escape(r rune) string {
+	switch r {
+	case '\\':
+		return `\\`
+	case '"':
+		return `\"`
+	case '\t':
+		return `\t`
+	case '\n':
+		return `\n`
+	case '\r':
+		return `\r`
+	}
+	if r < 0x20 || r == 0x7f || (r >= 0x80 && r <= 0x9f) {
+		// Exactly two digits, which is what \x takes. FormatInt gives one for
+		// anything under 0x10, and `\x9` reads as a truncated escape.
+		hex := strconv.FormatInt(int64(r), 16)
+		if len(hex) == 1 {
+			hex = "0" + hex
+		}
+		return `\x` + hex
+	}
+	return string(r)
 }
 
 // Forget drops this session's state file.

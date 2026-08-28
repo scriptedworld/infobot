@@ -301,3 +301,101 @@ func TestForgetRemovesTheStateFile(t *testing.T) {
 	// Forgetting twice is not an error.
 	state.Forget("abcd-1234")
 }
+
+// controlRanges is every code point FR-1.11r names, plus the five separators
+// that look like they belong and do not. The separators are here to assert they
+// are left alone: a sweep found them already round tripping, so escaping them
+// would be a change with no defect behind it.
+func controlRanges() (escaped, untouched []rune) {
+	for r := rune(0); r < 0x20; r++ {
+		escaped = append(escaped, r)
+	}
+	escaped = append(escaped, 0x7f)
+	for r := rune(0x80); r <= 0x9f; r++ {
+		escaped = append(escaped, r)
+	}
+	return escaped, []rune{0x00a0, 0x200b, 0x2028, 0x2029, 0xfeff}
+}
+
+// COVERS: FR-1.11r | property
+//
+// The whole range rather than a sample. A first pass at this defect tested six
+// characters and reported three failures against an actual 61, and wrench made
+// the same error the same day on its own packs, sampling twelve and reporting
+// eight. Neither number was worth quoting, so this asserts the range.
+func TestEveryControlCodePointSurvivesTheRoundTrip(t *testing.T) {
+	escaped, untouched := controlRanges()
+	for _, r := range append(append([]rune{}, escaped...), untouched...) {
+		data := full()
+		data["workspace"] = map[string]any{"current_dir": "/a" + string(r) + "b"}
+		got := write(t, data)
+
+		line := ""
+		for _, candidate := range strings.Split(got, "\n") {
+			if strings.HasPrefix(candidate, `"cwd"`) {
+				line = candidate
+			}
+		}
+		if line == "" {
+			t.Fatalf("U+%04X: no cwd line, so the value broke the record", r)
+		}
+		if strings.ContainsRune(line, r) && r >= 0x20 && r != 0x7f && r < 0x80 {
+			continue // a separator, left alone deliberately
+		}
+		if strings.ContainsRune(line, r) && (r < 0x20 || r == 0x7f || r <= 0x9f) {
+			t.Errorf("U+%04X: emitted raw, so a reader gets a space or a refusal", r)
+		}
+	}
+}
+
+// cwdLine renders a payload whose cwd carries text, and returns that one line.
+func cwdLine(t *testing.T, text string) string {
+	t.Helper()
+	data := full()
+	data["workspace"] = map[string]any{"current_dir": text}
+	for _, line := range strings.Split(write(t, data), "\n") {
+		if strings.HasPrefix(line, `"cwd"`) {
+			return line
+		}
+	}
+	t.Fatalf("no cwd line for %q", text)
+	return ""
+}
+
+// COVERS: FR-1.11r | negative
+//
+// The three a parser accepts raw and then changes. They are the dangerous
+// members: the other 61 make a file no parser will read, which is loud, and
+// these come back as a space with nothing reporting it.
+func TestTheSilentlyCorruptingThreeAreEscaped(t *testing.T) {
+	for _, c := range []struct{ r, want string }{
+		{"\n", `"cwd": "/a\nb"`},
+		{"\r", `"cwd": "/a\rb"`},
+		{"", `"cwd": "/a\x85b"`},
+	} {
+		if got := cwdLine(t, "/a"+c.r+"b"); got != c.want {
+			t.Errorf("got %q, want %q", got, c.want)
+		}
+	}
+}
+
+// COVERS: FR-1.11r | edge
+//
+// Two hex digits, because `\x9` is a truncated escape rather than a tab.
+func TestShortEscapesAreZeroPadded(t *testing.T) {
+	if got := cwdLine(t, "/a\x01b"); got != `"cwd": "/a\x01b"` {
+		t.Errorf("got %q, want %q", got, `"cwd": "/a\x01b"`)
+	}
+}
+
+// COVERS: FR-1.11r | positive
+//
+// Nothing outside the ranges changes, which is what makes this a fix rather
+// than a change to what the form emits for every value it has ever held.
+func TestOrdinaryTextIsUntouched(t *testing.T) {
+	for _, s := range []string{"/home/x/proj", "Opus 5 (1M)", "é日本", "a b"} {
+		if got := cwdLine(t, s); got != `"cwd": "`+s+`"` {
+			t.Errorf("got %q, want it left alone", got)
+		}
+	}
+}

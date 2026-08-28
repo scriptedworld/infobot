@@ -232,8 +232,26 @@ therefore safer than a stricter parser here.
 The block styles `|` and `>` are YAML's multi-line forms and are not wanted:
 they span lines by definition and FR-1.11g is one key to a line.
 
-Fixing it is still an FR-1.11o announcement, because the form's definition
-changes even though its current output does not.
+**FIXED, and the sweep is the proof rather than the tests.** `escape()` in
+`internal/state/state.go` now spells C0, DEL and C1, with `\n`, `\r` and `\t`
+named and the rest as `\xNN`. Re-swept through the rebuilt binary:
+
+    before   6 ok   61 unreadable   3 silently changed
+    after   70 ok    0 unreadable   0 silently changed
+
+FR-1.11r is the requirement it discharges, and `TestCanonicalForm` passes
+untouched: no fixture value holds a control character, so the pinned bytes did
+not move and neither did wrench's half.
+
+wrench's decomposition is why the third column is the one to read. Measured
+against PyYAML with neither emitter in the path, raw passthrough is exactly
+6/61/3, which is what infobot scored, so it had been escaping nothing in the
+range rather than too little. The 61 is the parser's rule and no emitter earns
+it; the column that varies is `silently changed`, where the four ranked 0, 0, 1
+and 3. That is the column FR-1.11r is about.
+
+The FR-1.11o announcement is owed to silo, whose board reads this file, and to
+wrench, which holds the other half of the pin.
 
 **That settles the measurement and not the decision.** Linking changes FR-1.11p
 from two emitters pinned by two fixtures into one emitter with a conformance
