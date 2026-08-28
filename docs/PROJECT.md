@@ -7,6 +7,15 @@ the context window and the rate limit windows you have spent.
 The name is the caretaker of the Great Clock, who keeps the machinery running
 and tells you what state it is in. It replaces `milton`.
 
+**Paths here that begin with another repository's name will not resolve for
+you.** `clank`, `silo`, `toolbox`, `wrench` and `bolt` are private siblings:
+clank holds the task tree, silo the settings that invoke this, toolbox the
+adopted checkers, and wrench and bolt the tooling two requirements are pinned
+against. They are named rather than hidden because a decision loses its reason
+when the thing it was weighed against is edited out, and a reader who cannot
+open them can still see what the argument was. Nothing in this repository needs
+any of them to build or to run; `README.md` says what it does need.
+
 ## What it is FOR
 
 One job: turn the session payload into rows. Formatter is a constraint, not a
