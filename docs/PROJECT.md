@@ -57,12 +57,18 @@ extension and the script had none.
 **That gap is still open here, and the split did not close it.** What moved was
 which gate runs, not what it can read. All three checkers `make gate` invokes
 select by Go extension, so the 77 lines of shell in `bin/infobot` and
-`bin/forget-session` are read by none of them, and `bin/infobot` is both the
-path `settings.json` names and where FR-1.13's mechanism lives. Measured
-2026-08-28: lizard read 26 of 26 `.go` files and 0 of 2 shims;
-`suppression-register.py:87` globs `*.go`. It is
-`clank/tasks/infobot/gate/10-*`, blocked on toolbox's shell jig, and neither
-`shellcheck` nor `shfmt` is installed on this machine yet.
+`bin/forget-session` are read by none of them. Measured 2026-08-28: lizard read
+26 of 26 `.go` files and 0 of 2 shims; `suppression-register.py:87` globs
+`*.go`.
+
+**Their behaviour is tested even so**, and the distinction matters. Five cases in
+`cmd/statusline/shim_test.go` execute the committed shim and carry `COVERS:`
+marks for FR-1.13 both ways, FR-3.8, FR-1.9 and FR-1.11f. What is unread is the
+text, so what is genuinely exposed is a suppression pragma in shell going
+unregistered, and any defect on a path those five do not walk.
+
+It is `clank/tasks/infobot/gate/10-*`, blocked on toolbox's shell jig, and
+neither `shellcheck` nor `shfmt` is installed on this machine yet.
 
 ## Layout
 
