@@ -15,7 +15,12 @@ import (
 
 // askTimeout bounds the wait on a host. A hung multiplexer must not hang a line
 // that renders on every event.
-const askTimeout = 2 * time.Second
+const (
+	askTimeout = 2 * time.Second
+	// waitDelay bounds how long Wait may block on inherited pipes after the
+	// context has killed the process. Without it the bound is the grandchild.
+	waitDelay = 250 * time.Millisecond
+)
 
 var ansi = regexp.MustCompile("\033\\[[0-9;]*m")
 
@@ -75,10 +80,22 @@ func TerminalWidth() int {
 // ask puts a question to a host and hands back its stdout, trimmed. An empty
 // answer means the host could not be asked, which is a rendering decision
 // rather than an error.
+//
+// WaitDelay IS THE HALF THAT ACTUALLY BOUNDS IT. The context kills the process
+// it started, and that is not enough: a host is a script, and killing the shell
+// leaves any child it spawned holding the inherited stdout pipe. Output() then
+// blocks reading that pipe until the GRANDCHILD exits, so a two second timeout
+// waited thirty against a host that ran `sleep 30`. WaitDelay closes the pipes
+// a beat after the kill and returns.
+//
+// The line renders on every Claude Code event, so an unbounded wait here is the
+// whole status line hanging on a multiplexer that is already in trouble.
 func ask(argv ...string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), askTimeout)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, argv[0], argv[1:]...).Output()
+	command := exec.CommandContext(ctx, argv[0], argv[1:]...)
+	command.WaitDelay = waitDelay
+	out, err := command.Output()
 	if err != nil {
 		return ""
 	}

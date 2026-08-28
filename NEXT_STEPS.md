@@ -10,7 +10,7 @@ What checked it, because a rewrite is only as good as what it was held against:
     golden corpus     17 of 18 identical, at the width it was captured
     parity probes     the state file, the countdown and the cost, Python to Go
     the wrench fixture  byte for byte, from both ends
-    go test           80 of 109 requirements cited by a test that asserts them
+    go test           109 of 109 requirements cited by a test that asserts them
 
 The eighteenth corpus case is `malformed-resets` and it differs on purpose. The
 Python wrapped the whole render in a bare `except`, so one unreadable field
@@ -30,16 +30,10 @@ document's state is prose, so where the two disagree the tree is right.
 
 ## Not done, and honest about it
 
-**29 settled requirements carry no test.** `python3 bin/test-traceability.py
---requirements REQUIREMENTS.md .` names them. They are mostly the row-assembly
-rules in section 5 and the payload-reading rules in section 2, which are
-reachable through `render.Build` with a fixed width and a fixed clock and want
-no fixture at all. FR-4.1 closes when the gate does.
-
 **The Go jig is not adopted.** `bolt.go-std-quality.yaml` is the one that
 matters, because it judges coverage per file at 80% through an adapter that
 exists. `make cover` applies that bar by hand meanwhile, and every package
-clears it: payload 100, state 94, render 91, num 89, pricing 88, forget 86,
+clears it: payload 100, render 96, state 94, num 89, pricing 88, forget 86,
 usage 82. The two entry points are 100 when measured the way the rule requires,
 built with `go build -cover` and run rather than excluded.
 
@@ -53,9 +47,14 @@ middle of a window feels too quiet.
 ## Open questions
 
 Section 4 of `REQUIREMENTS.md` holds them, each with an id so closing one is a
-change to a row. What is left: the suite, one row against two, colouring the
-countdown, a staleness marker on the cost, the parameter budget, and whether the
-state file should say what a session is DOING rather than only what it spent.
+change to a row. What is left: one row against two, colouring the countdown, a
+staleness marker on the cost, the parameter budget, whether the state file
+should say what a session is DOING rather than only what it spent, and which
+kind of absence a missing context block is.
+
+The suite is no longer among them. FR-4.1 retired on 2026-08-28 when the gate
+started passing, because a question that is answered goes rather than standing
+as a permanently satisfied assertion. What keeps it true is the gate.
 
 That last one is filed as a task in `clank/tasks/infobot/state-readers/`, in
 `.questions`, because the first question is whether it is infobot's work at all.

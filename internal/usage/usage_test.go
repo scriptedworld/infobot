@@ -3,6 +3,7 @@ package usage_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/scriptedworld/infobot/internal/usage"
@@ -271,6 +272,68 @@ func TestUnknowableSessionYieldsNoTotals(t *testing.T) {
 	root := tree(t, map[string]string{"-p/other.jsonl": record("m", `"input_tokens":1`)})
 	if got := usage.Sum("", root); len(got) != 0 {
 		t.Errorf("Sum with no session id = %v, want empty", got)
+	}
+}
+
+// COVERS: FR-8.24 | edge
+//
+// Looking for the session a transcript belongs to gives up after a bounded
+// number of records. The field first appeared on record 18 of a transcript
+// opened by a clear, so the bound is 40: a large transcript that never carries
+// one costs a bounded read rather than a full scan.
+func TestOriginSearchGivesUpAfterFortyRecords(t *testing.T) {
+	within := strings.Repeat(`{"type":"bookkeeping"}`+"\n", 30) +
+		`{"session_id":"origin"}` + "\n"
+	beyond := strings.Repeat(`{"type":"bookkeeping"}`+"\n", 45) +
+		`{"session_id":"origin"}` + "\n"
+
+	root := tree(t, map[string]string{
+		"-p/origin.jsonl": record("m", `"input_tokens":1`),
+		"-p/early.jsonl":  within,
+		"-p/late.jsonl":   beyond,
+	})
+	got := usage.Transcripts("origin", root)
+
+	var names []string
+	for _, path := range got {
+		names = append(names, filepath.Base(path))
+	}
+	joined := strings.Join(names, " ")
+	if !strings.Contains(joined, "early.jsonl") {
+		t.Errorf("a claim at record 31 was missed: %v", names)
+	}
+	if strings.Contains(joined, "late.jsonl") {
+		t.Errorf("a claim at record 46 was read, so the bound is not holding: %v", names)
+	}
+}
+
+// COVERS: FR-4.4 | property
+//
+// The transcript root is a PARAMETER and the offsets follow XDG_STATE_HOME, so
+// section 8 is tested against a fixture tree with nothing patched. A test giving
+// a root must move XDG_STATE_HOME too, or the offsets it writes land beside the
+// real ones and a later render skips bytes it never counted.
+func TestRootAndStateAreBothSeams(t *testing.T) {
+	root := tree(t, map[string]string{
+		"-p/s.jsonl": record("m", `"input_tokens":42`) + "\n",
+	})
+
+	// The root reaches the reader: a fixture tree is counted, and the real one
+	// is never consulted, which is what makes the figure 42 rather than whatever
+	// this machine holds.
+	state := t.TempDir()
+	t.Setenv("XDG_STATE_HOME", state)
+	if got := usage.Sum("s", root)["m"]["input_tokens"]; got != 42 {
+		t.Errorf("Sum against a fixture root = %v, want 42", got)
+	}
+
+	// And the offsets landed in the scratch directory rather than beside the
+	// real ones.
+	if _, err := os.Stat(filepath.Join(state, "infobot", "s.json")); err != nil {
+		t.Errorf("offsets did not follow XDG_STATE_HOME: %v", err)
+	}
+	if usage.StateDir() != filepath.Join(state, "infobot") {
+		t.Errorf("StateDir = %q, want it under the scratch home", usage.StateDir())
 	}
 }
 

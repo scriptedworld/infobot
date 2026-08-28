@@ -80,7 +80,7 @@ its own right with its own test.
 | FR-3.8 | `NO_COLOR` strips every escape, the separator and the rail included, so the output is either coloured or clean and never half of each. | [A/D] |
 | FR-3.9 | A row is measured as the terminal will draw it: escapes cost nothing, combining characters cost nothing, and characters of east-asian width `W` or `F` cost two. | [D] |
 | FR-3.10 | Ambiguous-width characters are counted as one column. | [A/D] |
-| FR-3.11 | A host that does not answer costs a bounded wait, two seconds, and then counts as unknown. | [D] |
+| FR-3.11 | A host that does not answer costs a bounded wait and then counts as unknown. Killing the process is not the bound: a host is a script, and killing the shell leaves any child it spawned holding the inherited stdout pipe, so the read blocks on the grandchild. The bound is the two second timeout plus a short delay after which the pipes are closed regardless. | [D] |
 
 ## 5. The rows
 
@@ -174,7 +174,6 @@ are settled requirements about the shape of the code; the rest are questions.
 |---|---|---|
 | FR-4.3 | The clock is a parameter, so FR-2.4, FR-7.4 and FR-7.9 are asserted against a fixed instant. It defaults to `time.time` and reaches `countdown()`, `elapsed_fraction()`, `limit_segment()`, `compose()` and `build()`. | [D] |
 | FR-4.4 | The transcript root is a parameter and the rate table and the offsets follow the XDG variables, so section 8 is tested against a fixture tree with nothing patched. A test giving a root must move `XDG_STATE_HOME` too, or the offsets it writes land beside the real ones. | [D] |
-| FR-4.1 | Every settled requirement is cited by a test that asserts it, so the traceability gate means what it says. The suite exists and 78 of 107 are covered; the gate names the rest, and this row closes when it does not. | [?] |
 | FR-4.5 | Whether the identity row and the meter row should be one row. Two rows is settled against three, which is a different question. | [?] |
 | FR-4.6 | Whether the countdown gets its own colour scale, probably inverted: a reset getting closer is good news, which is the opposite direction to consumption. | [?] |
 | FR-4.7 | Whether the cost segment carries a staleness marker. The rate table records the date it was taken and nothing reads it. | [?] |
@@ -201,4 +200,5 @@ to something unrelated.
 | FR-1.11m | 2026-08-27 | A failed write leaves nothing behind. Folded into FR-1.11b. |
 | FR-1.12 | 2026-08-27 | Standard library only, so it ran under whatever `python3` resolved to. A property of the Python runtime, retired ahead of the Go port. The hazard it guarded against does not retire with it; FR-1.13 carries that. |
 | FR-1.12a | 2026-08-27 | The interpreter floor, 3.8, set by `Path.unlink(missing_ok=True)`. Retired with FR-1.12, which it qualified. |
+| FR-4.1 | 2026-08-28 | Whether infobot has a suite, so the traceability gate means what it says. It does: 109 of 109 settled requirements are cited by a test that asserts them, every package clears 80% per file, and the two entry points are measured by `go build -cover` rather than excluded. The row was a question and the question is answered, so it goes rather than standing as a permanently satisfied assertion. What keeps it true is the gate, not this row. |
 | FR-4.2 | 2026-08-28 | Which language, and when. It was a question with an id rather than a line of prose so that closing it would be a change to a row. Answered and closed the same day it was acted on: Go, and the Python is gone. What the port traded is not retired with it and is FR-1.13. |
