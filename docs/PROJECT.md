@@ -79,9 +79,16 @@ neither `shellcheck` nor `shfmt` is installed on this machine yet.
     cmd/               two entry points, one delegating call each
     internal/          the program: render, state, usage, pricing, payload, num
     Makefile           build, test, cover, gate
+    README.md          the front door: what it is, how to build and wire it
+    LICENSE, NOTICE    Apache 2.0
     REQUIREMENTS.md    what must be true of it
     NEXT_STEPS.md      what is not done
     docs/PROJECT.md    this file
+
+`README.md` is for somebody arriving at the repository, and this file is for
+somebody working in it. Where they cover the same ground the README states the
+instruction and this file states the reason, so the install steps live there and
+why the shim is the committed half lives here.
 
 **The committed half is the shim and the built half is not**, which is FR-1.13
 rather than a packaging preference. Claude Code names `bin/infobot` in
