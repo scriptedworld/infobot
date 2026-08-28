@@ -2,23 +2,23 @@
 
 I am on a subscription, so nothing here is a bill. It is the counterfactual:
 what the same tokens would have come to had they gone through the API, which is
-the only figure that makes the cache worth anything visible.
+what makes the cache worth anything visible.
 
 THE RATES ARE A CACHED COPY AND THEY DRIFT. A status line that runs on every
 event cannot make a network call to ask, so they are read from a table on disk
 and refreshed by something else.
 
-`~/.config/infobot/pricing.json` is that table, and it wins when it is there.
-Config rather than state: the offsets under `~/.local/state/infobot` are
-disposable machine bookkeeping, while this is a file worth editing by hand.
-Sonnet 5 carrying an introductory rate with an expiry is exactly the case that
-wants a person, not a fetch.
+`~/.config/infobot/pricing.json` is that table and wins when it is there. Config
+rather than state, because the offsets under `~/.local/state/infobot` are
+disposable machine bookkeeping and this is a file worth editing by hand.
+Sonnet 5 carrying an introductory rate with an expiry is the case that wants a
+person, not a fetch.
 
 The table below is the seed and the fallback, so a fresh clone renders with no
 config file and no network. Both carry the date they were taken.
 
-A model absent from the table is priced at nothing and reported as tokens, not
-as a figure. A cost computed from a guessed rate is worse than no cost.
+A model absent from the table is priced at nothing and reported as tokens. A
+cost computed from a guessed rate is worse than no cost.
 """
 
 from __future__ import annotations
@@ -51,10 +51,10 @@ RATES = {
 }
 
 # Multipliers on the input rate, uniform across models: the per-model cache
-# columns at SOURCE are these applied. A cache read is CHARGED, at a tenth: 90%
-# off, not free, and on a long session it is the largest single line. A write
-# costs more than a fresh input token, which is why the two are priced apart
-# rather than lumped together as "cache".
+# columns at SOURCE are these applied. A cache read is CHARGED at a tenth, 90%
+# off rather than free, and on a long session it is the largest single line. A
+# write costs more than a fresh input token, which is why the two are priced
+# apart rather than lumped together as "cache".
 CACHE_READ = 0.1
 CACHE_WRITE = {"ephemeral_5m_input_tokens": 1.25, "ephemeral_1h_input_tokens": 2.0}
 
@@ -67,9 +67,8 @@ def table_path() -> Path:
 def table() -> dict:
     """The rates on disk, or the seed below when there are none to be had.
 
-    Anything malformed falls back rather than raising. A status line that
-    raises shows nothing at all, and a stale rate is a smaller wrong than a
-    blank row.
+    Anything malformed falls back rather than raising. A status line that raises
+    shows nothing at all, and a stale rate is a smaller wrong than a blank row.
     """
     try:
         loaded = json.loads(table_path().read_text())
@@ -89,13 +88,12 @@ def priced(totals: dict) -> tuple[float, float, bool] | None:
     on several models is the sum of them, not an average.
 
     A model with no rate is left out and the total is flagged incomplete rather
-    than abandoned. One unknown model should cost the reader the exactness of
-    the figure, not the figure. None comes back only when nothing at all could
-    be priced.
+    than abandoned, so one unknown model costs the exactness of the figure and
+    not the figure. None comes back only when nothing at all could be priced.
 
-    The saving is the honest counterfactual: every cached token, read or
-    written, charged at the plain input rate instead. That is what the session
-    would have cost with no caching at all, less what it did cost.
+    The saving is every cached token, read or written, charged at the plain
+    input rate instead: what the session would have cost with no caching, less
+    what it did cost.
     """
     if not totals:
         return None

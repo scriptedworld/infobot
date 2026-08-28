@@ -24,11 +24,11 @@ so it pales through white into blue.
 
     PACE_STOPS = 0 blue, 70 white, 100 green, 125 yellow, 150 red
 
-My calibration example settled the anchor: 80% spent with an hour left of
-five projects to exactly 100%, which is the boundary of concern rather than the
+My calibration example settled the anchor: 80% spent with an hour left of five
+projects to exactly 100%, which is the boundary of concern rather than the
 middle of it. An earlier version reused the context meter's ramp and made that
-case an alarm, which is wrong twice over: it treats efficient use as a crisis,
-and it says nothing different when the window will actually run dry.
+case an alarm, which treats efficient use as a crisis and then says nothing
+different when the window will actually run dry.
 
 ## Why the verdict fades in
 
