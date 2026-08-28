@@ -6,9 +6,11 @@
 # Session entry point: ephemeral by design, rewritten each session.
 START_HERE.md
 
-# Python's compiled cache. `bin/infobot` carries no .py suffix, so its cache
-# lands as `bin/__pycache__/infobotcpython-314.pyc`. Regenerated from the
-# source on demand, and stale the moment the source is edited without running.
+# Python's caches. This repository's own Python went with the port; what is
+# left is the checkers linked in from toolbox, which run from here and leave
+# their caches here. Both entries carry a `.gitignore` holding `*` that the
+# tool writes itself, so a cache hides from `git status` on its own account and
+# these lines are belt to that brace.
 __pycache__/
 
 # Adopted jig links, and the run directories they produce. The links resolve
@@ -21,7 +23,6 @@ adapters/
 # Adopted checker scripts, linked into bin/ from toolbox.
 bin/*.py
 
-# ruff, run ad hoc until the Python jig is adopted.
 .ruff_cache/
 
 # The built binaries. bin/infobot and bin/forget-session are committed shims
