@@ -175,7 +175,7 @@ func TestAmbiguousWidthCountsAsOne(t *testing.T) {
 		// most editors and a raw copy of it is easily lost, which is how this
 		// line first asserted the width of an empty string.
 		"", // the powerline separator, private use
-		"⌂",      // the project root marker
+		"⌂", // the project root marker
 	} {
 		if got := render.VisibleWidth(r); got != 1 {
 			t.Errorf("VisibleWidth(%q) = %d, want 1", r, got)
