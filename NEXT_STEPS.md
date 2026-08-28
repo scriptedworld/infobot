@@ -257,17 +257,31 @@ and needs no change.
 
 **Two things wrench raised after the fix, one of which changes the link's cost.**
 
-FACT 2026-08-28, `.ephemera/wrench-parity/separators.go`: U+2028, U+2029,
-U+FEFF, U+00A0 and U+200B sit outside C0/DEL/C1 and are emitted raw. wrench
-notes Go escapes the first three. They round trip unaltered through **both**
-parsers available to check, PyYAML and go-yaml, so leaving them raw satisfies
-FR-1.11r as written: nothing rejects them and nothing alters them. The range is
-not widened on a spelling difference with no defect behind it.
+**U+2028 and U+2029 are now escaped, reversing the call made an hour earlier.**
+The first answer was that three parsers round trip them raw, so widening was a
+spelling change with no defect behind it. That was reasoning from behaviour.
 
-The residual risk is stated rather than measured: U+2028 and U+2029 are line
-separators by Unicode semantics, so a parser entitled to treat them as line
-breaks would split a record, which is the newline failure with a different code
-point. Neither parser tested does. A third might.
+FACT 2026-08-28, read from both specification texts rather than inherited: YAML
+1.1 rule 27 makes `b-char` five characters, LF CR NEL LS PS. YAML 1.2 cuts it to
+LF and CR and says so explicitly, calling the rest non-breaks for JSON
+compatibility.
+
+So U+0085, U+2028 and U+2029 are **one class in the spec**, and PyYAML folds the
+first while preserving the other two, implementing three fifths of its own
+version's rule. The old range escaped U+0085 and left its siblings raw for no
+better reason than which one PyYAML happened to fold.
+
+The defect is therefore nameable: which of the five fold depends on the reader's
+version rather than on the character, and this file must not depend on which
+version its reader implements. Both are escaped in the `\u` form, which `\x`
+cannot carry. `b2f1b6d`, amended to `2e35bfe`.
+
+U+00A0, U+200B and U+FEFF stay raw: not line breaks in either version, and
+nothing alters them.
+
+**The lesson is the one this session keeps meeting.** Three implementations
+agreeing is not corroboration when none of them was asked the question. The
+spec was one fetch away and settled in two minutes what three parsers could not.
 
 **Go names thirteen escapes where this uses `\xNN`,** including `\e`, `\0` and
 `\N` for U+0085. Both spellings are correct and they interoperate in both
