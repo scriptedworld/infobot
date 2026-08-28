@@ -52,8 +52,10 @@ Classify, then count the classes. For this directory that means, for each id:
 does a transcript exist, is its newest file older than the hook, and was it
 written recently enough to belong to something still running.
 
-`.ephemera/classify-state.py` does it. A cleanup is suspect only when the
-unexplained class is non-empty.
+It was done by a `.ephemera/classify-state.py`, which was working space and is
+gone. The three questions above are the whole of it, so it is cheaper to rewrite
+than to have kept. A cleanup is suspect only when the unexplained class is
+non-empty.
 
 ## And pin the classification to an absolute instant
 

@@ -17,15 +17,21 @@ using the library. Rather than take it on trust it was re-run here, and it
 reproduced exactly. It then went into FR-1.11d as: *it is not imported because
 it cannot be.*
 
-**infobot does not run on `/usr/bin/python3`.** Both entry points say
-`#!/usr/bin/env python3`, which on this machine reaches a mise-managed 3.14.7,
-and the two interpreters do not carry the same packages:
+**infobot did not run on `/usr/bin/python3`.** Both entry points said
+`#!/usr/bin/env python3`, which on this machine reached a mise-managed 3.14.7,
+and the two interpreters did not carry the same packages:
 
     /usr/bin/python3         3.13.5   yaml yes   jsonschema NO    referencing NO
     env python3              3.14.7   yaml yes   jsonschema yes   referencing yes
 
-Under the interpreter infobot actually uses, the import would have succeeded.
-The requirement was true about a runtime nothing here runs on.
+Under the interpreter infobot actually used, the import would have succeeded.
+The requirement was true about a runtime nothing here ran on.
+
+**Everything above is past tense now, and the reason is this lesson's own.**
+infobot is Go, from 2026-08-28, and has no interpreter to resolve. The account
+stays because the failure it describes is not about Python, and because a lesson
+rewritten to look as though it had always been about the current code teaches
+nothing about how the mistake was reached.
 
 ## Why verifying did not catch it
 
@@ -47,12 +53,19 @@ a timing claim, warm or cold, and on which host.
 
 ## The better reason, which does not depend on a package being absent
 
-FR-1.12 replaced it: infobot imports the standard library and nothing else, so
-it runs under whatever `python3` resolves to rather than under one particular
+FR-1.12 replaced it: infobot imported the standard library and nothing else, so
+it ran under whatever `python3` resolved to rather than under one particular
 interpreter. A dependency that resolves or not depending on which interpreter
 wins a PATH race is what FR-1.9 already calls something that can be half
 present, and for a status line it fails as a blank line rather than as an error
 anyone sees.
+
+FR-1.12 is itself retired, on 2026-08-27, ahead of the port that removed the
+runtime it was about. The Retired table records that what it guarded against did
+not retire with it: a compiled binary trades an import that might not resolve
+for a build that might not have run, and both fail as the same blank line.
+FR-1.13 carries that now, and it is why `bin/infobot` is a shim that can report
+its own binary's absence rather than a symlink that cannot.
 
 That reason holds whether or not `jsonschema` is installed anywhere, which the
 original did not. FACT 2026-08-26, measured from wrench: `python3-yaml` is an

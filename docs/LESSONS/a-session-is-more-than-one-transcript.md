@@ -47,7 +47,8 @@ So the link exists but points backwards, and which id you are handed decides
 which half you can see. Grouping transcripts by ROOT solves it: a transcript's
 recorded origin where it has one, its own name where it does not. Every
 transcript sharing a root is one session's spending, whichever id was asked
-about. `infobot/usage.py` does this.
+about. `internal/usage/usage.go` does this, and did it as `infobot/usage.py`
+before the port carried the behaviour across unchanged.
 
 UNVERIFIED: whether the status line payload's `session_id` after a clear is the
 new session's id rather than the original. No cleared session was rendering at
