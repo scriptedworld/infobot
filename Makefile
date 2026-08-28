@@ -8,7 +8,7 @@
 
 GOFLAGS ?= -mod=mod
 
-.PHONY: build test gate clean
+.PHONY: build test check gate clean
 
 build:
 	go build -o bin/statusline ./cmd/statusline
@@ -49,7 +49,40 @@ build-current:
 	  echo "bin/statusline is older than $$(echo "$$newest" | head -1); run make build"; \
 	  exit 1; fi
 
-gate: test build-current
+# What runs in ANY clone, needing nothing but the Go toolchain. A contributor
+# without this machine's adopted tooling runs this and gets a real answer.
+#
+# gofmt is here rather than assumed. It lists unformatted files on stdout and
+# exits 0 whatever it finds, so `test -z` on its output is what makes it a gate
+# rather than a report. It caught a file that had been sitting in a green tree,
+# which is the whole argument for it being a step instead of a habit.
+check: build-current
+	@out=$$(gofmt -l .); \
+	if [ -n "$$out" ]; then echo "not gofmt-clean:"; echo "$$out"; exit 1; fi
+	go vet ./...
+	go test ./...
+
+# The full gate. Everything in `check`, plus the checkers adopted from toolbox.
+#
+# THOSE CHECKERS ARE SYMLINKS INTO A SIBLING REPOSITORY and are gitignored: in a
+# built image the same files arrive from the anvil layer, so a committed copy
+# would be a third statement of one thing. A clone without that sibling
+# therefore has no checkers at all, and the failure it used to give was a Python
+# traceback naming a path, which reads as a broken repository rather than as a
+# missing adoption.
+#
+# So it is reported. Same principle as FR-1.13 one level up: a thing that is not
+# there says so, in terms that name what would fix it.
+gate: check
+	@for c in bin/test-traceability.py bin/suppression-register.py; do \
+	  if [ ! -r "$$c" ]; then \
+	    echo "$$c is missing."; \
+	    echo "It is adopted from toolbox as a symlink and is gitignored, so a"; \
+	    echo "clone without that sibling repository does not have it."; \
+	    echo "Run 'make check' for everything that needs only the Go toolchain."; \
+	    exit 1; \
+	  fi; \
+	done
 	lizard -C 15 -a 5 -L 60 .
 	python3 bin/test-traceability.py --requirements REQUIREMENTS.md .
 	python3 bin/suppression-register.py --register SUPPRESSIONS .

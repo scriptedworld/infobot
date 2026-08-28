@@ -113,14 +113,21 @@ each end, which is FR-1.11p.
 
     make build    the two binaries
     make test     go test ./...
+    make check    everything that needs only the Go toolchain:
+                  gofmt, go vet, the tests, and a staleness check
     make cover    per-file coverage, including the entry points
-    make gate     what has to pass: tests, staleness, complexity,
-                  traceability, suppressions
+    make gate     check, plus complexity, traceability and suppressions
 
-`make gate` refuses a binary older than its source, because every other check
-reads the source and the built artifact is downstream of all of them. A stale
-binary and a broken one look identical from the outside, which is to say like a
-quiet session.
+**`make check` is what to run in a clone.** `make gate` adds three checkers that
+are adopted from a sibling repository as symlinks and are gitignored, so a clone
+without that sibling does not have them. It says so and names `make check`
+rather than failing on a missing file, because a traceback naming an absent path
+reads as a broken repository instead of a missing adoption.
+
+Both refuse a binary older than its source, because every other check reads the
+source and the built artifact is downstream of all of them. A stale binary and a
+broken one look identical from the outside, which is to say like a quiet
+session.
 
 **Every test names the requirement it discharges**, in a comment directly above
 it, and the gate fails a test that cites nothing or cites a requirement
