@@ -179,16 +179,28 @@ silo's board reading `grep -oP '"cwd": "\K[^"]+'` returns `/home/x/a` and stops.
 failure, arriving through a different door. A newline is legal in a Linux path,
 so it is reachable, and nothing has reached it.
 
-**The newline is one member of a class, and the rest is worse.** FACT
-2026-08-28, `.ephemera/ctrl-probe.py`, a control character in `current_dir`:
+**The newline is one member of a class, and the class is nearly the whole
+range.** FACT 2026-08-28, `.ephemera/ctrl-sweep.py`, 70 code points through the
+real binary: C0, DEL, the C1 block, and five separators.
 
-    ESC BEL DEL   raw, and no YAML parser will read the file back
-    U+0085 CR     parses, and comes back as a space
-    TAB           survives
+    ok                 6
+    unreadable        61   C0 less LF CR TAB, DEL, and all of C1
+    silently changed   3   LF, CR and U+0085, each to a space
 
-So infobot writes files it cannot read, and silently corrupts two characters. It
-is FR-1.11q's shape twice over, and the same class wrench found in its own packs
-the same day. A path may hold any byte but NUL and `/`, so all of it is legal.
+**A first pass sampled six characters and found three unreadable.** The sweep
+found 61. wrench made the same error the same day, sampling twelve and reporting
+eight against a swept 61, so neither number was worth quoting until it was
+swept. A path may hold any byte but NUL and `/`, so all of it is legal.
+
+Against the three packs wrench swept, infobot is the worst of the four:
+
+    wrench Go        70 ok
+    wrench Rust      69 ok,  1 unreadable
+    wrench Python     8 ok, 61 unreadable, 1 changed
+    infobot           6 ok, 61 unreadable, 3 changed
+
+The extra two corruptions are LF and CR, which wrench's Python escapes and this
+does not.
 
 I told wrench its escaping was "strictly better than mine" before measuring
 this. Wrong in both directions: wrench corrected that its other two packs
@@ -196,7 +208,7 @@ disagree with its Go one, and this shows mine is worse than I had assumed rather
 than merely thinner.
 
 **Linking still repairs it.** wrench's Go pack escapes ESC and round trips it,
-measured at wrench `67d843a`, and the Go pack is the one that would be linked.
+measured at wrench `67d843a`, and its Go pack is clean across all 70 swept points, not merely on the reachable case.
 Its caveat is precise and worth keeping: its Python and Rust packs diverge from
 its Go one on these inputs, so a conformance check comparing infobot's bytes
 against a non-Go pack would inherit a divergence rather than escape one. That is
