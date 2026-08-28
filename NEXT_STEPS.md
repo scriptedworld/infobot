@@ -147,6 +147,43 @@ So the second objection is answered rather than assumed away. wrench's float
 behaviour was called unspecified when it declined; on the values this form
 actually carries it is specified and it agrees.
 
+**wrench re-measured with its own probe and all eight reproduce, and it supplied
+the two things my probe could not.**
+
+First, **the agreement is a requirement rather than a coincidence.** At wrench
+`d62f755` this morning its encoder used `strconv.FormatFloat(v, 'g', -1, 64)`
+and `1000000.0` encoded as `1e+06`, so my case 7 would have failed yesterday.
+FR-4.8 landed at wrench `7076801` today: positional decimal, never an exponent,
+in every codec of every pack. That is the upgrade its declination was waiting
+on, and "unspecified, and disagreeing with my other two packs" is retired.
+
+Second, **key order, which a fixture match cannot show.** wrench sorts
+unconditionally; so does infobot, at `state.go:221`, `sort.Strings` over the key
+set before emitting. Checked rather than assumed, against wrench's own example
+inserted out of order plus every field this file might plausibly gain and three
+cases that break a naive sort. They agree exactly, `Agent` and
+`_leading_underscore` included. Adding a key is therefore safe from reordering
+at both ends.
+
+**FACT 2026-08-28: a defect of infobot's turned up in wrench's list of edges it
+thought were not a problem.** wrench escapes `\ " \n \t \r`. infobot escapes
+`\` and `"` only, at `state.go:237`, so a value carrying a newline is emitted
+raw. Measured with a payload whose `current_dir` holds one:
+
+    "cwd": "/home/x/a
+    b"
+
+Eight lines for seven keys, so FR-1.11g's one-key-to-a-line is broken, and
+silo's board reading `grep -oP '"cwd": "\K[^"]+'` returns `/home/x/a` and stops.
+**That is FR-1.11q's shape exactly**, a silent wrong answer rather than a parse
+failure, arriving through a different door. A newline is legal in a Linux path,
+so it is reachable, and nothing has reached it.
+
+Fixing it means widening the escape set, which changes the form and is therefore
+an FR-1.11o announcement. **It also makes the link more attractive rather than
+less: wrench's encoder does not have this defect**, so linking would fix it as a
+side effect instead of requiring a matching change at both ends.
+
 **That settles the measurement and not the decision.** Linking changes FR-1.11p
 from two emitters pinned by two fixtures into one emitter with a conformance
 check, which is a change to how the published form is produced and belongs to
