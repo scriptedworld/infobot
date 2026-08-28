@@ -61,6 +61,21 @@ jig's config is: 123 issues, none of which may be settled with a pragma, so they
 are decisions rather than edits. Running the rest of the jig's checks by hand
 found one real thing, a file that was not gofmt-clean, fixed at `7de208a`.
 
+**A fixture carries this machine's username, and removing it is a
+two-repository change.** `internal/state/state_test.go` asserts
+`"cwd": "/home/ancient/.projects/infobot"` twice, in `TestCanonicalForm`. It is
+not a secret and it is untidy for a repository meant to be published.
+
+It was left alone deliberately. FR-1.11p pins that form as a fixture at each
+end, infobot's bytes here and the same bytes in wrench, and the comment above
+the test says editing it to make it pass is how the pin comes undone. If wrench's
+fixture holds the same literal string, changing it here silently unpins the two,
+and FR-1.11o makes announcing a change to the form a requirement. So it is
+wrench's session in the loop or it stays.
+
+Worth doing in the same pass as the wrench YAML measurement above, since both
+touch the same test and the same counterpart.
+
 **No remote.** The repository is local, `clone = false` in the roster. Creating
 `github.com/scriptedworld/infobot` is not something a session does on its own.
 
