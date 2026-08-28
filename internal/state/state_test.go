@@ -45,12 +45,17 @@ func full() payload.Map {
 	}
 }
 
-// COVERS: FR-1.11g, FR-1.11o | property
+// COVERS: FR-1.11g, FR-1.11o, FR-1.11p | property
 //
 // The exact bytes, because the form is a published interface: silo's board
 // matches anchored patterns on the quoted key and the single space after the
-// colon, and takes the number bare. This is also wrench's fixture, so the two
-// repositories agree on one dialect.
+// colon, and takes the number bare.
+//
+// It is also infobot's half of FR-1.11p. These same bytes are a fixture in
+// wrench, and neither suite reaches into the other's tree, because a check
+// needing a sibling repository present fails for the wrong reason on a fresh
+// clone. So the pin is two tests that never meet, and editing this one to make
+// it pass is the way the pin comes undone.
 func TestCanonicalForm(t *testing.T) {
 	want := `"context_percent": 48.2
 "context_remaining": 520000
@@ -221,6 +226,63 @@ func TestOverFullWindowClampsRemainingButNotPercent(t *testing.T) {
 	}
 	if !strings.Contains(got, `"context_percent": 130`) {
 		t.Errorf("percent was capped:\n%s", got)
+	}
+}
+
+// COVERS: FR-1.11q | property
+//
+// A number is spelled without an exponent, ever. `1e+06` is a legal spelling of
+// a million and silo's board matches `[0-9.]+` against the value, so it would
+// capture `1`, report a plausible small number, and never fail.
+//
+// wrench measured the same divergence across its three packs on 2026-08-28 and
+// four of six values disagreed, so this is not hypothetical and not only
+// infobot's. Held here for infobot's own emitter whatever the ecosystem settles.
+func TestNumbersAreNeverSpelledWithAnExponent(t *testing.T) {
+	for _, pct := range []float64{
+		1e6, 1.23456789e8, 1e21, 1e-7, 0.0000001, 48.2, 0, 100,
+	} {
+		got := write(t, payload.Map{
+			"session_id": "exponent",
+			"context_window": map[string]any{
+				"context_window_size": 100.0,
+				"used_percentage":     pct,
+			},
+		})
+		for _, line := range strings.Split(got, "\n") {
+			key, value, found := strings.Cut(line, ": ")
+			// The KEY carries an "e", in "percent", so only the value is
+			// scanned. Checking the whole line reports every row as a failure
+			// and reads as the emitter being far more broken than it is.
+			if !found || key != `"context_percent"` {
+				continue
+			}
+			if strings.ContainsAny(value, "eE") {
+				t.Errorf("%v spelled with an exponent: %q", pct, value)
+			}
+		}
+	}
+}
+
+// COVERS: FR-1.11q | property
+//
+// A float keeps its decimal point so a reader gets a float back, and an integer
+// does not have one. Both must survive without reaching for an exponent.
+func TestFloatKeepsItsPointAndIntegerDoesNot(t *testing.T) {
+	got := write(t, payload.Map{
+		"session_id": "types",
+		"context_window": map[string]any{
+			"context_window_size": 1000000.0,
+			"used_percentage":     50.0,
+			"current_usage":       map[string]any{"input_tokens": 500000.0},
+		},
+	})
+	if !strings.Contains(got, `"context_percent": 50.0`) {
+		t.Errorf("a round percentage lost its decimal point:\n%s", got)
+	}
+	if !strings.Contains(got, `"context_size": 1000000`) ||
+		strings.Contains(got, `"context_size": 1000000.0`) {
+		t.Errorf("a count is not a bare integer:\n%s", got)
 	}
 }
 

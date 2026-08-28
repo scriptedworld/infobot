@@ -147,11 +147,25 @@ func intv(n float64) value   { return raw(strconv.FormatInt(int64(n), 10)) }
 func floatv(f float64) value { return raw(decimal(f)) }
 
 // decimal writes a float so its type is never in question on the way back in:
-// it always carries a decimal point or an exponent, which a YAML reader needs
-// to give back a float rather than an integer.
+// it always carries a decimal point, which a YAML reader needs to give back a
+// float rather than an integer.
+//
+// NEVER AN EXPONENT. `1e+06` is a legal spelling of a million and a reader
+// matching `[0-9.]+` against it captures `1`, which is a plausible small number
+// rather than a parse failure. silo's coordination board matches exactly that,
+// so an exponent here is a silent wrong answer on a board a person uses to
+// decide which session to clear.
+//
+// wrench measured the same divergence across its Python, Go and Rust packs on
+// 2026-08-28: four of six values spelled differently and every pack was the odd
+// one out for something, invisible because no fixture held a float outside the
+// range where all three agree. The canonical spelling for the ecosystem is a
+// question above this repository. This is infobot's own answer meanwhile, and
+// it is the conservative one: 'f' never reaches for an exponent at any
+// magnitude.
 func decimal(f float64) string {
-	text := strconv.FormatFloat(f, 'g', -1, 64)
-	if strings.ContainsAny(text, ".e") {
+	text := strconv.FormatFloat(f, 'f', -1, 64)
+	if strings.Contains(text, ".") {
 		return text
 	}
 	return text + ".0"

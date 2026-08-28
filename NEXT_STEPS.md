@@ -10,7 +10,7 @@ What checked it, because a rewrite is only as good as what it was held against:
     golden corpus     17 of 18 identical, at the width it was captured
     parity probes     the state file, the countdown and the cost, Python to Go
     the wrench fixture  byte for byte, from both ends
-    go test           78 of 107 requirements cited by a test that asserts them
+    go test           80 of 109 requirements cited by a test that asserts them
 
 The eighteenth corpus case is `malformed-resets` and it differs on purpose. The
 Python wrapped the whole render in a bare `except`, so one unreadable field
@@ -19,7 +19,7 @@ it would show as a diff. It does.
 
 ## Queued
 
-    one-emitter/10   link wrench's pack so there is one    .blocked
+    one-emitter/10   link wrench's pack so there is one    .cancelled
     state-readers/10 say what a session is DOING           .questions
     status-line/     05 through 20                         .complete
 
@@ -69,11 +69,23 @@ on the quoted key and the single space after the colon, and takes the number
 bare. FR-1.11o makes announcing a change to that form a requirement rather than
 a courtesy. Adding a key is safe; changing the shape is not.
 
-**Nothing pins it against wrench any more.** FR-1.11n used to make a form change
-a two-repository change, and it retired on the measurement that wrench's Go pack
-emits the same bytes. The port did not then link that pack, so there are still
-two emitters and nothing holding them together.
+**It is pinned against wrench by a fixture at each end, not by shared code.**
+FR-1.11p, restoring what FR-1.11n gave. wrench declined the link on 2026-08-28,
+with reasons rather than a preference: it cannot promise an import path while
+its own `gate/05` is blocked, and `YAML.Encode` is not a surface it supports for
+an outside consumer because its float behaviour is unspecified and disagrees
+with its other two packs. Its recommendation was to keep the emitter that
+already works, and that is what infobot does.
 
-That is `clank/tasks/infobot/one-emitter/10-*.blocked`, which carries the
-measurements, the acceptance and what it waits on. Not restated here, because
-two copies drift and the one with a state is the one to believe.
+So there are two emitters permanently, and two tests that never meet.
+**Editing `TestCanonicalForm` to make it pass is how the pin comes undone**,
+which is the only way it can.
+
+`clank/tasks/infobot/one-emitter/10-*.cancelled` carries the full answer.
+
+**A number is never spelled with an exponent.** FR-1.11q. `1e+06` is a legal
+spelling of a million and a reader matching `[0-9.]+` captures `1` from it, so
+it is a silent wrong answer rather than a parse failure. infobot had that defect
+and it is fixed; wrench found the same one across all three of its packs, where
+four of six values diverge. The canonical spelling for the ecosystem is with our
+user.
