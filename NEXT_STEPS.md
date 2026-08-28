@@ -19,15 +19,14 @@ it would show as a diff. It does.
 
 ## Queued
 
-    clank/tasks/infobot/status-line/   05 through 20, all superseded by the
-                                       single pass that landed the port
-    clank/tasks/infobot/state-readers/ 10  say what a session is DOING  .questions
+    one-emitter/10   link wrench's pack so there is one    .blocked
+    state-readers/10 say what a session is DOING           .questions
+    status-line/     05 through 20                         .complete
 
-**The `status-line` tasks want closing out rather than doing.** They were
-written as a leaf-first sequence, one file per task, and the work was done in
-one pass instead. Each needs its `.complete` rename and the SHA that did it, or
-`.cancelled` with the reason, which is that the sequence was mis-sized rather
-than wrong.
+**Ask the task tree rather than this file.** Its state is a rename and a
+document's state is prose, so where the two disagree the tree is right.
+
+    ( setopt null_glob; print -l ~/.projects/clank/tasks/infobot/**/*.blocked )
 
 ## Not done, and honest about it
 
@@ -73,4 +72,8 @@ a courtesy. Adding a key is safe; changing the shape is not.
 **Nothing pins it against wrench any more.** FR-1.11n used to make a form change
 a two-repository change, and it retired on the measurement that wrench's Go pack
 emits the same bytes. The port did not then link that pack, so there are still
-two emitters and nothing holding them together. Linking it is the open half.
+two emitters and nothing holding them together.
+
+That is `clank/tasks/infobot/one-emitter/10-*.blocked`, which carries the
+measurements, the acceptance and what it waits on. Not restated here, because
+two copies drift and the one with a state is the one to believe.
