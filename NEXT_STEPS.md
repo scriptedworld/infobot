@@ -179,10 +179,31 @@ silo's board reading `grep -oP '"cwd": "\K[^"]+'` returns `/home/x/a` and stops.
 failure, arriving through a different door. A newline is legal in a Linux path,
 so it is reachable, and nothing has reached it.
 
-Fixing it means widening the escape set, which changes the form and is therefore
-an FR-1.11o announcement. **It also makes the link more attractive rather than
-less: wrench's encoder does not have this defect**, so linking would fix it as a
-side effect instead of requiring a matching change at both ends.
+**The newline is one member of a class, and the rest is worse.** FACT
+2026-08-28, `.ephemera/ctrl-probe.py`, a control character in `current_dir`:
+
+    ESC BEL DEL   raw, and no YAML parser will read the file back
+    U+0085 CR     parses, and comes back as a space
+    TAB           survives
+
+So infobot writes files it cannot read, and silently corrupts two characters. It
+is FR-1.11q's shape twice over, and the same class wrench found in its own packs
+the same day. A path may hold any byte but NUL and `/`, so all of it is legal.
+
+I told wrench its escaping was "strictly better than mine" before measuring
+this. Wrong in both directions: wrench corrected that its other two packs
+disagree with its Go one, and this shows mine is worse than I had assumed rather
+than merely thinner.
+
+**Linking still repairs it.** wrench's Go pack escapes ESC and round trips it,
+measured at wrench `67d843a`, and the Go pack is the one that would be linked.
+Its caveat is precise and worth keeping: its Python and Rust packs diverge from
+its Go one on these inputs, so a conformance check comparing infobot's bytes
+against a non-Go pack would inherit a divergence rather than escape one. That is
+`clank/tasks/wrench/parity/50-*.questions`.
+
+Fixing it here means widening the escape set, which changes the form and is
+therefore an FR-1.11o announcement.
 
 **That settles the measurement and not the decision.** Linking changes FR-1.11p
 from two emitters pinned by two fixtures into one emitter with a conformance
