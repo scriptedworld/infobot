@@ -202,8 +202,26 @@ its Go one on these inputs, so a conformance check comparing infobot's bytes
 against a non-Go pack would inherit a divergence rather than escape one. That is
 `clank/tasks/wrench/parity/50-*.questions`.
 
-Fixing it here means widening the escape set, which changes the form and is
-therefore an FR-1.11o announcement.
+**The fix stays inside the form, because the form was never the limit.** FACT
+2026-08-28, `.ephemera/yaml-styles.py`: YAML's double-quoted scalar carries the
+full C-style escape set and stays on one line, so it is JSON's string with more
+in it, and it is already the style this file emits. Every control character
+round trips as `\xNN`. YAML even names U+0085 as `\N`, which JSON cannot spell.
+
+So this is an emitter implementing two escapes out of roughly twenty, not a
+format that cannot express the value. Widening the set changes no byte of any
+file rendered so far.
+
+**The characters that parse raw are the dangerous ones.** ESC, BEL, NUL and DEL
+are refused, which is a loud failure. NEL, CR, LF and TAB are accepted raw and
+two of them come back wrong, which is the silent one. A stricter emitter is
+therefore safer than a stricter parser here.
+
+The block styles `|` and `>` are YAML's multi-line forms and are not wanted:
+they span lines by definition and FR-1.11g is one key to a line.
+
+Fixing it is still an FR-1.11o announcement, because the form's definition
+changes even though its current output does not.
 
 **That settles the measurement and not the decision.** Linking changes FR-1.11p
 from two emitters pinned by two fixtures into one emitter with a conformance
