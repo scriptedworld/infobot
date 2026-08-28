@@ -27,7 +27,10 @@ it would show as a diff. It does.
 
 ## Queued
 
+    gate/10          the shims are read by something       .blocked
+    jig-adoption/10  adopt the Go jig                      .planning
     one-emitter/10   link wrench's pack so there is one    .cancelled
+    session-cost/10  show what the session would have cost .complete
     state-readers/10 say what a session is DOING           .questions
     status-line/     05 through 20                         .complete
 
@@ -38,12 +41,25 @@ document's state is prose, so where the two disagree the tree is right.
 
 ## Not done, and honest about it
 
-**The Go jig is not adopted.** `bolt.go-std-quality.yaml` is the one that
-matters, because it judges coverage per file at 80% through an adapter that
-exists. `make cover` applies that bar by hand meanwhile, and every package
-clears it: payload 100, render 96, state 94, num 89, pricing 88, forget 86,
-usage 82. The two entry points are 100 when measured the way the rule requires,
-built with `go build -cover` and run rather than excluded.
+**The Go jig is not adopted**, and it is
+`clank/tasks/infobot/jig-adoption/10-adopt-the-go-jig.planning`.
+`bolt.go-std-quality.yaml` is the one that matters, because it judges coverage
+per file at 80% through an adapter that exists. `make cover` applies that bar by
+hand meanwhile.
+
+Every file clears it, which is a stronger statement than the per-package one
+this section used to make. Statement-weighted from the profile, 2026-08-28:
+
+    payload 100.0  palette 97.2  segments 97.1  build 96.7  state 94.0
+    width    92.7  num     88.9  pricing 88.3  forget 85.7  usage  81.6
+
+The two entry points are 100 when measured the way the rule requires, built with
+`go build -cover` and run rather than excluded.
+
+Coverage is therefore not what adoption is waiting on. `golangci-lint` under the
+jig's config is: 123 issues, none of which may be settled with a pragma, so they
+are decisions rather than edits. Running the rest of the jig's checks by hand
+found one real thing, a file that was not gofmt-clean, fixed at `7de208a`.
 
 **No remote.** The repository is local, `clone = false` in the roster. Creating
 `github.com/scriptedworld/infobot` is not something a session does on its own.

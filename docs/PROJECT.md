@@ -54,6 +54,16 @@ own requirements, its own gate and its own tests. Keeping it in silo showed:
 silo's gate never read `bin/statusline` at all, because lizard selects by file
 extension and the script had none.
 
+**That gap is still open here, and the split did not close it.** What moved was
+which gate runs, not what it can read. All three checkers `make gate` invokes
+select by Go extension, so the 77 lines of shell in `bin/infobot` and
+`bin/forget-session` are read by none of them, and `bin/infobot` is both the
+path `settings.json` names and where FR-1.13's mechanism lives. Measured
+2026-08-28: lizard read 26 of 26 `.go` files and 0 of 2 shims;
+`suppression-register.py:87` globs `*.go`. It is
+`clank/tasks/infobot/gate/10-*`, blocked on toolbox's shell jig, and neither
+`shellcheck` nor `shfmt` is installed on this machine yet.
+
 ## Layout
 
     bin/infobot        a shell shim. Committed, and execs bin/statusline.
@@ -96,7 +106,10 @@ rather than excluded**: they are one delegating call each and the test process
 cannot reach them, so they are built with `go build -cover`, run, and their
 profile read. Both are at 100% that way.
 
-Adopting the jig is queued in `clank/tasks/infobot/`.
+Adopting it is `clank/tasks/infobot/jig-adoption/10-adopt-the-go-jig.planning`,
+which carries what running each of its checks by hand turned up: coverage
+already clears the per-file bar, and `golangci-lint` reports 123 issues that
+have to be decided rather than silenced.
 
 ## Perishable: the pricing table
 
