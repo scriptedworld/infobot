@@ -257,6 +257,16 @@ func scalar(v value) string {
 // characters a parser lets through are exactly the ones it corrupts, which is
 // why this belongs in the emitter rather than being left to a stricter reader.
 //
+// THE LINE-BREAK SET IS THE SPEC'S, NOT THE OBSERVED ONE. YAML 1.1 makes five
+// characters line breaks, LF CR NEL LS PS; 1.2 cuts the set to LF and CR for
+// JSON compatibility and calls the other three non-breaks. Checked against both
+// specification texts on 2026-08-28 rather than inherited.
+//
+// PyYAML folds LF, CR and U+0085 and preserves U+2028 and U+2029, so it
+// implements three fifths of its own version's rule. Deriving this range from
+// what it does would escape U+0085 and leave its two spec siblings raw, which
+// is the split this file used to have and had no reason for.
+//
 // Measured before and after, 70 code points through the built binary,
 // `.ephemera/ctrl-sweep.py`: 6 ok, 61 unreadable and 3 silently changed became
 // 70 ok. The 61 was the parser's rule rather than a score, so what this moves
@@ -277,6 +287,14 @@ func escape(r rune) string {
 		return `\n`
 	case '\r':
 		return `\r`
+	}
+	// U+2028 and U+2029 are line breaks in YAML 1.1 and non-breaks in 1.2, the
+	// same change that demoted U+0085. They are escaped for that reason rather
+	// than an observed one: a 1.1 parser folds them, and this file must not
+	// depend on which version its reader implements. `\u` because the code
+	// point does not fit `\x`.
+	if r == 0x2028 || r == 0x2029 {
+		return `\u` + strconv.FormatInt(int64(r), 16)
 	}
 	if r < 0x20 || r == 0x7f || (r >= 0x80 && r <= 0x9f) {
 		// Exactly two digits, which is what \x takes. FormatInt gives one for

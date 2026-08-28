@@ -314,7 +314,11 @@ func controlRanges() (escaped, untouched []rune) {
 	for r := rune(0x80); r <= 0x9f; r++ {
 		escaped = append(escaped, r)
 	}
-	return escaped, []rune{0x00a0, 0x200b, 0x2028, 0x2029, 0xfeff}
+	// U+2028 and U+2029 are escaped for a spec reason rather than an observed
+	// one: they are line breaks in YAML 1.1 and not in 1.2, exactly as U+0085
+	// is. U+00A0 and U+200B are neither, and are left alone.
+	escaped = append(escaped, 0x2028, 0x2029)
+	return escaped, []rune{0x00a0, 0x200b, 0xfeff}
 }
 
 // COVERS: FR-1.11r | property
@@ -367,10 +371,16 @@ func cwdLine(t *testing.T, text string) string {
 // The three a parser accepts raw and then changes. They are the dangerous
 // members: the other 61 make a file no parser will read, which is loud, and
 // these come back as a space with nothing reporting it.
-func TestTheSilentlyCorruptingThreeAreEscaped(t *testing.T) {
+func TestTheLineBreakSetIsEscaped(t *testing.T) {
 	for _, c := range []struct{ r, want string }{
 		{"\n", `"cwd": "/a\nb"`},
 		{"\r", `"cwd": "/a\rb"`},
+		// Not folded by any parser reachable here, and escaped anyway: YAML
+		// 1.1 makes these line breaks alongside the three above, and 1.2 does
+		// not, so which of them fold is the reader's version rather than the
+		// character.
+		{"\u2028", `"cwd": "/a\u2028b"`},
+		{"\u2029", `"cwd": "/a\u2029b"`},
 		{"", `"cwd": "/a\x85b"`},
 	} {
 		if got := cwdLine(t, "/a"+c.r+"b"); got != c.want {
