@@ -32,7 +32,24 @@ cover:
 	go tool covdata percent -i=$$dir | grep '/cmd/'; \
 	rm -rf $$dir $$out $$state
 
-gate: test
+# COMMITTED IS NOT DEPLOYED. Every other check reads the SOURCE: git status is
+# clean because the source is committed, the tests pass because they compile the
+# source, and the gate is green for the same reason. The built artifact is
+# downstream of all of them and inside none.
+#
+# That is not hypothetical here. bin/statusline ran two commits behind a clean
+# tree for 38 minutes on 2026-08-28, and the status line has no failure output,
+# so a stale binary and a broken one look identical: like a quiet session.
+build-current:
+	@if [ ! -x bin/statusline ]; then \
+	  echo "bin/statusline is not built; run make build"; exit 1; fi
+	@newest=$$(find cmd internal -name '*.go' ! -name '*_test.go' -newer bin/statusline \
+	    2>/dev/null; find go.mod go.sum -newer bin/statusline 2>/dev/null); \
+	if [ -n "$$newest" ]; then \
+	  echo "bin/statusline is older than $$(echo "$$newest" | head -1); run make build"; \
+	  exit 1; fi
+
+gate: test build-current
 	lizard -C 15 -a 5 -L 60 .
 	python3 bin/test-traceability.py --requirements REQUIREMENTS.md .
 	python3 bin/suppression-register.py --register SUPPRESSIONS .

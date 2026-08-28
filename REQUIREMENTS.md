@@ -180,6 +180,7 @@ are settled requirements about the shape of the code; the rest are questions.
 | FR-4.7 | Whether the cost segment carries a staleness marker. The rate table records the date it was taken and nothing reads it. | [?] |
 | FR-4.9 | Whether the state file should say what a session is DOING, not only what it has spent. Nothing in it distinguishes a session waiting on a person from one with nothing to do. Raised from silo 2026-08-27. Not a segment: the render sees one payload and has no view of a board. | [?] |
 | FR-4.8 | Whether the parameter budget still fits. `limit_segment`, `place_context` and `compose` each carry five parameters, which is exactly what the complexity gate allows. | [?] |
+| FR-4.10 | Whether a state file says which KIND of absence its missing context is. FR-1.11g omits an empty value, so a payload carrying no context block writes a file with no context keys, and that is indistinguishable from a session whose window has not been measured yet. Raised by silo 2026-08-28 as the reader: its hand invocation with a stub payload produced a file it could not tell from a real early-session one, and the guard it is adding rejects a malformed value rather than an absent one. The estate met the same shape twice that night, a missing thing and a not-yet thing reading identically at the moment of looking. Adding a key is safe under FR-1.11o where changing the shape is not, so the cheap answer is probably a key rather than a convention. | [?] |
 
 ## Retired
 
