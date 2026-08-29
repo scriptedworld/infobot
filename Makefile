@@ -8,7 +8,7 @@
 
 GOFLAGS ?= -mod=mod
 
-.PHONY: build test check gate clean
+.PHONY: build test check gate leakcheck clean
 
 build:
 	go build -o bin/statusline ./cmd/statusline
@@ -86,6 +86,31 @@ gate: check
 	lizard -C 15 -a 5 -L 60 .
 	python3 bin/test-traceability.py --requirements REQUIREMENTS.md .
 	python3 bin/suppression-register.py --register SUPPRESSIONS .
+	$(MAKE) leakcheck
+
+# NAME THE CORPUS, DO NOT LET THE TOOL CHOOSE IT.
+#
+# `bolt secrets .` cannot run this: its detect-secrets task declares a baseline
+# no adopter has, so it exits 2 on a usage error and scans nothing, and giving
+# it the baseline is worse. `detect-secrets scan --baseline` is a baseline
+# BUILDER by its own help text: measured 2026-08-28, it absorbs a newly
+# committed credential into the file and exits 0. That is toolbox's own-gate/30
+# and the file is a symlink, so it is not fixed here. This runs beside it.
+#
+# `detect-secrets-hook` is the half that gates. It takes filenames, which is the
+# point: the corpus is stated here rather than inferred by the tool. `scan` with
+# no path reads what git tracks, which is a narrower question than its name
+# suggests, and an untracked fixture makes it look like it found nothing.
+#
+# Both commands print what they read, so a run that scanned nothing says so
+# instead of passing quietly.
+leakcheck:
+	@files=$$(git ls-files -z | tr '\0' '\n' | wc -l); \
+	if [ "$$files" -eq 0 ]; then \
+	  echo "no tracked files; this check read nothing"; exit 1; fi; \
+	echo "the hook over $$files tracked file(s)"
+	@git ls-files -z | xargs -0 detect-secrets-hook
+	gitleaks detect --no-banner --redact
 
 clean:
 	rm -f bin/statusline bin/forget
