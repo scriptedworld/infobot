@@ -263,13 +263,13 @@ func scalar(v value) string {
 // specification texts on 2026-08-28 rather than inherited.
 //
 // PyYAML folds LF, CR and U+0085 and preserves U+2028 and U+2029, so it
-// implements three fifths of its own version's rule. Deriving this range from
-// what it does would escape U+0085 and leave its two spec siblings raw, which
-// is the split this file used to have and had no reason for.
+// implements three fifths of its own version's rule. A range derived from what
+// it does would escape U+0085 and leave its two spec siblings raw, which is a
+// split in the spec's class with nothing behind it.
 //
-// Measured before and after, 70 code points through the built binary,
-// `.ephemera/ctrl-sweep.py`: 6 ok, 61 unreadable and 3 silently changed became
-// 70 ok. The 61 was the parser's rule rather than a score, so what this moves
+// Measured, 70 code points through the built binary, `.ephemera/ctrl-sweep.py`:
+// 6 ok, 61 unreadable and 3 silently changed became 70 ok. The 61 was the
+// parser's rule rather than a score, so what this moves
 // is the third column, which is the one FR-1.11r is about.
 //
 // `\xNN` names a code point rather than a byte, so it is right for C1 as well
