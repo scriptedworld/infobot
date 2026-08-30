@@ -67,23 +67,40 @@ whether the grandchild ever closes the pipe stops being the program's problem.
 
 ## What it costs to run
 
-Measured 2026-08-30, 300 runs interleaved, a real event with a live session id
-and warm offsets, on this machine:
+**Faster and much hungrier.** Measured 2026-08-30, warm offsets, a 6.3MB
+transcript, `hyperfine -N` for time and a small `wait4` supervisor for memory:
 
-    go     7.5 ms/run    3.9 MB
-    zig    5.8 ms/run    4.4 MB
+    time     go  4.0 ms ± 1.3    [user 1.0, system 3.2]
+             zig 2.3 ms ± 1.0    [user 1.1, system 1.1]
 
-**Read that as "the same order", not as a win.** Both are dominated by the
-transcript search the cost segment does, which `docs/PROJECT.md` measures at
-about 15ms cold and which was ported as it stood into both. The gap moves by
-more than its own size between runs on a machine carrying a dozen agent
-sessions.
+    peak RSS      cold        warm
+    go       11.6-13.6 MB   8.9-9.1 MB
+    zig      368-371 MB     25.8-27.1 MB
 
-**The mode matters more than the language.** Debug was 17.7ms and a 17.1MB
-binary, so it is not a slower build of the same program. ReleaseSafe is the
-default here and ReleaseFast bought nothing measurable, 5.4ms against 5.8ms,
-inside the run-to-run spread. ReleaseSmall is worth knowing about at 275KB, one
-fourteenth of the ReleaseSafe binary, for a cost of about 0.3ms.
+**The time is not the interesting half.** User time is the same to within noise,
+1.0 against 1.1 ms, so the render costs what it costs in either language. The
+whole gap is system time, which is Go's runtime setting itself up in the kernel.
+
+**THE MEMORY IS A DEFECT IN THIS TREE, not a property of Zig**, and it is
+`clank/tasks/infobot/zig-memory/10-*`. Three faults compound: `scan` allocates
+the whole delta as one slice, so a cold read holds the entire transcript;
+`originOf` takes a 4MB buffer per call and is called once per transcript in the
+pool; and every parsed line goes into an arena that never frees. One arena for
+one render was a reasonable choice for a program that draws a line, and it is
+the wrong one for a program that parses six megabytes on the way there.
+
+**Two earlier figures here were wrong and are worth knowing about.** They said
+7.5 and 5.8 ms, from a bash loop timing its own subprocesses, and 1.2MB against
+6.8MB of RSS, which was the reverse of the truth. The memory number came from a
+payload carrying no `rate_limits`: with one row there is no second row for
+`alignCost` to place a cost segment on, so the transcript was never read and
+both binaries were measured doing no work. **Byte parity cannot catch that.**
+The output was identical while one implementation used thirty times the memory.
+
+**The build mode matters more than the language for size.** Debug was 17.7ms and
+a 17.1MB binary, so it is not a slower build of the same program. ReleaseSafe is
+the default and ReleaseFast bought nothing measurable. ReleaseSmall is 275KB,
+one fourteenth of ReleaseSafe, for about 0.3ms.
 
 ## What reads this tree, which is less than reads the Go one
 

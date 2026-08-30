@@ -60,8 +60,20 @@ the argument limit, and three over both. All eleven were fixed rather than
 excluded, which is hard rule 4, and the fix is what the parity harnesses then
 re-verified.
 
-So deploying it would trade a fully gated implementation for a half gated one,
-to gain about 1.7ms on a render dominated by a file search both of them share.
+**And it is far hungrier, which byte parity was never going to show.** Measured
+2026-08-30 against a 6.3MB transcript: 368MB peak on a cold read and 26MB warm,
+against Go's 13MB and 9MB. The output was identical the whole time.
+
+That is the strongest argument in this file and it arrived last. A parity
+harness compares what a program PRODUCES, and two implementations agreeing to
+the byte can differ by thirty times in what they cost to produce it. The defect
+is this tree's own, in `clank/tasks/infobot/zig-memory/10-*`, and it is fixable;
+the point that survives fixing it is that nothing in the acceptance test could
+have raised it.
+
+So deploying it would trade a fully gated implementation for a half gated one
+that uses thirty times the memory, to gain 1.7ms of system time on a render
+whose actual work costs the same in both.
 
 ## What it is good for
 
