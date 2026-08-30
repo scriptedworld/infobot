@@ -50,9 +50,9 @@ transcript sharing a root is one session's spending, whichever id was asked
 about. `internal/usage/usage.go` does this, and did it as `infobot/usage.py`
 before the port carried the behaviour across unchanged.
 
-UNVERIFIED: whether the status line payload's `session_id` after a clear is the
-new session's id rather than the original. No cleared session was rendering at
-the time, and the root grouping makes it moot.
+Whether the status line payload's `session_id` after a clear is the new
+session's id rather than the original is not established. No cleared session was
+rendering at the time, and the root grouping makes it moot.
 
 ## What it cost
 

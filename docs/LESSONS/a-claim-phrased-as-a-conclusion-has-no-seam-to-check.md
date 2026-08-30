@@ -6,8 +6,8 @@ were wrong in the same way, and so was the correction I first offered for one.
 
 ## What happened
 
-**"The shims are gated by nothing."** FACT 2026-08-28: no checker reads their
-text, because all three the gate runs select by Go extension. But
+**"The shims are gated by nothing."** Measured 2026-08-28: no checker reads
+their text, because all three the gate runs select by Go extension. But
 `cmd/statusline/shim_test.go` copies the committed shim into a scratch directory
 and executes it, five cases carrying `COVERS:` marks for FR-1.13 both ways,
 FR-3.8, FR-1.9 and FR-1.11f. Unread is not untested, and I had not looked before
@@ -19,7 +19,7 @@ it.
 
 **"dotfiles has 8 bash scripts and 10 zsh fragments."** I relayed that into this
 project's own task file, having measured nothing and having misattributed it to
-an inbox entry that does not contain it. FACT 2026-08-28, measured:
+an inbox entry that does not contain it. Measured 2026-08-28:
 
     git ls-files | while read f; do [ -f "$f" ] || continue
       case "$(head -c 200 "$f" | head -1)" in \#!*bash*|\#!*/sh) echo "$f";; esac
@@ -31,11 +31,12 @@ an inbox entry that does not contain it. FACT 2026-08-28, measured:
 No reading reaches 8 or 10. `*.sh` by extension is 1, tracked files under `bin/`
 are 23, `config/zsh/*.zsh` alone is 15, `*.zsh` anywhere is 16.
 
-CLAIM 2026-08-28, from toolbox and not measured here: checking that figure
-caught its neighbour in the same paragraph, `install.sh` recorded at 4,380 bytes
-against an actual 4,376. Re-derive with `wc -c` in `agent-support` before
-quoting it. **It is marked because this document would otherwise do the thing it
-describes**, relaying somebody else's number as though the checking were mine.
+From toolbox, and not measured here: checking that figure caught its neighbour
+in the same paragraph, `install.sh` recorded at 4,380 bytes against an actual
+4,376. **Whose measurement it is gets said, because this document would
+otherwise do the thing it describes**, relaying somebody else's number as though
+the checking were mine. Re-derive with `wc -c` in `agent-support` before quoting
+it.
 
 ## Why verifying did not catch it, which is the part worth keeping
 

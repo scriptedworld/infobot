@@ -14,8 +14,8 @@ changing shape most days. Porting a moving target means porting twice.
 
 ## What changed
 
-**The reason for deferring expired, and it is measurable.** FACT 2026-08-26: the
-display last changed shape on 23 August. Six commits that evening brought the
+**The reason for deferring expired, and it is measurable.** Measured 2026-08-26:
+the display last changed shape on 23 August. Six commits that evening brought the
 gauges, the pace colour, the fade and the cost segment. Since then there is
 documentation on the 24th and two commits on the 26th that changed behaviour
 BEHIND the display. The proof is that the golden corpus renders byte-identical
@@ -58,7 +58,7 @@ Go relocates the hazard rather than retiring it. An import that may not resolve
 becomes a build that may not have run or a symlink that may dangle, and both
 fail identically: a blank line nobody is told about.
 
-FACT 2026-08-26: `~/bin/bolt` dangles on this machine, which is why infobot's own
+Measured 2026-08-26, `~/bin/bolt` dangles on this machine, which is why infobot's own
 gate is run by invoking its checkers directly rather than through `bolt`. The
 failure mode is not hypothetical and it is in arm's reach.
 

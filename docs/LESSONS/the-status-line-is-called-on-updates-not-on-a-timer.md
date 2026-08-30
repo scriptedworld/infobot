@@ -10,7 +10,7 @@ need to know how old a number is.
 
 ## What was measured
 
-**FACT 2026-08-26.** Sampled the mtime of
+**Measured 2026-08-26.** Sampled the mtime of
 `~/.local/state/infobot/<session>.status.yaml` every 0.5s for 76 seconds, across
 a deliberate idle window, then paired each write against the session transcript.
 

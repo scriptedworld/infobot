@@ -68,7 +68,7 @@ FR-1.13 carries that now, and it is why `bin/infobot` is a shim that can report
 its own binary's absence rather than a symlink that cannot.
 
 That reason holds whether or not `jsonschema` is installed anywhere, which the
-original did not. FACT 2026-08-26, measured from wrench: `python3-yaml` is an
+original did not. Measured from wrench, 2026-08-26: `python3-yaml` is an
 apt package nothing manually installed, held on a dependency edge and an
 autoremove candidate. The package state that made the first measurement true was
 itself in motion.
