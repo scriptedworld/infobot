@@ -5,6 +5,7 @@
     gate/10          the shims are read by something       .blocked
     jig-adoption/10  adopt the Go jig                      .planning
     one-emitter/10   link wrench's pack so there is one    .cancelled
+    published-form/10 a schema for the status file         .ready
     session-cost/10  show what the session would have cost .complete
     state-readers/10 say what a session is DOING           .questions
     status-line/     05 through 20                         .complete
@@ -87,6 +88,26 @@ courtesy. Adding a key is safe; changing the shape is not.
 **It is pinned against wrench by a fixture at each end, not by shared code.**
 FR-1.11p. Editing `TestCanonicalForm` to make it pass is how that pin comes
 undone, and it is the only way it can.
+
+## The form is described in prose and gets a schema
+
+`published-form/10` is `.ready`. Raised from silo, which reads the form with
+anchored greps and wanted a machine-checkable contract, and settled by a change
+to the estate decision at silo `c4ef97a`: a component running once per event has
+its schema enforced by its suite and a check on the artifact, where a long-lived
+one validates on write.
+
+**The render path is untouched, and the measurement is why.** Validating nine
+keys is 10 microseconds, but linking the validator costs 6.2ms of package init
+in a process that starts once per event, so the rule read literally was 56% on
+top of an 11.8ms render. `.ephemera/schema-cost/` regenerates it and
+`docs/LESSONS/a-difference-with-two-explanations-is-not-a-measurement-yet.md`
+carries how the number was got wrong first.
+
+**A schema does not retire FR-1.11p.** `1e+06` and `1000000` decode to the same
+number, so nothing a schema states about the decoded structure reaches
+FR-1.11q's rule about the spelling. The schema and the byte fixture cover
+different halves.
 
 ## The wrench link is decided by evidence and waiting on a decision
 
