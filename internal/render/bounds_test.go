@@ -1,6 +1,7 @@
 package render_test
 
 import (
+	"fmt"
 	"go/parser"
 	"go/token"
 	"os"
@@ -21,14 +22,14 @@ func sources(t *testing.T, visit func(path string, imports []string)) {
 		t.Fatal(err)
 	}
 	for _, dir := range []string{"cmd", "internal"} {
-		err := filepath.WalkDir(filepath.Join(root, dir), func(path string, d os.DirEntry, err error) error {
+		walk := func(path string, d os.DirEntry, err error) error {
 			if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") ||
 				strings.HasSuffix(path, "_test.go") {
 				return err
 			}
 			file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
 			if err != nil {
-				return err
+				return fmt.Errorf("parsing %s: %w", path, err)
 			}
 			var imports []string
 			for _, spec := range file.Imports {
@@ -36,8 +37,8 @@ func sources(t *testing.T, visit func(path string, imports []string)) {
 			}
 			visit(strings.TrimPrefix(path, root+"/"), imports)
 			return nil
-		})
-		if err != nil {
+		}
+		if err := filepath.WalkDir(filepath.Join(root, dir), walk); err != nil {
 			t.Fatal(err)
 		}
 	}

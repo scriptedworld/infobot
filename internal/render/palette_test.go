@@ -271,7 +271,10 @@ func TestPaceColoursTheGaugeByWhereItLands(t *testing.T) {
 	}, 5*3600, false, clock)
 
 	green, warm, blue := firstFG(t, onRate), firstFG(t, hot), firstFG(t, cold)
-	if !(warm[0] > green[0] && green[0] > blue[0]) {
+	// Named rather than negated inline, so the invariant reads forwards and the
+	// check reads as its absence.
+	diverges := warm[0] > green[0] && green[0] > blue[0]
+	if !diverges {
 		t.Errorf("pace does not diverge: hot %v, on-rate %v, cold %v", warm, green, blue)
 	}
 	// The LENGTH still says the spend, whatever the colour says.

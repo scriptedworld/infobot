@@ -64,7 +64,8 @@ func TestNumDistinguishesAbsentFromZero(t *testing.T) {
 // COVERS: FR-1.3 | negative
 func TestWrongTypesReadAsAbsent(t *testing.T) {
 	var data payload.Map
-	if err := json.Unmarshal([]byte(`{"obj":"not an object","str":42,"num":"not a number"}`), &data); err != nil {
+	const mistyped = `{"obj":"not an object","str":42,"num":"not a number"}`
+	if err := json.Unmarshal([]byte(mistyped), &data); err != nil {
 		t.Fatal(err)
 	}
 	if got := data.Obj("obj"); got != nil {

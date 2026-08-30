@@ -17,9 +17,16 @@ func TestRoundBreaksTiesToEven(t *testing.T) {
 		in   float64
 		want float64
 	}{
-		{0.5, 0}, {1.5, 2}, {2.5, 2}, {3.5, 4}, {4.5, 4},
-		{-0.5, 0}, {-1.5, -2}, {-2.5, -2},
-		{1.4, 1}, {1.6, 2},
+		{0.5, 0},
+		{1.5, 2},
+		{2.5, 2},
+		{3.5, 4},
+		{4.5, 4},
+		{-0.5, 0},
+		{-1.5, -2},
+		{-2.5, -2},
+		{1.4, 1},
+		{1.6, 2},
 	} {
 		if got := num.Round(c.in); got != c.want {
 			t.Errorf("Round(%v) = %v, want %v", c.in, got, c.want)

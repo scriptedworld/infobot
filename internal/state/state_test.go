@@ -381,7 +381,7 @@ func TestTheLineBreakSetIsEscaped(t *testing.T) {
 		// character.
 		{"\u2028", `"cwd": "/a\u2028b"`},
 		{"\u2029", `"cwd": "/a\u2029b"`},
-		{"", `"cwd": "/a\x85b"`},
+		{"\u0085", `"cwd": "/a\x85b"`},
 	} {
 		if got := cwdLine(t, "/a"+c.r+"b"); got != c.want {
 			t.Errorf("got %q, want %q", got, c.want)

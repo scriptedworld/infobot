@@ -138,11 +138,12 @@ func TestCacheWritesCostMoreThanFreshInput(t *testing.T) {
 func TestLoadPrefersTheTableOnDisk(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
-	if err := os.MkdirAll(filepath.Join(dir, "infobot"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(dir, "infobot"), 0o750); err != nil {
 		t.Fatal(err)
 	}
 	table := `{"taken":"2099-01-01","rates":{"only-model":[7.0,9.0]}}`
-	if err := os.WriteFile(filepath.Join(dir, "infobot", "pricing.json"), []byte(table), 0o644); err != nil {
+	target := filepath.Join(dir, "infobot", "pricing.json")
+	if err := os.WriteFile(target, []byte(table), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	got := pricing.Load()
@@ -172,11 +173,11 @@ func TestLoadFallsBackToTheSeed(t *testing.T) {
 			dir := t.TempDir()
 			t.Setenv("XDG_CONFIG_HOME", dir)
 			if c.write {
-				if err := os.MkdirAll(filepath.Join(dir, "infobot"), 0o755); err != nil {
+				if err := os.MkdirAll(filepath.Join(dir, "infobot"), 0o750); err != nil {
 					t.Fatal(err)
 				}
 				if err := os.WriteFile(filepath.Join(dir, "infobot", "pricing.json"),
-					[]byte(c.content), 0o644); err != nil {
+					[]byte(c.content), 0o600); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -195,12 +196,13 @@ func TestLoadFallsBackToTheSeed(t *testing.T) {
 func TestCacheMultipliersAreConfigurable(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
-	if err := os.MkdirAll(filepath.Join(dir, "infobot"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(dir, "infobot"), 0o750); err != nil {
 		t.Fatal(err)
 	}
 	// A cache read priced at half rather than at a tenth, with no code change.
 	table := `{"rates":{"m":[10.0,20.0]},"cache_read":0.5}`
-	if err := os.WriteFile(filepath.Join(dir, "infobot", "pricing.json"), []byte(table), 0o644); err != nil {
+	target := filepath.Join(dir, "infobot", "pricing.json")
+	if err := os.WriteFile(target, []byte(table), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	got, ok := pricing.Price(totals("m", map[string]float64{"cache_read_input_tokens": 1e6}))

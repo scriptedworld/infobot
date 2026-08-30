@@ -29,10 +29,11 @@ func priced(t *testing.T, records string) payload.Map {
 	t.Setenv("HERDR_PANE_ID", "")
 
 	dir := filepath.Join(home, ".claude", "projects", "-p")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, costSession+".jsonl"), []byte(records), 0o644); err != nil {
+	transcript := filepath.Join(dir, costSession+".jsonl")
+	if err := os.WriteFile(transcript, []byte(records), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	return payload.Map{

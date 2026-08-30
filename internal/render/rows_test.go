@@ -94,11 +94,15 @@ func TestBarAndFileAgreeBecauseTheyShareAMeasurement(t *testing.T) {
 		// A stated percentage.
 		{"context_window_size": 200000.0, "used_percentage": 48.0},
 		// Counts alone, so the percentage is derived.
-		{"context_window_size": 200000.0,
-			"current_usage": map[string]any{"input_tokens": 50000.0}},
+		{
+			"context_window_size": 200000.0,
+			"current_usage":       map[string]any{"input_tokens": 50000.0},
+		},
 		// Both, disagreeing: the payload's percentage is the authority.
-		{"context_window_size": 200000.0, "used_percentage": 48.0,
-			"current_usage": map[string]any{"input_tokens": 10.0}},
+		{
+			"context_window_size": 200000.0, "used_percentage": 48.0,
+			"current_usage": map[string]any{"input_tokens": 10.0},
+		},
 	} {
 		state := t.TempDir()
 		t.Setenv("HOME", t.TempDir())

@@ -44,11 +44,11 @@ func TestRemoveTakesBothFilesAndSaysWhich(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_STATE_HOME", dir)
 	state := filepath.Join(dir, "infobot")
-	if err := os.MkdirAll(state, 0o755); err != nil {
+	if err := os.MkdirAll(state, 0o750); err != nil {
 		t.Fatal(err)
 	}
 	for _, name := range []string{"s.status.yaml", "s.json"} {
-		if err := os.WriteFile(filepath.Join(state, name), []byte("x"), 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(state, name), []byte("x"), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -102,11 +102,11 @@ func TestRefusedIdIsReportedAndRemovesNothing(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_STATE_HOME", dir)
 	state := filepath.Join(dir, "infobot")
-	if err := os.MkdirAll(state, 0o755); err != nil {
+	if err := os.MkdirAll(state, 0o750); err != nil {
 		t.Fatal(err)
 	}
 	keep := filepath.Join(state, "innocent.status.yaml")
-	if err := os.WriteFile(keep, []byte("x"), 0o644); err != nil {
+	if err := os.WriteFile(keep, []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 

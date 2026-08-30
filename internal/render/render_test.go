@@ -42,8 +42,14 @@ func TestTokensAreCompact(t *testing.T) {
 		in   float64
 		want string
 	}{
-		{0, "0"}, {999, "999"}, {1000, "1k"}, {21000, "21k"},
-		{142000, "142k"}, {999999, "1000k"}, {1000000, "1.0M"}, {2700000, "2.7M"},
+		{0, "0"},
+		{999, "999"},
+		{1000, "1k"},
+		{21000, "21k"},
+		{142000, "142k"},
+		{999999, "1000k"},
+		{1000000, "1.0M"},
+		{2700000, "2.7M"},
 	} {
 		if got := render.Tokens(c.in); got != c.want {
 			t.Errorf("Tokens(%v) = %q, want %q", c.in, got, c.want)

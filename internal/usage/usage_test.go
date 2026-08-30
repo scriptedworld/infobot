@@ -10,8 +10,8 @@ import (
 )
 
 // record is one transcript line carrying usage.
-func record(model string, fields string) string {
-	return `{"message":{"model":"` + model + `","usage":{` + fields + `}}}`
+func record(fields string) string {
+	return `{"message":{"model":"m","usage":{` + fields + `}}}`
 }
 
 // tree writes a fixture projects directory and returns its root.
@@ -20,10 +20,10 @@ func tree(t *testing.T, files map[string]string) string {
 	root := t.TempDir()
 	for name, body := range files {
 		path := filepath.Join(root, name)
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -41,8 +41,8 @@ func scratch(t *testing.T) {
 // from the working directory: a session may have been started elsewhere.
 func TestTranscriptsFindTheSessionByName(t *testing.T) {
 	root := tree(t, map[string]string{
-		"-some-other-slug/wanted.jsonl": record("m", `"input_tokens":1`),
-		"-some-other-slug/other.jsonl":  record("m", `"input_tokens":1`),
+		"-some-other-slug/wanted.jsonl": record(`"input_tokens":1`),
+		"-some-other-slug/other.jsonl":  record(`"input_tokens":1`),
 	})
 	got := usage.Transcripts("wanted", root)
 	if len(got) != 1 || filepath.Base(got[0]) != "wanted.jsonl" {
@@ -56,9 +56,9 @@ func TestTranscriptsFindTheSessionByName(t *testing.T) {
 // output tokens and 33% of cache reads.
 func TestTranscriptsIncludeSubagents(t *testing.T) {
 	root := tree(t, map[string]string{
-		"-p/s.jsonl":                   record("m", `"input_tokens":1`),
-		"-p/s/subagents/agent-a.jsonl": record("m", `"input_tokens":1`),
-		"-p/s/subagents/agent-b.jsonl": record("m", `"input_tokens":1`),
+		"-p/s.jsonl":                   record(`"input_tokens":1`),
+		"-p/s/subagents/agent-a.jsonl": record(`"input_tokens":1`),
+		"-p/s/subagents/agent-b.jsonl": record(`"input_tokens":1`),
 	})
 	if got := usage.Transcripts("s", root); len(got) != 3 {
 		t.Errorf("Transcripts found %d, want the session and both subagents: %v", len(got), got)
@@ -72,12 +72,12 @@ func TestTranscriptsIncludeSubagents(t *testing.T) {
 // one, the file's own name where there is not.
 func TestTranscriptsFollowBothSidesOfAClear(t *testing.T) {
 	root := tree(t, map[string]string{
-		"-p/original.jsonl": record("m", `"input_tokens":1`),
+		"-p/original.jsonl": record(`"input_tokens":1`),
 		// The transcript a clear opened: its own id is new, and it records the
 		// session it came from.
 		"-p/after-clear.jsonl": `{"session_id":"original"}` + "\n" +
-			record("m", `"input_tokens":1`),
-		"-p/unrelated.jsonl": record("m", `"input_tokens":1`),
+			record(`"input_tokens":1`),
+		"-p/unrelated.jsonl": record(`"input_tokens":1`),
 	})
 	// Asked about EITHER id, both halves come back.
 	for _, asked := range []string{"original", "after-clear"} {
@@ -94,7 +94,7 @@ func TestTranscriptsFollowBothSidesOfAClear(t *testing.T) {
 // cost is proportional to one project's sessions.
 func TestSearchStaysInsideTheProject(t *testing.T) {
 	root := tree(t, map[string]string{
-		"-project-a/s.jsonl":     record("m", `"input_tokens":1`),
+		"-project-a/s.jsonl":     record(`"input_tokens":1`),
 		"-project-b/other.jsonl": `{"session_id":"s"}`,
 	})
 	got := usage.Transcripts("s", root)
@@ -131,7 +131,7 @@ func TestNestedCacheCreationIsCounted(t *testing.T) {
 func TestNonNumericFieldsAreIgnoredNotCoerced(t *testing.T) {
 	scratch(t)
 	root := tree(t, map[string]string{
-		"-p/s.jsonl": `{"message":{"model":"m","usage":{"input_tokens":"lots","output_tokens":5}}}` + "\n",
+		"-p/s.jsonl": record(`"input_tokens":"lots","output_tokens":5`) + "\n",
 	})
 	got := usage.Sum("s", root)["m"]
 	if _, present := got["input_tokens"]; present {
@@ -160,9 +160,9 @@ func TestRecordWithNoModelGoesUnderAPlaceholder(t *testing.T) {
 // mid-line, so the offset advances only over lines that arrived complete.
 func TestHalfWrittenLineIsNotCounted(t *testing.T) {
 	scratch(t)
-	whole := record("m", `"input_tokens":10`) + "\n"
+	whole := record(`"input_tokens":10`) + "\n"
 	root := tree(t, map[string]string{
-		"-p/s.jsonl": whole + record("m", `"input_tokens":999`), // no newline
+		"-p/s.jsonl": whole + record(`"input_tokens":999`), // no newline
 	})
 	got := usage.Sum("s", root)["m"]
 	if got["input_tokens"] != 10 {
@@ -177,26 +177,26 @@ func TestHalfWrittenLineIsNotCounted(t *testing.T) {
 func TestOnlyAppendedBytesAreParsed(t *testing.T) {
 	scratch(t)
 	path := filepath.Join(t.TempDir(), "-p", "s.jsonl")
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		t.Fatal(err)
 	}
 	root := filepath.Dir(filepath.Dir(path))
-	first := record("m", `"input_tokens":10`) + "\n"
-	if err := os.WriteFile(path, []byte(first), 0o644); err != nil {
+	first := record(`"input_tokens":10`) + "\n"
+	if err := os.WriteFile(path, []byte(first), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if got := usage.Sum("s", root)["m"]["input_tokens"]; got != 10 {
 		t.Fatalf("first read = %v, want 10", got)
 	}
 
-	handle, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o644)
+	handle, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := handle.WriteString(record("m", `"input_tokens":5`) + "\n"); err != nil {
+	if _, err := handle.WriteString(record(`"input_tokens":5`) + "\n"); err != nil {
 		t.Fatal(err)
 	}
-	handle.Close()
+	_ = handle.Close()
 
 	if got := usage.Sum("s", root)["m"]["input_tokens"]; got != 15 {
 		t.Errorf("second read = %v, want 15", got)
@@ -211,20 +211,20 @@ func TestShrunkTranscriptIsReadFromTheStart(t *testing.T) {
 	scratch(t)
 	dir := t.TempDir()
 	path := filepath.Join(dir, "-p", "s.jsonl")
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		t.Fatal(err)
 	}
 	root := dir
-	long := record("m", `"input_tokens":10`) + "\n" + record("m", `"input_tokens":10`) + "\n"
-	if err := os.WriteFile(path, []byte(long), 0o644); err != nil {
+	long := record(`"input_tokens":10`) + "\n" + record(`"input_tokens":10`) + "\n"
+	if err := os.WriteFile(path, []byte(long), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if got := usage.Sum("s", root)["m"]["input_tokens"]; got != 20 {
 		t.Fatalf("first read = %v, want 20", got)
 	}
 
-	short := record("m", `"input_tokens":3`) + "\n"
-	if err := os.WriteFile(path, []byte(short), 0o644); err != nil {
+	short := record(`"input_tokens":3`) + "\n"
+	if err := os.WriteFile(path, []byte(short), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if got := usage.Sum("s", root)["m"]["input_tokens"]; got != 3 {
@@ -240,10 +240,10 @@ func TestSubagentAppearingLaterIsCountedOnce(t *testing.T) {
 	scratch(t)
 	dir := t.TempDir()
 	main := filepath.Join(dir, "-p", "s.jsonl")
-	if err := os.MkdirAll(filepath.Dir(main), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(main), 0o750); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(main, []byte(record("m", `"input_tokens":10`)+"\n"), 0o644); err != nil {
+	if err := os.WriteFile(main, []byte(record(`"input_tokens":10`)+"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if got := usage.Sum("s", dir)["m"]["input_tokens"]; got != 10 {
@@ -251,10 +251,10 @@ func TestSubagentAppearingLaterIsCountedOnce(t *testing.T) {
 	}
 
 	sub := filepath.Join(dir, "-p", "s", "subagents", "agent-a.jsonl")
-	if err := os.MkdirAll(filepath.Dir(sub), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(sub), 0o750); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(sub, []byte(record("m", `"input_tokens":4`)+"\n"), 0o644); err != nil {
+	if err := os.WriteFile(sub, []byte(record(`"input_tokens":4`)+"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if got := usage.Sum("s", dir)["m"]["input_tokens"]; got != 14 {
@@ -269,7 +269,7 @@ func TestSubagentAppearingLaterIsCountedOnce(t *testing.T) {
 // COVERS: FR-8.10 | negative
 func TestUnknowableSessionYieldsNoTotals(t *testing.T) {
 	scratch(t)
-	root := tree(t, map[string]string{"-p/other.jsonl": record("m", `"input_tokens":1`)})
+	root := tree(t, map[string]string{"-p/other.jsonl": record(`"input_tokens":1`)})
 	if got := usage.Sum("", root); len(got) != 0 {
 		t.Errorf("Sum with no session id = %v, want empty", got)
 	}
@@ -288,7 +288,7 @@ func TestOriginSearchGivesUpAfterFortyRecords(t *testing.T) {
 		`{"session_id":"origin"}` + "\n"
 
 	root := tree(t, map[string]string{
-		"-p/origin.jsonl": record("m", `"input_tokens":1`),
+		"-p/origin.jsonl": record(`"input_tokens":1`),
 		"-p/early.jsonl":  within,
 		"-p/late.jsonl":   beyond,
 	})
@@ -315,7 +315,7 @@ func TestOriginSearchGivesUpAfterFortyRecords(t *testing.T) {
 // real ones and a later render skips bytes it never counted.
 func TestRootAndStateAreBothSeams(t *testing.T) {
 	root := tree(t, map[string]string{
-		"-p/s.jsonl": record("m", `"input_tokens":42`) + "\n",
+		"-p/s.jsonl": record(`"input_tokens":42`) + "\n",
 	})
 
 	// The root reaches the reader: a fixture tree is counted, and the real one
@@ -340,7 +340,7 @@ func TestRootAndStateAreBothSeams(t *testing.T) {
 // COVERS: FR-1.11e | positive
 func TestForgetRemovesTheOffsets(t *testing.T) {
 	scratch(t)
-	root := tree(t, map[string]string{"-p/s.jsonl": record("m", `"input_tokens":1`)})
+	root := tree(t, map[string]string{"-p/s.jsonl": record(`"input_tokens":1`)})
 	usage.Sum("s", root)
 	path := usage.OffsetPath("s")
 	if _, err := os.Stat(path); err != nil {

@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -41,20 +42,12 @@ func shimIn(t *testing.T, name string, withBinary bool) (string, int) {
 	code := 0
 	var exit *exec.ExitError
 	if err != nil {
-		if !asExitError(err, &exit) {
+		if !errors.As(err, &exit) {
 			t.Fatal(err)
 		}
 		code = exit.ExitCode()
 	}
 	return string(out), code
-}
-
-func asExitError(err error, target **exec.ExitError) bool {
-	if e, ok := err.(*exec.ExitError); ok {
-		*target = e
-		return true
-	}
-	return false
 }
 
 // COVERS: FR-1.13 | negative
@@ -110,9 +103,9 @@ func TestAbsentBinaryHonoursNoColor(t *testing.T) {
 // The Python this replaced called Path(__file__).resolve(), which follows
 // symlinks. The port dropped it without noticing it was load-bearing.
 func TestShimReachedThroughASymlinkDoesNotExecItself(t *testing.T) {
-	real, code := shimIn(t, "infobot", true)
-	if code != 0 || !strings.Contains(real, "RAN-THE-BINARY") {
-		t.Fatalf("direct call already broken: %q", real)
+	direct, code := shimIn(t, "infobot", true)
+	if code != 0 || !strings.Contains(direct, "RAN-THE-BINARY") {
+		t.Fatalf("direct call already broken: %q", direct)
 	}
 
 	// A symlink to the shim, in a directory holding nothing else, which is the
@@ -160,7 +153,7 @@ func TestShimReachedThroughASymlinkDoesNotExecItself(t *testing.T) {
 	}
 	if runErr != nil {
 		var exit *exec.ExitError
-		if !asExitError(runErr, &exit) {
+		if !errors.As(runErr, &exit) {
 			t.Fatal(runErr)
 		}
 	}
