@@ -26,7 +26,7 @@ network at render time.
 
 ## Build
 
-    make build
+    just build
 
 That produces `bin/statusline` and `bin/forget`. Both are gitignored. What is
 committed is the pair of shell shims beside them, `bin/infobot` and
@@ -76,7 +76,7 @@ does not do what its name suggests. The line is drawn on events, not on a timer.
 See `docs/LESSONS/the-status-line-is-called-on-updates-not-on-a-timer.md`.
 
 Start a new session to pick it up. If the row reads `infobot is not built`, the
-shim is working and `make build` has not been run.
+shim is working and `just build` has not been run.
 
 ## Configure
 
@@ -111,18 +111,31 @@ each end, which is FR-1.11p.
 
 ## Develop
 
-    make build    the two binaries
-    make test     go test ./...
-    make check    everything that needs only the Go toolchain:
-                  gofmt, go vet, the tests, and a staleness check
-    make cover    per-file coverage, including the entry points
-    make gate     check, plus complexity, traceability and suppressions
+Every project here carries the same ten recipes, so moving between a Go tree and
+a Rust one means typing the same words:
 
-**`make check` is what to run in a clone.** `make gate` adds three checkers that
-are adopted from a sibling repository as symlinks and are gitignored, so a clone
-without that sibling does not have them. It says so and names `make check`
-rather than failing on a missing file, because a traceback naming an absent path
-reads as a broken repository instead of a missing adoption.
+    just checks        all the quality tooling, and what to run before landing
+    just test          the suite
+    just coverage      the suite with the 80% per-file minimum enforced
+    just format-check  formatting verified, nothing written
+    just format        formatting written
+    just build         the two binaries
+    just install       rebuild, and prove bin/ matches its source
+    just dist          nothing; infobot is used from its own tree
+    just clean         build output and past run directories
+    just secrets       the secrets jig alone
+
+`just` on its own lists them.
+
+**`just checks` is the whole gate and contains the others.** It runs three bolt
+jigs: `common-quality` for complexity, traceability, suppressions and secrets;
+`go-std-quality` for build, format, lint, tests, tidy, vet and vulnerabilities;
+and `secrets` alone.
+
+Those jigs and their adapters are symlinks into a sibling repository and are
+gitignored, so a clone without that sibling cannot run `just checks`. `just
+test`, `just build` and `just format` need only the Go toolchain and work
+anywhere.
 
 Both refuse a binary older than its source, because every other check reads the
 source and the built artifact is downstream of all of them. A stale binary and a
@@ -148,12 +161,15 @@ carried as the directory's suffix.
 
 ## Known gaps
 
-The Go quality jig is not adopted, so `make gate` runs neither `golangci-lint`
-nor the race detector. Both pass when run by hand; adoption is queued.
+`just checks` is red on one task, `lint`. The Go jig runs `golangci-lint` with
+42 analysers and it reports 124 findings, none of which may be settled with a
+suppression pragma, so each is a decision rather than an edit. Every other task
+passes: build, format, tests at 92.8% with the entry points measured, tidy, vet,
+vulnerabilities, complexity, traceability, suppressions and secrets.
 
-The two shell shims are read by no checker, because all three the gate runs
-select by file extension and the shims have none. Their behaviour is tested
-five ways; their text is unread.
+The two shell shims are read by no checker, because every checker selects by
+file extension and the shims have none. Their behaviour is tested five ways;
+their text is unread.
 
 ## Licence
 
