@@ -21,10 +21,15 @@ __pycache__/
 # swallows `bolt.go-std-quality.definitions.yaml`, which is this project's own
 # values for the shared jig's placeholders and has to be committed. qwark met
 # the same trap and its .gitignore carries the same list for the same reason.
+#
+# `config/` holds one link and none of this project's own settings. The Go jig
+# names `{config_dir}/config/go-std-quality.golangci.yml`, and `config_dir` is
+# the project root, so an adopter links the shared file in at that path.
 bolt.common-quality.yaml
 bolt.go-std-quality.yaml
 bolt.secrets.yaml
 adapters/
+config/
 
 # Run directories. A run's artefacts belong to the run rather than the repo, and
 # the stamp format changed with the Rust build, so both are covered.
