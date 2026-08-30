@@ -19,9 +19,9 @@ given. Retired ids are listed at the bottom and never come back.
 **A lettered id is a facet of the row it hangs off**, and is a requirement in
 its own right with its own test.
 
-> The traceability gate does not pass, and that is the honest state. Every
-> settled requirement below is uncovered, because infobot has no test suite.
-> Closing the gap is `clank/tasks/infobot/status-line/`.
+**Every settled requirement is cited by a test that asserts it**, 110 of 110,
+checked by the traceability task of `bolt common-quality`. The six rows marked
+`[?]` are open questions and are exempt until they are answered.
 
 ## 1. What it reads and writes
 

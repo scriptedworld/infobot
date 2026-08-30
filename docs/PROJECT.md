@@ -64,8 +64,8 @@ silo's gate never read `bin/statusline` at all, because lizard selects by file
 extension and the script had none.
 
 **That gap is still open here, and the split did not close it.** What moved was
-which gate runs, not what it can read. All three checkers `make gate` invokes
-select by Go extension, so the 77 lines of shell in `bin/infobot` and
+which gate runs, not what it can read. Every checker `just checks` invokes
+selects by Go extension, so the 77 lines of shell in `bin/infobot` and
 `bin/forget-session` are read by none of them. Measured 2026-08-28: lizard read
 26 of 26 `.go` files and 0 of 2 shims; `suppression-register.py:87` globs
 `*.go`.
@@ -87,7 +87,7 @@ neither `shellcheck` nor `shfmt` is installed on this machine yet.
     bin/forget         the built cleanup. Gitignored.
     cmd/               two entry points, one delegating call each
     internal/          the program: render, state, usage, pricing, payload, num
-    Makefile           build, test, cover, gate
+    Justfile           the two-word interface; recipes in just/
     README.md          the front door: what it is, how to build and wire it
     LICENSE, NOTICE    Apache 2.0
     REQUIREMENTS.md    what must be true of it
@@ -116,22 +116,24 @@ infobot's. infobot does not read it.
 
 ## The gate
 
-`make gate` runs it: the tests, then complexity, traceability and the
-suppression register. `bolt common-quality .` runs the last three through the
-jig, and note that bolt exits 0 whenever the RUN completed, so the verdict is
-`success` in the `result.yaml` it names rather than the exit status.
+    just checks
 
-`bolt.go-std-quality.yaml` is not adopted yet. It is the one that matters,
-because it judges coverage per file at 80% through an adapter that exists.
-`make cover` applies that bar by hand meanwhile. **The entry points are measured
-rather than excluded**: they are one delegating call each and the test process
-cannot reach them, so they are built with `go build -cover`, run, and their
-profile read. Both are at 100% that way.
+Two jigs, both adopted from toolbox as symlinks. `common-quality` gives
+complexity, traceability, suppressions and secrets; `go-std-quality` gives
+build, format, lint, tests, tidy, vet and vulnerabilities.
 
-Adopting it is `clank/tasks/infobot/jig-adoption/10-adopt-the-go-jig.planning`,
-which carries what running each of its checks by hand turned up: coverage
-already clears the per-file bar, and `golangci-lint` reports 123 issues that
-have to be decided rather than silenced.
+**bolt exits 0 whenever the run completed, whatever the tools concluded**, so
+every call passes `--result-to-exitcode` and the verdict reaches the shell. The
+authority is `success` in the `result.yaml` a run names.
+
+**The entry points are measured, not excluded**, which is hard rule 5. They are
+one delegating call each and no test process reaches them, so
+`scripts/cover-entrypoint.sh` builds both with `go build -cover`, runs them, and
+merges the profile. Coverage is judged per file at 80%.
+
+One task is red: `lint` reports 124 issues, each a decision rather than an edit
+because rule 4 admits no pragma.
+`clank/tasks/infobot/jig-adoption/10-adopt-the-go-jig.planning` carries them.
 
 ## Perishable: the pricing table
 

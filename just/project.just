@@ -47,7 +47,22 @@ install: build
 dist:
     @echo "infobot is used from its own tree through bin/infobot"
 
-# remove build output and past run directories
+# THE BINARIES ARE NOT BUILD OUTPUT, THEY ARE DEPLOYED. Claude Code runs
+# `bin/infobot` on every event in every live session, so removing them stops the
+# status line across the whole machine and every session's state file stops
+# being written with it.
+#
+# Measured 2026-08-29: `just clean` during Justfile work removed them, and all
+# 15 state files stopped at 20:31:11. FR-1.13 worked exactly as designed, the
+# shim rendering "infobot is not built" in every pane, but the instruments that
+# read the state files went quiet rather than loud and reported the estate as
+# idle for 25 minutes.
+#
+# So clean removes run directories, which are genuinely disposable, and rebuilds
+# rather than leaving a hole. `just clean` must not be the command that takes
+# the status line down.
+
+# remove past run directories, and leave the deployed binaries built
 clean:
     rm -rf .bolt-*/ .bolt*/
-    rm -f bin/statusline bin/forget
+    @just build

@@ -14,22 +14,16 @@ document's state is prose, so where the two disagree the tree is right.
 
     ( setopt null_glob; print -l ~/.projects/clank/tasks/infobot/**/*.blocked )
 
-## The Go jig is not adopted
+## The gate is red on one task, lint
 
-`bolt.go-std-quality.yaml` judges coverage per file at 80% through an adapter
-that exists. `make cover` applies that bar by hand meanwhile, and every file
-clears it. Statement-weighted from the profile, 2026-08-28:
+The Go jig is adopted and `just checks` runs it. Six of its seven tasks pass,
+along with all four of common-quality. Coverage is 92.8%, per file at the 80%
+bar, with both entry points measured by building with `go build -cover` and
+running them.
 
-    payload 100.0  palette 97.2  segments 97.1  build 96.7  state 94.0
-    width    92.7  num     88.9  pricing 88.3  forget 85.7  usage  81.6
-
-The two entry points are 100 when measured the way the rule requires, built with
-`go build -cover` and run rather than excluded.
-
-**Coverage is not what adoption waits on.** `golangci-lint` reports 124 issues,
-and rule 4 forbids settling any with a pragma, so they are decisions rather than
-edits. 89 are escalated to toolbox, whose shared config has no per-project
-override:
+`golangci-lint` reports 124 issues, and rule 4 forbids settling any with a
+pragma, so each is a decision. 89 are escalated to toolbox, whose shared config
+has no per-project override:
 
     paralleltest      50   tests were never meant to run in parallel
     mnd               26   all 26 checked; none is truly magic
@@ -39,17 +33,12 @@ Three entries under `clank/inbox/toolbox/`. The remaining 35 are infobot's own,
 workable now, and `build.go:230` is the one to start with: it writes the
 program's entire output through an unchecked `Fprintln`.
 
-## The secrets jig cannot gate, and must not be made to look as if it does
+## The secrets jig gates, since toolbox fixed it
 
-`bolt.secrets.yaml` is a symlink into toolbox. Its `detect-secrets` task names a
-baseline no adopter has, so it exits 2 and scans nothing. **Supplying the
-baseline is worse:** `scan --baseline` is a builder, and a newly committed
-credential is absorbed while the run exits 0. Toolbox tracks it as `own-gate/30`
-and leaves it red deliberately, because a missing check and a broken one look
-identical from a green run.
-
-`make leakcheck` runs a working check beside it: `detect-secrets-hook` over the
-tracked file list, then `gitleaks`. Both print what they read.
+Fixed upstream at toolbox `adc8d00`. `detect-secrets scan --baseline` is a
+builder rather than a checker, so it absorbed a newly committed credential and
+exited 0; the task now runs `detect-secrets-hook` over the tracked file list,
+which gates. `common-quality` composes it, so `just checks` reaches it.
 
 ## Smaller things
 
