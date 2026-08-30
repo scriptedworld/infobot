@@ -22,6 +22,13 @@ along with all four of common-quality. Coverage is 92.8%, per file at the 80%
 bar, with both entry points measured by building with `go build -cover` and
 running them.
 
+**Lint is the only red task and it is reached**, which took two fixes on
+2026-08-30 and neither was about the findings. `config/go-std-quality.golangci.yml`
+was never linked, so the task exited 3 on a missing file for as long as the jig
+had been adopted and the 124 below came from running the tool by hand. And
+`common-quality` failed ahead of it on a recipe name, so nothing after it ran at
+all.
+
 `golangci-lint` reports 124 issues, and rule 4 forbids settling any with a
 pragma, so each is a decision. 89 are escalated to toolbox, whose shared config
 has no per-project override:
@@ -40,6 +47,13 @@ Fixed upstream at toolbox `adc8d00`. `detect-secrets scan --baseline` is a
 builder rather than a checker, so it absorbed a newly committed credential and
 exited 0; the task now runs `detect-secrets-hook` over the tracked file list,
 which gates. `common-quality` composes it, so `just checks` reaches it.
+
+It then flagged this repository's own `secrets:` recipe, because
+`detect-secrets` reads the name as an assignment. **silo had already renamed the
+recipe to `leak-scan` at `12a5d4e`**, forty-eight minutes before this repository
+filed the collision as somebody else's problem, and the copy here was the only
+pre-rename one left. Taken at `d33e0c1`, and the pack brought `_verdict` with
+it.
 
 ## Smaller things
 
