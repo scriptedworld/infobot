@@ -25,21 +25,52 @@ running them.
 **Lint is the only red task and it is reached**, which took two fixes on
 2026-08-30 and neither was about the findings. `config/go-std-quality.golangci.yml`
 was never linked, so the task exited 3 on a missing file for as long as the jig
-had been adopted and the 124 below came from running the tool by hand. And
+had been adopted and the count below came from running the tool by hand. And
 `common-quality` failed ahead of it on a recipe name, so nothing after it ran at
 all.
 
-`golangci-lint` reports 124 issues, and rule 4 forbids settling any with a
-pragma, so each is a decision. 89 are escalated to toolbox, whose shared config
-has no per-project override:
+**The 124 this file used to quote was a capped number.** golangci-lint
+truncates its own output by default, `max-issues-per-linter` at 50 and
+`max-same-issues` at 3, and neither the shared config nor the jig turns it off.
+Uncapped, the same tree reported 187. Filed as
+`clank/inbox/toolbox/the-lint-task-reports-a-capped-count`, with both runs as
+evidence, because it reaches every adopter and the fix is one flag pair on the
+jig's command line.
 
-    paralleltest      50   tests were never meant to run in parallel
-    mnd               26   all 26 checked; none is truly magic
+Measure it uncapped or the figure is a floor:
+
+    golangci-lint run --config config/go-std-quality.golangci.yml \
+        --max-issues-per-linter 0 --max-same-issues 0
+
+**152 now**, after the pass of 2026-08-30 cleared everything that needed no
+decision. 130 are escalated to toolbox, whose shared config has no per-project
+override:
+
+    paralleltest      89   tests were never meant to run in parallel
+    mnd               28   none is truly magic; four were never printed
     gochecknoglobals  13   all are types Go's const cannot hold, none mutated
 
-Three entries under `clank/inbox/toolbox/`. The remaining 35 are infobot's own,
-workable now, and `build.go:230` is the one to start with: it writes the
-program's entire output through an unchecked `Fprintln`.
+Three entries under `clank/inbox/toolbox/`, each corrected for the cap.
+
+**The remaining 22 are infobot's own and NOT ONE IS AN EDIT.** All gosec, and
+rule 4 admits no pragma without a person having answered first:
+
+    G304  10   a file opened by computed path: the transcripts, the rate
+               table, and temporary paths a test has just built
+    G306   7   a WriteFile that must land executable. 0600 is not a mode a
+               script runs from, so the rule and the fixture cannot both be
+               satisfied. Any project whose tests write a script meets this
+    G204   3   a subprocess with a variable: the width query the design
+               requires, and two tests invoking the shim
+    G301   1   and G302 1, both the state file. See below
+
+**The state file's mode is a question, not a finding.** gosec wants 0600 where
+it is written 0644, and `TestFileIsReadableByOtherPrograms` pins 0644 while
+citing FR-1.11b, which is about writing whole or not at all and says nothing
+about a mode. The test asserts something no requirement states, and its name
+says "other programs" where the assertion only bites for other users. silo's
+board reads these files as the same user, so 0600 would not break the consumer
+we know about. Tightening it would drop an intent recorded nowhere else.
 
 ## The secrets jig gates, since toolbox fixed it
 

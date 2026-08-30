@@ -163,9 +163,13 @@ carried as the directory's suffix.
 ## Known gaps
 
 `just checks` is red on one task, `lint`. The Go jig runs `golangci-lint` with
-42 analysers and it reports 124 findings, none of which may be settled with a
-suppression pragma, so each is a decision rather than an edit. Every other task
-passes: build, format, tests at 92.8% with the entry points measured, tidy, vet,
+42 analysers and it reports 152 findings, none of which may be settled with a
+suppression pragma, so each is a decision rather than an edit. Most are one of
+three rules asking for a house style this project does not keep. The 22 that are
+its own are all `gosec`, and each is inherent rather than accidental: a file
+opened by computed path, a test fixture that must land executable, or the one
+subprocess that asks the terminal how wide it is. Every other task passes:
+build, format, tests at 92.7% with the entry points measured, tidy, vet,
 vulnerabilities, complexity, traceability, suppressions and secrets.
 
 The two shell shims are read by no checker, because every checker selects by

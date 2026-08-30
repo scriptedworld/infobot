@@ -131,9 +131,18 @@ one delegating call each and no test process reaches them, so
 `scripts/cover-entrypoint.sh` builds both with `go build -cover`, runs them, and
 merges the profile. Coverage is judged per file at 80%.
 
-One task is red: `lint` reports 124 issues, each a decision rather than an edit
-because rule 4 admits no pragma.
+One task is red: `lint`. 152 issues, of which 130 are escalated to toolbox as
+config decisions and 22 are infobot's own, every one of them a gosec finding
+that cannot be settled by an edit. Rule 4 admits no pragma without a person
+having answered first, so they stay red.
 `clank/tasks/infobot/jig-adoption/10-adopt-the-go-jig.planning` carries them.
+
+**Measure that uncapped or it is a floor.** golangci-lint truncates its own
+output by default, at 50 per linter and 3 per repeated message, and neither the
+shared config nor the jig turns it off. The same tree reads 124 capped and 187
+uncapped, and which findings are hidden shifts as the tree changes, so a fix can
+look like a regression. `--max-issues-per-linter 0 --max-same-issues 0`, filed
+for toolbox as `the-lint-task-reports-a-capped-count`.
 
 ## Perishable: the pricing table
 
