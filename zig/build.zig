@@ -28,27 +28,27 @@ pub fn build(b: *std.Build) void {
         "Optimize mode; ReleaseSafe unless asked otherwise",
     ) orelse .ReleaseSafe;
 
-    // Two binaries, matching the Go tree: the status line and the SessionEnd
-    // cleanup. Both are thin entry points over src/, so a test can reach the
-    // work and a checker can read it.
-    const exes = .{
+    installBinaries(b, target, optimize);
+    addTests(b, target, optimize);
+}
+
+/// Two binaries, matching the Go tree: the status line and the SessionEnd
+/// cleanup. Both are thin entry points over src/, so a test can reach the work
+/// and a checker can read it.
+fn installBinaries(b: *std.Build, target: Target, optimize: Mode) void {
+    inline for (.{
         .{ "statusline", "src/main.zig" },
         .{ "forget", "src/forget_main.zig" },
-    };
-
-    inline for (exes) |pair| {
-        const exe = b.addExecutable(.{
+    }) |pair| {
+        b.installArtifact(b.addExecutable(.{
             .name = pair[0],
-            .root_module = b.createModule(.{
-                .root_source_file = b.path(pair[1]),
-                .target = target,
-                .optimize = optimize,
-            }),
-        });
-        b.installArtifact(exe);
+            .root_module = module(b, pair[1], target, optimize),
+        }));
     }
+}
 
-    const test_step = b.step("test", "Run the suite");
+fn addTests(b: *std.Build, target: Target, optimize: Mode) void {
+    const step = b.step("test", "Run the suite");
     inline for (.{
         "src/num.zig",
         "src/payload.zig",
@@ -62,13 +62,18 @@ pub fn build(b: *std.Build) void {
         "src/usage.zig",
         "src/forget.zig",
     }) |path| {
-        const unit = b.addTest(.{
-            .root_module = b.createModule(.{
-                .root_source_file = b.path(path),
-                .target = target,
-                .optimize = optimize,
-            }),
-        });
-        test_step.dependOn(&b.addRunArtifact(unit).step);
+        const unit = b.addTest(.{ .root_module = module(b, path, target, optimize) });
+        step.dependOn(&b.addRunArtifact(unit).step);
     }
 }
+
+fn module(b: *std.Build, path: []const u8, target: Target, optimize: Mode) *std.Build.Module {
+    return b.createModule(.{
+        .root_source_file = b.path(path),
+        .target = target,
+        .optimize = optimize,
+    });
+}
+
+const Target = std.Build.ResolvedTarget;
+const Mode = std.builtin.OptimizeMode;

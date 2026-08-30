@@ -103,16 +103,27 @@ pub fn load(ctx: Ctx) Table {
     const parsed = std.json.parseFromSlice(std.json.Value, ctx.gpa, raw[0..got], .{}) catch return seedTable(ctx);
     const wire = payload.Map.from(parsed.value);
 
-    // Rates arrive as [input, output] pairs, which is the shape the seed is
-    // written in and the shape a person editing the file would copy.
-    const rates_value = (wire.value orelse return seedTable(ctx)).object.get("rates") orelse return seedTable(ctx);
-    const rates_object = switch (rates_value) {
-        .object => |o| o,
-        else => return seedTable(ctx),
-    };
-
     var table: Table = .{};
-    var it = rates_object.iterator();
+    table.rates = readRates(ctx, wire.obj("rates"));
+    if (table.rates.count() == 0) return seedTable(ctx);
+
+    table.cache_read = wire.num("cache_read") orelse seed_cache_read;
+    table.cache_write = readMultipliers(ctx, wire.obj("cache_write"));
+    if (table.cache_write.count() == 0) {
+        for (seed_cache_write) |entry| table.cache_write.put(ctx.gpa, entry.field, entry.multiplier) catch {};
+    }
+    return table;
+}
+
+/// Rates arrive as [input, output] pairs, which is the shape the seed is
+/// written in and the shape a person editing the file would copy.
+fn readRates(ctx: Ctx, rates: payload.Map) std.StringHashMapUnmanaged(Rate) {
+    var out: std.StringHashMapUnmanaged(Rate) = .empty;
+    const object = switch (rates.value orelse return out) {
+        .object => |o| o,
+        else => return out,
+    };
+    var it = object.iterator();
     while (it.next()) |entry| {
         const pair = switch (entry.value_ptr.*) {
             .array => |a| a.items,
@@ -120,27 +131,24 @@ pub fn load(ctx: Ctx) Table {
         };
         if (pair.len < 2) continue;
         const in = payload.asNumber(pair[0]) orelse continue;
-        const out = payload.asNumber(pair[1]) orelse continue;
-        table.rates.put(ctx.gpa, entry.key_ptr.*, .{ .in = in, .out = out }) catch {};
+        const cost = payload.asNumber(pair[1]) orelse continue;
+        out.put(ctx.gpa, entry.key_ptr.*, .{ .in = in, .out = cost }) catch {};
     }
-    if (table.rates.count() == 0) return seedTable(ctx);
+    return out;
+}
 
-    table.cache_read = wire.num("cache_read") orelse seed_cache_read;
-
-    const writes = wire.obj("cache_write");
-    if (writes.value) |wv| {
-        if (wv == .object) {
-            var w = wv.object.iterator();
-            while (w.next()) |entry| {
-                const n = payload.asNumber(entry.value_ptr.*) orelse continue;
-                table.cache_write.put(ctx.gpa, entry.key_ptr.*, n) catch {};
-            }
-        }
+fn readMultipliers(ctx: Ctx, writes: payload.Map) std.StringHashMapUnmanaged(f64) {
+    var out: std.StringHashMapUnmanaged(f64) = .empty;
+    const object = switch (writes.value orelse return out) {
+        .object => |o| o,
+        else => return out,
+    };
+    var it = object.iterator();
+    while (it.next()) |entry| {
+        const n = payload.asNumber(entry.value_ptr.*) orelse continue;
+        out.put(ctx.gpa, entry.key_ptr.*, n) catch {};
     }
-    if (table.cache_write.count() == 0) {
-        for (seed_cache_write) |entry| table.cache_write.put(ctx.gpa, entry.field, entry.multiplier) catch {};
-    }
-    return table;
+    return out;
 }
 
 /// The outcome of pricing a session's totals.

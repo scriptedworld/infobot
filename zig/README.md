@@ -85,6 +85,19 @@ default here and ReleaseFast bought nothing measurable, 5.4ms against 5.8ms,
 inside the run-to-run spread. ReleaseSmall is worth knowing about at 275KB, one
 fourteenth of the ReleaseSafe binary, for a cost of about 0.3ms.
 
+## What reads this tree, which is less than reads the Go one
+
+Measured 2026-08-30 rather than assumed, because assuming it was wrong once:
+
+    lizard          READS IT, and failed the gate on 11 findings the first time
+    detect-secrets  READS IT; it scans `git ls-files` and is language-blind
+    traceability    does not; it globs *.go
+    suppressions    does not; it globs *.go
+    go-std-quality  reads none of it, so no build, vet, format, lint or coverage
+
+`zig build test` is the only thing that runs these unit tests, and nothing in
+the gate runs `zig build test`. Run it yourself.
+
 ## Layout
 
     src/ctx.zig       what every part needs: allocator, Io, environment

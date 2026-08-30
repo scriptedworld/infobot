@@ -135,47 +135,14 @@ pub fn canonical(
 
     try fields.append(gpa, .{ .key = "session", .value = str(session) });
     try fields.append(gpa, .{ .key = "written", .value = str(written) });
-
-    const cwd = data.obj("workspace").str("current_dir");
-    if (cwd.len != 0) try fields.append(gpa, .{ .key = "cwd", .value = str(cwd) });
-
-    var model = data.obj("model").str("display_name");
-    if (model.len == 0) model = data.obj("model").str("id");
-    if (model.len != 0) try fields.append(gpa, .{ .key = "model", .value = str(model) });
-
-    const effort = data.obj("effort").str("level");
-    if (effort.len != 0) try fields.append(gpa, .{ .key = "effort", .value = str(effort) });
+    try describedFields(gpa, data, &fields);
 
     var scratch: std.ArrayList([]u8) = .empty;
     defer {
         for (scratch.items) |item| gpa.free(item);
         scratch.deinit(gpa);
     }
-
-    if (figures(data.obj("context_window"))) |window| {
-        const used: i64 = @intFromFloat(window.used);
-        const size: i64 = @intFromFloat(window.size);
-        // Derived rather than read, and never negative: a payload reporting
-        // more used than the window holds gives zero.
-        var remaining = size - used;
-        if (remaining < 0) remaining = 0;
-
-        const used_text = try std.fmt.allocPrint(gpa, "{d}", .{used});
-        try scratch.append(gpa, used_text);
-        const size_text = try std.fmt.allocPrint(gpa, "{d}", .{size});
-        try scratch.append(gpa, size_text);
-        const remaining_text = try std.fmt.allocPrint(gpa, "{d}", .{remaining});
-        try scratch.append(gpa, remaining_text);
-        // Neither floored nor capped, so a reader sees an over-full window as
-        // over-full where the bar can only draw it as full.
-        const percent_text = try decimal(gpa, num.roundTo(window.percent, 1));
-        try scratch.append(gpa, percent_text);
-
-        try fields.append(gpa, .{ .key = "context_used", .value = raw(used_text) });
-        try fields.append(gpa, .{ .key = "context_size", .value = raw(size_text) });
-        try fields.append(gpa, .{ .key = "context_remaining", .value = raw(remaining_text) });
-        try fields.append(gpa, .{ .key = "context_percent", .value = raw(percent_text) });
-    }
+    try contextFields(gpa, data, &fields, &scratch);
 
     std.mem.sort(Field, fields.items, {}, struct {
         fn lt(_: void, a: Field, b: Field) bool {
@@ -195,6 +162,57 @@ pub fn canonical(
         try out.append(gpa, '\n');
     }
     return out.toOwnedSlice(gpa);
+}
+
+/// The three keys the payload describes rather than measures, each omitted when
+/// the payload does not carry it.
+fn describedFields(gpa: std.mem.Allocator, data: payload.Map, fields: *std.ArrayList(Field)) !void {
+    // The model is display_name where the payload has one and id where it does
+    // not, which is FR-2.8.
+    const model = data.obj("model");
+    const chosen = if (model.str("display_name").len != 0)
+        model.str("display_name")
+    else
+        model.str("id");
+
+    for ([_]Field{
+        .{ .key = "cwd", .value = str(data.obj("workspace").str("current_dir")) },
+        .{ .key = "model", .value = str(chosen) },
+        .{ .key = "effort", .value = str(data.obj("effort").str("level")) },
+    }) |field| {
+        if (field.value.text.len != 0) try fields.append(gpa, field);
+    }
+}
+
+/// The four context keys, which are present together or not at all.
+///
+/// `scratch` owns the rendered numbers, because a `Field` holds a slice rather
+/// than a copy and the caller outlives this frame.
+fn contextFields(
+    gpa: std.mem.Allocator,
+    data: payload.Map,
+    fields: *std.ArrayList(Field),
+    scratch: *std.ArrayList([]u8),
+) !void {
+    const window = figures(data.obj("context_window")) orelse return;
+    const used: i64 = @intFromFloat(window.used);
+    const size: i64 = @intFromFloat(window.size);
+    // Derived rather than read, and never negative: a payload reporting more
+    // used than the window holds gives zero.
+    const remaining = @max(0, size - used);
+
+    const numbers = [_]struct { key: []const u8, text: []u8 }{
+        .{ .key = "context_used", .text = try std.fmt.allocPrint(gpa, "{d}", .{used}) },
+        .{ .key = "context_size", .text = try std.fmt.allocPrint(gpa, "{d}", .{size}) },
+        .{ .key = "context_remaining", .text = try std.fmt.allocPrint(gpa, "{d}", .{remaining}) },
+        // Neither floored nor capped, so a reader sees an over-full window as
+        // over-full where the bar can only draw it as full.
+        .{ .key = "context_percent", .text = try decimal(gpa, num.roundTo(window.percent, 1)) },
+    };
+    for (numbers) |entry| {
+        try scratch.append(gpa, entry.text);
+        try fields.append(gpa, .{ .key = entry.key, .value = raw(entry.text) });
+    }
 }
 
 /// A float written so its type is never in question on the way back in: it

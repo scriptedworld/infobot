@@ -96,21 +96,7 @@ pub fn transcripts(ctx: Ctx, session: []const u8, root_in: []const u8) []const [
     if (session.len == 0) return found.items;
 
     const root = if (root_in.len != 0) root_in else (projects(ctx) orelse return found.items);
-    const wanted = std.fmt.allocPrint(ctx.gpa, "{s}.jsonl", .{session}) catch return found.items;
-
-    var root_dir = ctx.dir().openDir(ctx.io, root, .{ .iterate = true }) catch return found.items;
-    defer root_dir.close(ctx.io);
-
-    // The transcript named by the session id, wherever under the root it sits.
-    var named: ?[]const u8 = null;
-    var projects_it = root_dir.iterate();
-    while (projects_it.next(ctx.io) catch null) |entry| {
-        if (entry.kind != .directory) continue;
-        const candidate = std.fs.path.join(ctx.gpa, &.{ root, entry.name, wanted }) catch continue;
-        ctx.dir().access(ctx.io, candidate, .{}) catch continue;
-        named = candidate;
-        break;
-    }
+    const named = namedTranscript(ctx, root, session);
 
     // Scoped to the project the session belongs to. A clear opens its new
     // transcript beside the old one, so the search never leaves that directory,
@@ -119,16 +105,10 @@ pub fn transcripts(ctx: Ctx, session: []const u8, root_in: []const u8) []const [
     var pool: std.ArrayList([]const u8) = .empty;
     var origin: []const u8 = session;
     if (named) |path| {
-        const dir = std.fs.path.dirname(path).?;
-        collectJsonl(ctx, dir, &pool);
+        collectJsonl(ctx, std.fs.path.dirname(path).?, &pool);
         origin = originOf(ctx, path);
     } else {
-        var all_it = root_dir.iterate();
-        while (all_it.next(ctx.io) catch null) |entry| {
-            if (entry.kind != .directory) continue;
-            const dir = std.fs.path.join(ctx.gpa, &.{ root, entry.name }) catch continue;
-            collectJsonl(ctx, dir, &pool);
-        }
+        everyProject(ctx, root, &pool);
     }
 
     for (pool.items) |path| {
@@ -147,6 +127,34 @@ pub fn transcripts(ctx: Ctx, session: []const u8, root_in: []const u8) []const [
         collectJsonl(ctx, sub, &found);
     }
     return found.items;
+}
+
+/// The transcript the session id names, wherever under the root it sits.
+fn namedTranscript(ctx: Ctx, root: []const u8, session: []const u8) ?[]const u8 {
+    const wanted = std.fmt.allocPrint(ctx.gpa, "{s}.jsonl", .{session}) catch return null;
+    var root_dir = ctx.dir().openDir(ctx.io, root, .{ .iterate = true }) catch return null;
+    defer root_dir.close(ctx.io);
+
+    var it = root_dir.iterate();
+    while (it.next(ctx.io) catch null) |entry| {
+        if (entry.kind != .directory) continue;
+        const candidate = std.fs.path.join(ctx.gpa, &.{ root, entry.name, wanted }) catch continue;
+        ctx.dir().access(ctx.io, candidate, .{}) catch continue;
+        return candidate;
+    }
+    return null;
+}
+
+/// Every transcript under every project, for a session whose own is not there.
+fn everyProject(ctx: Ctx, root: []const u8, pool: *std.ArrayList([]const u8)) void {
+    var root_dir = ctx.dir().openDir(ctx.io, root, .{ .iterate = true }) catch return;
+    defer root_dir.close(ctx.io);
+    var it = root_dir.iterate();
+    while (it.next(ctx.io) catch null) |entry| {
+        if (entry.kind != .directory) continue;
+        const dir = std.fs.path.join(ctx.gpa, &.{ root, entry.name }) catch continue;
+        collectJsonl(ctx, dir, pool);
+    }
 }
 
 fn collectJsonl(ctx: Ctx, dir: []const u8, into: *std.ArrayList([]const u8)) void {
@@ -323,6 +331,38 @@ fn take(ctx: Ctx, found: *Totals, raw: []const u8) void {
     }
 }
 
+/// The per-model counts recorded for one file, back off disk.
+///
+/// Anything that is not a number is skipped rather than coerced. The offsets
+/// are this program's own writing, so a value of another type means the file
+/// was edited or truncated, and a re-sum is slow rather than wrong.
+fn readTotals(ctx: Ctx, models: payload.Map) Totals {
+    var totals: Totals = .empty;
+    const object = switch (models.value orelse return totals) {
+        .object => |o| o,
+        else => return totals,
+    };
+    var it = object.iterator();
+    while (it.next()) |model| {
+        totals.put(ctx.gpa, model.key_ptr.*, readFields(ctx, model.value_ptr.*)) catch {};
+    }
+    return totals;
+}
+
+fn readFields(ctx: Ctx, value: std.json.Value) Fields {
+    var fields: Fields = .empty;
+    const object = switch (value) {
+        .object => |o| o,
+        else => return fields,
+    };
+    var it = object.iterator();
+    while (it.next()) |pair| {
+        const n = payload.asNumber(pair.value_ptr.*) orelse continue;
+        fields.put(ctx.gpa, pair.key_ptr.*, n) catch {};
+    }
+    return fields;
+}
+
 fn load(ctx: Ctx, session: []const u8) std.StringHashMapUnmanaged(FileState) {
     var files: std.StringHashMapUnmanaged(FileState) = .empty;
     const path = offsetPath(ctx, session) orelse return files;
@@ -344,29 +384,9 @@ fn load(ctx: Ctx, session: []const u8) std.StringHashMapUnmanaged(FileState) {
     var it = object.iterator();
     while (it.next()) |entry| {
         const one = payload.Map.from(entry.value_ptr.*);
-        var totals: Totals = .empty;
-        const models = one.obj("totals");
-        if (models.value) |mv| {
-            if (mv == .object) {
-                var m = mv.object.iterator();
-                while (m.next()) |model| {
-                    var fields: Fields = .empty;
-                    if (payload.Map.from(model.value_ptr.*).value) |fv| {
-                        if (fv == .object) {
-                            var f = fv.object.iterator();
-                            while (f.next()) |pair| {
-                                const n = payload.asNumber(pair.value_ptr.*) orelse continue;
-                                fields.put(ctx.gpa, pair.key_ptr.*, n) catch {};
-                            }
-                        }
-                    }
-                    totals.put(ctx.gpa, model.key_ptr.*, fields) catch {};
-                }
-            }
-        }
         files.put(ctx.gpa, entry.key_ptr.*, .{
             .size = @intFromFloat(one.count("size")),
-            .totals = totals,
+            .totals = readTotals(ctx, one.obj("totals")),
         }) catch {};
     }
     return files;
@@ -379,31 +399,14 @@ fn save(ctx: Ctx, session: []const u8, seen: std.StringHashMapUnmanaged(FileStat
 
     var out: std.ArrayList(u8) = .empty;
     out.appendSlice(ctx.gpa, "{\"files\":{") catch return;
-    var first = true;
     var it = seen.iterator();
+    var first = true;
     while (it.next()) |entry| {
-        if (!first) out.append(ctx.gpa, ',') catch return;
-        first = false;
+        comma(ctx, &out, &first);
         quote(ctx, &out, entry.key_ptr.*);
-        out.print(ctx.gpa, ":{{\"size\":{d},\"totals\":{{", .{entry.value_ptr.size}) catch return;
-        var first_model = true;
-        var m = entry.value_ptr.totals.iterator();
-        while (m.next()) |model| {
-            if (!first_model) out.append(ctx.gpa, ',') catch return;
-            first_model = false;
-            quote(ctx, &out, model.key_ptr.*);
-            out.appendSlice(ctx.gpa, ":{") catch return;
-            var first_field = true;
-            var f = model.value_ptr.iterator();
-            while (f.next()) |pair| {
-                if (!first_field) out.append(ctx.gpa, ',') catch return;
-                first_field = false;
-                quote(ctx, &out, pair.key_ptr.*);
-                out.print(ctx.gpa, ":{d}", .{pair.value_ptr.*}) catch return;
-            }
-            out.appendSlice(ctx.gpa, "}") catch return;
-        }
-        out.appendSlice(ctx.gpa, "}}") catch return;
+        out.print(ctx.gpa, ":{{\"size\":{d},\"totals\":", .{entry.value_ptr.size}) catch return;
+        writeTotals(ctx, &out, entry.value_ptr.totals);
+        out.append(ctx.gpa, '}') catch return;
     }
     out.appendSlice(ctx.gpa, "}}") catch return;
 
@@ -418,6 +421,37 @@ fn save(ctx: Ctx, session: []const u8, seen: std.StringHashMapUnmanaged(FileStat
     defer atomic.deinit(ctx.io);
     atomic.file.writeStreamingAll(ctx.io, out.items) catch return;
     atomic.replace(ctx.io) catch {};
+}
+
+/// A separator before every element but the first.
+fn comma(ctx: Ctx, out: *std.ArrayList(u8), first: *bool) void {
+    if (!first.*) out.append(ctx.gpa, ',') catch return;
+    first.* = false;
+}
+
+fn writeTotals(ctx: Ctx, out: *std.ArrayList(u8), totals: Totals) void {
+    out.append(ctx.gpa, '{') catch return;
+    var it = totals.iterator();
+    var first = true;
+    while (it.next()) |model| {
+        comma(ctx, out, &first);
+        quote(ctx, out, model.key_ptr.*);
+        out.append(ctx.gpa, ':') catch return;
+        writeFields(ctx, out, model.value_ptr.*);
+    }
+    out.append(ctx.gpa, '}') catch return;
+}
+
+fn writeFields(ctx: Ctx, out: *std.ArrayList(u8), fields: Fields) void {
+    out.append(ctx.gpa, '{') catch return;
+    var it = fields.iterator();
+    var first = true;
+    while (it.next()) |pair| {
+        comma(ctx, out, &first);
+        quote(ctx, out, pair.key_ptr.*);
+        out.print(ctx.gpa, ":{d}", .{pair.value_ptr.*}) catch return;
+    }
+    out.append(ctx.gpa, '}') catch return;
 }
 
 /// A JSON string. The keys here are file paths and model names, so the escape

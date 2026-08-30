@@ -9,7 +9,9 @@ const payload = @import("payload.zig");
 const rows = @import("rows.zig");
 const state = @import("state.zig");
 const width = @import("width.zig");
-const Ctx = @import("ctx.zig").Ctx;
+const ctxmod = @import("ctx.zig");
+const Ctx = ctxmod.Ctx;
+const View = ctxmod.View;
 
 /// Reads the session JSON on stdin and writes the rows.
 ///
@@ -45,9 +47,11 @@ pub fn main(init: std.process.Init) u8 {
     // cannot draw still leaves its numbers on disk.
     state.write(ctx, data, now);
 
-    const home = ctx.getenv("HOME");
-    const columns = width.terminal(ctx.gpa, ctx.io, ctx.env);
-    const lines = rows.build(ctx, data, home, columns, @floatFromInt(now), "");
+    const lines = rows.build(ctx, data, .{
+        .home = ctx.getenv("HOME"),
+        .width = width.terminal(ctx.gpa, ctx.io, ctx.env),
+        .now = @floatFromInt(now),
+    });
 
     var out_buf: [64 * 1024]u8 = undefined;
     var out = std.Io.File.stdout().writer(ctx.io, &out_buf);

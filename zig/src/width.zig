@@ -2,6 +2,7 @@
 
 const std = @import("std");
 const eaw = @import("eaw.zig");
+const payload = @import("payload.zig");
 
 /// Bounds the wait on a host. A hung multiplexer must not hang a line that
 /// renders on every Claude Code event.
@@ -139,34 +140,44 @@ fn herdrWidth(gpa: std.mem.Allocator, io: std.Io, env: *const std.process.Enviro
 
     const parsed = std.json.parseFromSlice(std.json.Value, gpa, answer, .{}) catch return null;
     defer parsed.deinit();
+    return columnsFromLayout(payload.Map.from(parsed.value).obj("result").obj("layout"), pane);
+}
 
-    const payload = @import("payload.zig");
-    const layout = payload.Map.from(parsed.value).obj("result").obj("layout");
-    const panes_value = (layout.value orelse return null).object.get("panes") orelse return null;
-    const panes = switch (panes_value) {
+/// The columns for one pane, out of a tab's layout.
+fn columnsFromLayout(layout: payload.Map, pane: []const u8) ?usize {
+    const value = layout.value orelse return null;
+    const panes = switch (value.object.get("panes") orelse return null) {
         .array => |a| a.items,
         else => return null,
     };
+    const chosen = panes[pickPane(panes, pane) orelse return null];
+    const m = payload.Map.from(chosen);
 
-    var index: ?usize = null;
+    if (isZoomed(value) and std.mem.eql(u8, m.str("pane_id"), layout.str("focused_pane_id"))) {
+        return @intFromFloat(layout.obj("area").count("width"));
+    }
+    return @intFromFloat(m.obj("rect").count("width"));
+}
+
+/// Which entry is this pane.
+///
+/// A tab holding exactly one pane answers whatever id that pane carries. It is
+/// the one case where not matching the id costs nothing, because there is only
+/// one rectangle it could be, and it covers an id in the environment that no
+/// longer names the pane the process now sits in. Every other mismatch is
+/// reported unknown rather than guessed at.
+fn pickPane(panes: []const std.json.Value, pane: []const u8) ?usize {
     for (panes, 0..) |p, i| {
-        const m = payload.Map.from(p);
-        if (std.mem.eql(u8, m.str("pane_id"), pane)) index = i;
+        if (std.mem.eql(u8, payload.Map.from(p).str("pane_id"), pane)) return i;
     }
-    if (index == null) {
-        if (panes.len != 1) return null;
-        index = 0;
-    }
+    return if (panes.len == 1) 0 else null;
+}
 
-    const chosen = payload.Map.from(panes[index.?]);
-    const zoomed = switch ((layout.value orelse return null).object.get("zoomed") orelse std.json.Value{ .bool = false }) {
+fn isZoomed(layout: std.json.Value) bool {
+    return switch (layout.object.get("zoomed") orelse return false) {
         .bool => |b| b,
         else => false,
     };
-    if (zoomed and std.mem.eql(u8, chosen.str("pane_id"), layout.str("focused_pane_id"))) {
-        return @intFromFloat(layout.obj("area").count("width"));
-    }
-    return @intFromFloat(chosen.obj("rect").count("width"));
 }
 
 /// Puts a question to a host and hands back its stdout. Null means the host

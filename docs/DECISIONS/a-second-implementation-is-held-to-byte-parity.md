@@ -40,14 +40,28 @@ tree agrees today because it is checked today.
 which program writes it is such a change even when the bytes match, because what
 readers depend on would then rest on a different set of measurements.
 
-**And nothing gates it.** Every checker `just checks` runs selects by Go
-extension, so the Zig tree is read by none of them, exactly as the two shell
-shims are. That is `clank/tasks/infobot/gate/10-the-shims-are-read-by-something`
-widened: what is unread is now 12 Zig files as well as 77 lines of shell.
-`zig build test` runs its own unit tests and no checker runs `zig build test`.
+**And it is only half gated.** Two of the four common-quality checkers read it
+and two do not, which was measured rather than assumed:
 
-So deploying it would trade a gated implementation for an ungated one, to gain
-about 1.7ms on a render dominated by a file search both of them share.
+    lizard          READS IT. 382 functions, 6153 nloc, Zig included
+    detect-secrets  READS IT. It scans `git ls-files`, which is language-blind
+    traceability    does not. bin/test-traceability.py globs *.go
+    suppressions    does not. bin/suppression-register.py:87 globs *.go
+
+`go-std-quality` reads none of it, so there is no build, vet, format, lint or
+coverage check over the Zig tree at all. `zig build test` runs its own unit
+tests and nothing in the gate runs `zig build test`.
+
+**The first draft of this file said nothing read it**, which was inherited from
+`docs/PROJECT.md`'s measurement of the shell shims and generalised to a language
+nobody had checked. lizard disproved it within the hour by failing the gate on
+11 findings in this tree: four functions over the complexity limit, four over
+the argument limit, and three over both. All eleven were fixed rather than
+excluded, which is hard rule 4, and the fix is what the parity harnesses then
+re-verified.
+
+So deploying it would trade a fully gated implementation for a half gated one,
+to gain about 1.7ms on a render dominated by a file search both of them share.
 
 ## What it is good for
 

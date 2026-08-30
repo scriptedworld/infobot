@@ -6,7 +6,9 @@ const payload = @import("payload.zig");
 const palette = @import("palette.zig");
 const state = @import("state.zig");
 const width = @import("width.zig");
-const Ctx = @import("ctx.zig").Ctx;
+const ctxmod = @import("ctx.zig");
+const Ctx = ctxmod.Ctx;
+const View = ctxmod.View;
 
 pub const brain = "🧠";
 pub const hourglass = "⏳";
@@ -281,17 +283,29 @@ fn elapsedFraction(resets_at: f64, span: i64, now: f64) ?f64 {
 /// It is deliberately UNCOLOURED. It wants its own scale and probably an
 /// inverted one, running TOWARD green as it nears zero, since a reset getting
 /// closer is good news. Undecided, so left plain rather than guessed at.
-pub fn limitSegment(
-    ctx: Ctx,
+pub const Limit = struct {
+    /// The emoji and the name together, because they are one fixed string at
+    /// both call sites.
     label: []const u8,
-    window: payload.Map,
+    /// The payload key naming this window.
+    key: []const u8,
+    /// How long the window is, in seconds.
     span: i64,
-    compact: bool,
-    now: f64,
-) []const u8 {
+};
+
+/// The two windows the payload carries.
+pub const limits = [_]Limit{
+    .{ .label = hourglass ++ " 5hr", .key = "five_hour", .span = five_hour },
+    .{ .label = calendar ++ " 7d", .key = "seven_day", .span = seven_day },
+};
+
+pub fn limitSegment(ctx: Ctx, limit: Limit, window: payload.Map, view: View) []const u8 {
     if (window.isEmpty()) return "";
     const pct = window.num("used_percentage") orelse return "";
     const resets_at = window.count("resets_at");
+    const now = view.now;
+    const span = limit.span;
+    const label = limit.label;
 
     // Concern where it can be worked out, raw spend where it cannot: with no
     // reset time there is no window position, so the gauge falls back to
@@ -304,7 +318,7 @@ pub fn limitSegment(
     const held = ctx.gpa.dupe(u8, tint) catch tint;
 
     var gauge = bar(ctx, pct, window_cells, held);
-    if (compact) {
+    if (view.compact) {
         const text = std.fmt.allocPrint(ctx.gpa, "{s}%", .{num.fixed(ctx.gpa, pct, 0)}) catch "";
         gauge = tinted(ctx, text, held);
     }
