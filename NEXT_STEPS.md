@@ -59,8 +59,16 @@ for a published repository, and **not a one-line change**: FR-1.11p pins those
 bytes at both ends, so it needs wrench in the loop. Do it in the same pass as
 the link decision below.
 
-**No remote.** `clone = false` in the roster, and no repository in the estate
-has one; a history rewrite stripped them.
+**No remote, deliberately, and it is not a blocker.** `clone = false` in the
+roster. The commit histories were scrubbed to clean up their messages, which
+removed the remotes, and they are being left off on purpose: while a repository
+is offline no copy anywhere can hold a reference to the rewritten-away history.
+
+**What ends it is the documentation, not a decision about hosting.** These
+projects go up once their documentation is clean and appropriate. So a document
+reporting the missing remote as an open question or an obstacle is wrong, and
+`docs/DECISIONS/the-remotes-are-off-until-the-documentation-is-ready.md` is the
+long form.
 
 **`PACE_CONFIDENT` at 0.6 and the squared fade** were tuned by eye against one
 evening's numbers. Expect them to move; only normal use answers whether the
