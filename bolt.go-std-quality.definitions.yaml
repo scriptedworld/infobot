@@ -1,0 +1,19 @@
+# infobot's values for the placeholders in bolt.go-std-quality.yaml.
+#
+# A flat mapping of placeholder name to scalar value. There is no `definitions:`
+# wrapper: the jig has one because the block sits inside a larger document, and
+# this document is nothing else.
+#
+# One entry, and it exists because of hard rule 5: a coverage failure is never
+# settled by excluding the file. This project has TWO entry points, one
+# delegating call each, and neither is reachable from a test process. The shared
+# jig leaves a slot for measuring them rather than a rule for how, because every
+# project's binaries and their smallest safe invocations are different.
+#
+# A placeholder is ONE ARGUMENT and is shell-quoted, so this names a program and
+# never a command line. The build-and-run chain lives in the script, which is
+# where the two invocations and the moved XDG_STATE_HOME belong.
+#
+# The path is relative to the base rather than to {config_dir}, because the
+# script belongs to this project and not to the shared definition it fills in.
+entrypoint: scripts/cover-entrypoint.sh

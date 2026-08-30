@@ -16,9 +16,20 @@ __pycache__/
 # Adopted jig links, and the run directories they produce. The links resolve
 # into toolbox; in a built image the same files arrive from the anvil layer
 # beneath, so a committed copy would be a third statement of one thing.
-bolt.*.yaml
+#
+# NAMED ONE AT A TIME rather than as `bolt.*.yaml`, because that glob also
+# swallows `bolt.go-std-quality.definitions.yaml`, which is this project's own
+# values for the shared jig's placeholders and has to be committed. qwark met
+# the same trap and its .gitignore carries the same list for the same reason.
+bolt.common-quality.yaml
+bolt.go-std-quality.yaml
+bolt.secrets.yaml
 adapters/
+
+# Run directories. A run's artefacts belong to the run rather than the repo, and
+# the stamp format changed with the Rust build, so both are covered.
 .bolt-*/
+.bolt*/
 
 # Adopted checker scripts, linked into bin/ from toolbox.
 bin/*.py
