@@ -255,13 +255,18 @@ fn copyInto(ctx: Ctx, into: *Totals, from: Totals) void {
 }
 
 fn mergeInto(ctx: Ctx, into: *Totals, more: Totals) void {
+    // LABELLED, and the behaviour is unchanged. An unlabeled `continue` in the
+    // inner loop already continued the inner loop, which is what was meant:
+    // a field that cannot be recorded is skipped and the rest of the model's
+    // counts still merge. The label says so rather than leaving a reader to
+    // recall the rule, which is what `require_labeled_continue` is for.
     var it = more.iterator();
-    while (it.next()) |entry| {
-        const got = into.getOrPut(ctx.gpa, entry.key_ptr.*) catch continue;
+    models: while (it.next()) |entry| {
+        const got = into.getOrPut(ctx.gpa, entry.key_ptr.*) catch continue :models;
         if (!got.found_existing) got.value_ptr.* = .empty;
         var f = entry.value_ptr.iterator();
-        while (f.next()) |pair| {
-            const slot = got.value_ptr.getOrPut(ctx.gpa, pair.key_ptr.*) catch continue;
+        fields: while (f.next()) |pair| {
+            const slot = got.value_ptr.getOrPut(ctx.gpa, pair.key_ptr.*) catch continue :fields;
             if (!slot.found_existing) slot.value_ptr.* = 0;
             slot.value_ptr.* += pair.value_ptr.*;
         }

@@ -211,9 +211,17 @@ pub fn price(ctx: Ctx, totals: usage.Totals) ?Priced {
 
 /// Dollars at the precision the number deserves rather than always two decimals.
 pub fn money(gpa: std.mem.Allocator, dollars: f64) []const u8 {
-    if (dollars >= 1000) return std.fmt.allocPrint(gpa, "${d:.1}k", .{dollars / 1000}) catch "";
-    if (dollars >= 100) return std.fmt.allocPrint(gpa, "${d:.0}", .{dollars}) catch "";
-    return std.fmt.allocPrint(gpa, "${d:.2}", .{dollars}) catch "";
+    // num.fixed rather than `{d:.N}`, for the reason the percentage uses it:
+    // Zig rounds a tie away from zero and Go takes the even neighbour.
+    //
+    // 432 PARITY CASES MISSED THIS. The edit that wired every other call site
+    // failed silently here, and no parity case ever put a cost on a tie because
+    // those figures come from real transcripts. What found it was a linter
+    // reporting the `num` import as unused, which is the only evidence there
+    // was that a fix had not landed.
+    if (dollars >= 1000) return std.fmt.allocPrint(gpa, "${s}k", .{num.fixed(gpa, dollars / 1000, 1)}) catch "";
+    if (dollars >= 100) return std.fmt.allocPrint(gpa, "${s}", .{num.fixed(gpa, dollars, 0)}) catch "";
+    return std.fmt.allocPrint(gpa, "${s}", .{num.fixed(gpa, dollars, 2)}) catch "";
 }
 
 test "money picks its precision by magnitude" {
@@ -228,6 +236,12 @@ test "money picks its precision by magnitude" {
         .{ .in = 814.3, .want = "$814" },
         .{ .in = 1000, .want = "$1.0k" },
         .{ .in = 4523, .want = "$4.5k" },
+        // THE TIES, WHICH IS WHAT WAS MISSING. Verified to bite: restoring
+        // `{d:.0}` makes the first of these fail with $101.
+        .{ .in = 100.5, .want = "$100" },
+        .{ .in = 101.5, .want = "$102" },
+        .{ .in = 2500, .want = "$2.5k" },
+        .{ .in = 0.125, .want = "$0.12" },
     }) |c| {
         try std.testing.expectEqualStrings(c.want, money(gpa, c.in));
     }

@@ -11,7 +11,6 @@ const state = @import("state.zig");
 const width = @import("width.zig");
 const ctxmod = @import("ctx.zig");
 const Ctx = ctxmod.Ctx;
-const View = ctxmod.View;
 
 /// Reads the session JSON on stdin and writes the rows.
 ///

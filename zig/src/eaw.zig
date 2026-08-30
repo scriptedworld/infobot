@@ -6,8 +6,6 @@
 //
 // Zero is Mn and Me, the non-spacing and enclosing marks. Two is East Asian
 // Wide and Fullwidth, which is where the emoji live.
-const std = @import("std");
-
 const Span = struct { lo: u21, hi: u21 };
 
 const zero_width = [_]Span{
