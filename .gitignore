@@ -46,3 +46,9 @@ bin/*.py
 # which is FR-1.13 and the reason the shims are the committed half.
 bin/statusline
 bin/forget
+
+# Zig's build output and its cache. src/eaw.zig is generated too and IS
+# committed, because regenerating it needs the Go module and the point of it is
+# that both implementations measure a column the same way.
+zig/zig-out/
+zig/.zig-cache/
