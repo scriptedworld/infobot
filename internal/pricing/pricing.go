@@ -69,6 +69,8 @@ var seedRates = map[string]Rate{
 // off rather than free, and on a long session it is the largest single line. A
 // write costs more than a fresh input token, which is why the two are priced
 // apart rather than lumped together as "cache".
+
+// SeedCacheRead is the read multiplier: a tenth of the input rate.
 const SeedCacheRead = 0.1
 
 var seedCacheWrite = map[string]float64{

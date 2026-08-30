@@ -32,18 +32,23 @@ func Main(stdin io.Reader, log io.Writer) int {
 	if json.Unmarshal(raw, &data) != nil || data == nil {
 		return 0
 	}
+	// THE THREE WRITES BELOW DISCARD THEIR ERROR DELIBERATELY. The log is
+	// stderr, so a failed write has nowhere to be reported, and the exit code
+	// is 0 by contract because a hook that raises interrupts somebody closing
+	// their terminal. `_ =` says that was decided rather than overlooked, which
+	// is what an unchecked call cannot say.
 	session := data.Str("session_id")
 	if !Named(session) {
-		fmt.Fprintf(log, "forget-session: refused session id %q\n", session)
+		_, _ = fmt.Fprintf(log, "forget-session: refused session id %q\n", session)
 		return 0
 	}
 
 	removed := Remove(session)
 	if len(removed) == 0 {
-		fmt.Fprintf(log, "forget-session: %s had nothing to remove\n", session)
+		_, _ = fmt.Fprintf(log, "forget-session: %s had nothing to remove\n", session)
 		return 0
 	}
-	fmt.Fprintf(log, "forget-session: %s removed %s\n", session, strings.Join(removed, " "))
+	_, _ = fmt.Fprintf(log, "forget-session: %s removed %s\n", session, strings.Join(removed, " "))
 	return 0
 }
 

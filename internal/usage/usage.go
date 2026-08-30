@@ -133,7 +133,8 @@ func originOf(path string) string {
 	if err != nil {
 		return stem(path)
 	}
-	defer handle.Close()
+	// Read-only, so nothing is buffered and a close error carries no news.
+	defer func() { _ = handle.Close() }()
 
 	scanner := bufio.NewScanner(handle)
 	scanner.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
@@ -231,7 +232,8 @@ func scan(path string, start int64) (Totals, int64) {
 	if err != nil {
 		return Totals{}, 0
 	}
-	defer handle.Close()
+	// Read-only, so nothing is buffered and a close error carries no news.
+	defer func() { _ = handle.Close() }()
 	if _, err := handle.Seek(start, 0); err != nil {
 		return Totals{}, 0
 	}
@@ -336,14 +338,17 @@ func save(sessionID string, state offsets) {
 	if path == "" {
 		return
 	}
-	if os.MkdirAll(filepath.Dir(path), 0o755) != nil {
+	// OWNER ONLY. The offsets are this user's own byte positions into their own
+	// transcripts, read by nothing but this program, so the group and world
+	// bits were breadth nobody asked for.
+	if os.MkdirAll(filepath.Dir(path), 0o750) != nil {
 		return
 	}
 	raw, err := json.Marshal(state)
 	if err != nil {
 		return
 	}
-	_ = os.WriteFile(path, raw, 0o644)
+	_ = os.WriteFile(path, raw, 0o600)
 }
 
 // Forget drops this session's offsets.

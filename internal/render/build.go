@@ -76,7 +76,8 @@ func limitParts(data payload.Map, compact bool, now time.Time) []string {
 		{hourglass + " 5hr", "five_hour", fiveHour},
 		{calendar + " 7d", "seven_day", sevenDay},
 	} {
-		if seg := LimitSegment(window.label, limits.Obj(window.key), window.span, compact, now); seg != "" {
+		seg := LimitSegment(window.label, limits.Obj(window.key), window.span, compact, now)
+		if seg != "" {
 			parts = append(parts, seg)
 		}
 	}
@@ -226,8 +227,15 @@ func Main(stdin io.Reader, stdout io.Writer) int {
 	if err != nil {
 		home = ""
 	}
+	// STOP AT THE FIRST FAILED WRITE rather than discarding the error. There is
+	// nowhere to report it, since stdout is the thing that failed and the exit
+	// code is 0 by contract, but a second row written after the first failed is
+	// a torn status line rather than a missing one, and torn is harder to read
+	// as broken.
 	for _, row := range Build(data, home, TerminalWidth(), time.Now()) {
-		fmt.Fprintln(stdout, row)
+		if _, err := fmt.Fprintln(stdout, row); err != nil {
+			break
+		}
 	}
 	return 0
 }
