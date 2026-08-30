@@ -1,24 +1,19 @@
-# The two-word interface. `just <thing>` and nothing else to learn.
+# The two-word interface. Ten recipes, the same words in every tree here.
 #
-# THIS FILE DEFINES NO RECIPE BUT `default`, and that is structure rather than
-# taste. Measured against just 1.58.0: a base and a language layer both defining
-# `test` is a hard error that kills every recipe in the tree, not an override.
+# THIS FILE DEFINES NO RECIPE EXCEPT `default`, AND THAT IS LOAD-BEARING.
+# just 1.58.0 lets an importing file beat what it imports, so any recipe
+# written here would permanently shadow the language layer's real one. Among
+# imports the FIRST listed wins, which is why the order below runs most
+# specific to least.
 #
-#     error: recipe `test` first defined on line 1 is redefined on line 4
+#     just/project.just   this project's own. No template writes it.
+#     just/lang.just      the language layer's.
+#     just/base.just      the ten, supplied for every project.
 #
-# `allow-duplicate-recipes` removes the error and, among imports, the FIRST
-# listed wins. So the ordering below gives project over language over base, and
-# falls through cleanly as layers are absent.
+# `default` is the exception and has to be here: defined in an import it is not
+# found, and bare `just` answers "justfile contains no default recipe".
 #
-# `default` must sit here. Defined in an import it is not found, and bare `just`
-# reports no default recipe.
-#
-# Ownership, from silo's decision: a template owns `Justfile` and
-# `just/base.just`, a language layer owns `just/lang.just`, and
-# `just/project.just` belongs to the project and no template writes it. Those
-# templates do not exist yet, so all three here are the first of their kind and
-# are written to be lifted rather than to stay.
-
+# silo/docs/DECISIONS/a-justfile-gives-every-project-the-same-two-word-interface.md
 set allow-duplicate-recipes := true
 
 import? 'just/project.just'

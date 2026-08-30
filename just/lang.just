@@ -21,14 +21,26 @@
 # Cheapest first, so a failure surfaces before the slow checks run.
 #
 # TWO JIGS AND NOT THREE. common-quality composes the secrets jig as a task of
-# its own, so `checks` reaches it by construction. Listing `bolt secrets .` here
+# its own, so `checks` reaches it by construction. Listing the secrets jig here
 # as well would run detect-secrets and gitleaks over the whole history twice for
-# one verdict. The `secrets` recipe stays for running that piece alone.
+# one verdict. The `leak-scan` recipe stays for running that piece alone.
+#
+# THROUGH `_verdict`, WHICH IS BASE'S AND READS THE ARTIFACT. bolt exits 0
+# whenever a run completed, whatever the tools concluded, so a status is
+# evidence the run happened and never evidence it passed.
+# `--result-to-exitcode` asks bolt to translate, and `_verdict` reads `success`
+# out of the result file bolt names instead, so a run that writes no result at
+# all is refused rather than read as a pass. That is hard rule 6, and it is
+# structure here rather than a habit to remember.
+#
+# `--definitions` IS PASSED THROUGH, which is what makes `_verdict` variadic: a
+# recipe cannot add an argument to another recipe's command line, so an adopter
+# filling a placeholder has to be able to hand its flags over.
 
 # all the quality tooling
 checks:
-    bolt common-quality . --result-to-exitcode
-    bolt --definitions go-std-quality go-std-quality . --result-to-exitcode
+    @just _verdict common-quality
+    @just _verdict go-std-quality --definitions go-std-quality
 
 # Race and shuffle are the jig's, and are here too so that running the piece
 # alone asks the same question the gate does.
@@ -43,7 +55,7 @@ test:
 
 # the suite with coverage, and the minimum enforced
 coverage:
-    bolt --definitions go-std-quality go-std-quality . --result-to-exitcode
+    @just _verdict go-std-quality --definitions go-std-quality
 
 # gofmt lists unformatted files on stdout and exits 0 whatever it finds, so its
 # exit status answers "did gofmt run" and never "is this formatted". `test -z`

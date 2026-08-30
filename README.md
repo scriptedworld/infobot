@@ -122,15 +122,16 @@ a Rust one means typing the same words:
     just build         the two binaries
     just install       rebuild, and prove bin/ matches its source
     just dist          nothing; infobot is used from its own tree
-    just clean         build output and past run directories
-    just secrets       the secrets jig alone
+    just clean         past run directories, and the binaries left built
+    just leak-scan     the secrets jig alone
 
 `just` on its own lists them.
 
-**`just checks` is the whole gate and contains the others.** It runs three bolt
+**`just checks` is the whole gate and contains the others.** It runs two bolt
 jigs: `common-quality` for complexity, traceability, suppressions and secrets;
-`go-std-quality` for build, format, lint, tests, tidy, vet and vulnerabilities;
-and `secrets` alone.
+and `go-std-quality` for build, format, lint, tests, tidy, vet and
+vulnerabilities. The secrets jig is composed into the first rather than listed
+again, so `leak-scan` is for running that piece by itself.
 
 Those jigs and their adapters are symlinks into a sibling repository and are
 gitignored, so a clone without that sibling cannot run `just checks`. `just
