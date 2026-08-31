@@ -48,3 +48,7 @@ bin/statusline
 bin/forget
 
 zig/.zig-cache/
+
+# Zig build output, from an implementation retired at 2c19f0b. Kept ignored
+# because a rebuild of that tree must not land binaries here.
+zig/
