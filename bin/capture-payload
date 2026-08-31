@@ -1,0 +1,29 @@
+#!/bin/sh
+# Record what Claude Code sends the status line, then render normally.
+#
+# Point the statusLine command here instead of at bin/infobot. Every render
+# appends one line of the raw stdin payload to the log, so `rate_limits` and
+# anything else the harness sends becomes inspectable after the fact.
+#
+#     jq -c '.rate_limits' ~/.local/state/infobot/payloads.jsonl | tail -5
+#
+# THE RENDER MUST NOT DEPEND ON THE CAPTURE. The payload is read once into a
+# variable, the log write is allowed to fail silently, and the real binary is
+# fed from the variable rather than from a pipe that the tee could break. A
+# status line that stops drawing because its debugging broke is worse than no
+# debugging.
+#
+# Remove it by pointing statusLine back at bin/infobot. Nothing here is
+# permanent and nothing else reads the log.
+
+set -u
+
+log="${INFOBOT_PAYLOAD_LOG:-$HOME/.local/state/infobot/payloads.jsonl}"
+real="$(dirname "$0")/infobot"
+
+payload="$(cat)"
+
+mkdir -p "$(dirname "$log")" 2>/dev/null || true
+printf '%s\n' "$payload" >>"$log" 2>/dev/null || true
+
+printf '%s' "$payload" | exec "$real" "$@"
