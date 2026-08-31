@@ -122,6 +122,54 @@ silo's dispatch tooling, so a reader over every session's file already exists
 and has an owner. What remains is narrower, being where intent comes from and
 whose vocabulary it uses.
 
+## The rows want describing in configuration rather than in code
+
+Wanted, not scheduled, and not started. The shape of each row would be lines in
+a configuration file naming the segments and their order, so changing what the
+status line shows stops being a code change.
+
+**Most of the way there already.** Every segment is a function taking the
+payload and returning a string, and `compose` does nothing but pick them and put
+them in order. A template naming `model`, `path`, `context`, `session` would
+drive that loop with no segment needing to change.
+
+**The width fitting is what does not fall out of it, and it is the whole
+difficulty.** Fitting is not a property of any segment: the context bar takes
+whatever the row has left, which means measuring every other segment first, and
+the meter row compacts as a unit when it is over budget. So a template has to
+say more than an order. It has to say which segment absorbs the slack, which
+may be dropped, and in what order things give way, and that vocabulary does not
+exist yet.
+
+Worth doing after the compaction coupling below is fixed rather than before.
+Describing the current fitting behaviour in configuration would be encoding a
+defect in a file format.
+
+## Compaction hands row one a budget it did not have
+
+`Build` composes both rows, measures the meter row, and recomposes BOTH rows
+compacted when it is over budget. Row one then has more slack than it did, so
+the cost segment can take back detail it had already given up as the pane
+narrows, which FR-5.7 forbids.
+
+**Compaction is a decision about row two and should not hand row one a budget
+it did not have.**
+
+It is latent rather than firing: the monotonicity holds at ten gauge cells by
+where two thresholds happen to sit, not by construction. Measured 2026-08-31 at
+`9bfbfdf`, with no other change, widening the gauge to eleven cells breaks
+`TestCostShortensThenDropsAsTheRowNarrows` and twelve and thirteen break it too.
+Nine and ten pass.
+
+The reading beside each gauge is therefore declined below `readingMin` columns,
+which is not a weaker claim but a refusal to make the claim where it cannot be
+held. Fixing the coupling is what would let that restriction go.
+
+The obvious repair, keeping row one from the first composition and taking only
+row two from the second, is unsafe as it stands: `placeContext` moves the
+context segment between the rows, so one row from each composition can duplicate
+or drop it.
+
 ## Two things that constrain changes to the state file
 
 **It has a reader outside this repository.** silo's coordination board pulls
