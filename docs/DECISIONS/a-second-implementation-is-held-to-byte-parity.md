@@ -1,5 +1,27 @@
 # A second implementation is held to byte parity, and is not deployed
 
+**RETIRED 2026-08-31. The Zig tree is deleted and the parity check with it.**
+Go remains the deployed and only implementation. The reasoning below is kept
+because it is why a second implementation was worth building at all, and
+because the parity harness is the part worth rebuilding if a third ever exists.
+
+Why it went, on cost first. `docs/LESSONS/byte-parity-cannot-see-what-a-program-costs.md`
+measured it with `poop` and `hyperfine -N` under `taskset` on a 6.3MB
+transcript: Go 2.8ms against Zig 13.2ms, 3.08M instructions against 58.0M, and
+peak RSS of 8.9-13.6MB against 26-371MB. Identical output, nineteen times the
+instructions, and the cause was an arena that never freed.
+
+The toolchain's ecosystem is the second reason and would have been enough on
+its own, but it is not what decided this.
+
+**Both cost measurements in this repository's history were taken on the same
+axis and only one was trustworthy.** A later run using a Python wrapper, ten
+iterations, no CPU pinning, on a machine running eight other sessions, reported
+Zig ahead by 2x. It was measuring scheduler noise. The instrument that answered
+was the one that pinned the CPU and counted instructions.
+
+---
+
 2026-08-30. There is now a Zig implementation of the status line in `zig/`,
 built on request. It renders the same two rows and writes the same
 `.status.yaml`, and it is checked byte for byte against the Go one rather than
