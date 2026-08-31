@@ -71,7 +71,7 @@ checked by the traceability task of `bolt common-quality`. The six rows marked
 
 | ID | Requirement | |
 |---|---|---|
-| FR-3.1 | Colour is 24-bit. The environment Claude Code's 256-colour cap depends on is set in `silo/settings.json` rather than left to the terminal. | [A/D] |
+| FR-3.1 | Colour is 24-bit. The environment Claude Code's 256-colour cap depends on is set in the harness settings file rather than left to the terminal. | [A/D] |
 | FR-3.2 | Refresh is time-based as well as event-based, so a quiet session does not show a stale countdown. | [A/D] |
 | FR-3.3 | The terminal width is established or reported as unknown, never guessed. Every ordinary route fails under Claude Code, so whatever owns the pane is asked directly, tmux or herdr, innermost first. A host that cannot be asked yields unknown, which means render the full form. | [D] |
 | FR-3.4 | A fabricated default returned by a library in place of an answer is treated as absent data. | [D] |

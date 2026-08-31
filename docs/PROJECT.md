@@ -76,7 +76,7 @@ marks for FR-1.13 both ways, FR-3.8, FR-1.9 and FR-1.11f. What is unread is the
 text, so what is genuinely exposed is a suppression pragma in shell going
 unregistered, and any defect on a path those five do not walk.
 
-It is `clank/tasks/infobot/gate/10-*`, blocked on toolbox's shell jig, and
+It is tracked, blocked on toolbox's shell jig, and
 neither `shellcheck` nor `shfmt` is installed on this machine yet.
 
 ## Layout
@@ -106,7 +106,7 @@ told about. The shim is what turns that silence into a row saying so.
 
 ## How it is invoked
 
-`silo/settings.json` names it by absolute path:
+the harness settings file names it by absolute path:
 
     "statusLine": { "type": "command", "command": ".../infobot/bin/infobot",
                     "refreshInterval": 10 }
@@ -135,7 +135,7 @@ One task is red: `lint`. 152 issues, of which 130 are escalated to toolbox as
 config decisions and 22 are infobot's own, every one of them a gosec finding
 that cannot be settled by an edit. Rule 4 admits no pragma without a person
 having answered first, so they stay red.
-`clank/tasks/infobot/jig-adoption/10-adopt-the-go-jig.planning` carries them.
+the task tracker.planning` carries them.
 
 **Measure that uncapped or it is a floor.** golangci-lint truncates its own
 output by default, at 50 per linter and 3 per repeated message, and neither the
@@ -196,7 +196,7 @@ renders with no config file and no network.
 
 Done rather than decided: Go. The port landed on 2026-08-28 and the Python is
 gone. It was checked against the 18-case golden corpus in
-`clank/tasks/infobot/status-line/05-*/golden/`, which reads 17 of 18 identical;
+the golden corpus, which reads 17 of 18 identical;
 the eighteenth is `malformed-resets`, and it differs because the Python wrapped
 the whole render in a bare `except` so one bad field blanked both rows. That was
 FR-1.4's known gap, captured deliberately so that fixing it would show up here

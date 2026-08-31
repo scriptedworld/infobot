@@ -259,8 +259,8 @@ func TestIdentityRowShowsPathsAndSession(t *testing.T) {
 		"model":      map[string]any{"display_name": "Opus 5"},
 		"effort":     map[string]any{"level": "high"},
 		"workspace": map[string]any{
-			"current_dir": "/home/me/.projects/silo/bin",
-			"project_dir": "/home/me/.projects/silo",
+			"current_dir": "/home/me/.projects/demo/bin",
+			"project_dir": "/home/me/.projects/demo",
 		},
 	}, "/home/me", 200, clock)
 
@@ -268,10 +268,10 @@ func TestIdentityRowShowsPathsAndSession(t *testing.T) {
 	if !strings.Contains(row, "Opus 5 - high") {
 		t.Errorf("model and effort missing: %q", row)
 	}
-	if !strings.Contains(row, "~/.projects/silo/bin") {
+	if !strings.Contains(row, "~/.projects/demo/bin") {
 		t.Errorf("path not shown relative to home: %q", row)
 	}
-	if !strings.Contains(row, "⌂ ~/.projects/silo") {
+	if !strings.Contains(row, "⌂ ~/.projects/demo") {
 		t.Errorf("project root not marked: %q", row)
 	}
 	if !strings.Contains(row, "⟨a5e58a4d⟩") {
@@ -289,8 +289,8 @@ func TestProjectRootHiddenWhenItMatchesTheWorkingDirectory(t *testing.T) {
 	rows := render.Build(payload.Map{
 		"model": map[string]any{"display_name": "Opus 5"},
 		"workspace": map[string]any{
-			"current_dir": "/home/me/.projects/silo",
-			"project_dir": "/home/me/.projects/silo",
+			"current_dir": "/home/me/.projects/demo",
+			"project_dir": "/home/me/.projects/demo",
 		},
 	}, "/home/me", 200, clock)
 	if strings.Contains(rows[0], "⌂") {
@@ -314,7 +314,7 @@ func TestRowsFitInsideTheBudget(t *testing.T) {
 		rows := render.Build(payload.Map{
 			"session_id":     "a5e58a4d-2a4e-4774-aa6c-1e7745721df6",
 			"model":          map[string]any{"display_name": "Opus 5"},
-			"workspace":      map[string]any{"current_dir": "/home/me/.projects/silo"},
+			"workspace":      map[string]any{"current_dir": "/home/me/.projects/demo"},
 			"context_window": window(48),
 			"rate_limits": map[string]any{
 				"five_hour": map[string]any{"used_percentage": 34.0, "resets_at": at(3600)},

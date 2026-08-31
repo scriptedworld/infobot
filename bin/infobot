@@ -3,10 +3,9 @@
 # settings.json, so this file is committed and the binary beside it is not.
 #
 # RESOLVE SYMLINKS BEFORE LOOKING FOR THE BINARY. Claude Code reaches this
-# through `silo/bin/statusline`, which is a symlink to this file. `dirname "$0"`
-# on the symlink's own path gives silo/bin, so the binary this looked for was
-# silo/bin/statusline, which is the symlink, which is this script. It exec'd
-# itself, forever.
+# through a symlink in some other directory. `dirname "$0"` on the symlink's
+# own path gives that directory, so the binary this looked for was the symlink
+# itself, which is this script. It exec'd itself, forever.
 #
 # That ran for 35 minutes across ten sessions on 2026-08-28 and cost every
 # session its state file, silently: the loop never reaches the render, so there

@@ -36,7 +36,7 @@ func full() payload.Map {
 		"session_id": "abcd-1234",
 		"model":      map[string]any{"display_name": `Opus 5 "1M" \ context`},
 		"effort":     map[string]any{"level": "xhigh"},
-		"workspace":  map[string]any{"current_dir": "/home/ancient/.projects/infobot"},
+		"workspace":  map[string]any{"current_dir": "/home/me/.projects/infobot"},
 		"context_window": map[string]any{
 			"context_window_size": 1000000.0,
 			"used_percentage":     48.2,
@@ -61,7 +61,7 @@ func TestCanonicalForm(t *testing.T) {
 "context_remaining": 520000
 "context_size": 1000000
 "context_used": 480000
-"cwd": "/home/ancient/.projects/infobot"
+"cwd": "/home/me/.projects/infobot"
 "effort": "xhigh"
 "model": "Opus 5 \"1M\" \\ context"
 "session": "abcd-1234"

@@ -24,7 +24,7 @@
 # `default` is the exception and has to be here: defined in an import it is not
 # found, and bare `just` answers "justfile contains no default recipe".
 #
-# silo/docs/DECISIONS/a-justfile-gives-every-project-the-same-two-word-interface.md
+# Every project here exposes the same two-word interface.
 set allow-duplicate-recipes := true
 
 import? 'just/project.just'

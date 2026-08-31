@@ -101,8 +101,8 @@ func TestProjectRootMarkerSitsOutsideTheColour(t *testing.T) {
 	t.Setenv("NO_COLOR", "")
 	got := render.Build(payload.Map{
 		"workspace": map[string]any{
-			"current_dir": "/home/me/.projects/silo/bin",
-			"project_dir": "/home/me/.projects/silo",
+			"current_dir": "/home/me/.projects/demo/bin",
+			"project_dir": "/home/me/.projects/demo",
 		},
 	}, "/home/me", 200, clock)
 

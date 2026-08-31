@@ -19,8 +19,8 @@ func full() payload.Map {
 		"model":      map[string]any{"display_name": "Opus 5", "id": "claude-opus-5"},
 		"effort":     map[string]any{"level": "high"},
 		"workspace": map[string]any{
-			"current_dir": "/home/me/.projects/silo/bin",
-			"project_dir": "/home/me/.projects/silo",
+			"current_dir": "/home/me/.projects/demo/bin",
+			"project_dir": "/home/me/.projects/demo",
 		},
 		"context_window": window(48),
 		"rate_limits": map[string]any{

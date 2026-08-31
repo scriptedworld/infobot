@@ -13,7 +13,7 @@
 **Ask the task tree rather than this file.** Its state is a rename and a
 document's state is prose, so where the two disagree the tree is right.
 
-    ( setopt null_glob; print -l ~/.projects/clank/tasks/infobot/**/*.blocked )
+    ( setopt null_glob; print -l <task-tree>/**/*.blocked )
 
 ## The gate is red on one task, lint
 
@@ -33,7 +33,7 @@ all.
 truncates its own output by default, `max-issues-per-linter` at 50 and
 `max-same-issues` at 3, and neither the shared config nor the jig turns it off.
 Uncapped, the same tree reported 187. Filed as
-`clank/inbox/toolbox/the-lint-task-reports-a-capped-count`, with both runs as
+filed against toolbox, with both runs as
 evidence, because it reaches every adopter and the fix is one flag pair on the
 jig's command line.
 
@@ -50,7 +50,7 @@ override:
     mnd               28   none is truly magic; four were never printed
     gochecknoglobals  13   all are types Go's const cannot hold, none mutated
 
-Three entries under `clank/inbox/toolbox/`, each corrected for the cap.
+Three entries filed against toolbox, each corrected for the cap.
 
 **The remaining 22 are infobot's own and NOT ONE IS AN EDIT.** All gosec, and
 rule 4 admits no pragma without a person having answered first:
@@ -89,7 +89,7 @@ it.
 ## Smaller things
 
 **A fixture carries this machine's username.** `internal/state/state_test.go`
-asserts `"cwd": "/home/ancient/.projects/infobot"` twice. Not a secret, untidy
+asserts an absolute home path as `cwd` twice. Not a secret, untidy
 for a published repository, and **not a one-line change**: FR-1.11p pins those
 bytes at both ends, so it needs wrench in the loop. Do it in the same pass as
 the link decision below.
@@ -116,7 +116,7 @@ change to a row: one row against two, colouring the countdown, a staleness
 marker on the cost, the parameter budget, whether the state file should say what
 a session is DOING, and which kind of absence a missing context block is.
 
-The last is `clank/tasks/infobot/state-readers/`, in `.questions`. **Its premise
+The last is the task tracker, in `.questions`. **Its premise
 has since been settled and the task file has not caught up:** the board is
 silo's dispatch tooling, so a reader over every session's file already exists
 and has an owner. What remains is narrower, being where intent comes from and
@@ -225,5 +225,5 @@ when wrench declined. It is a change to how a published form is produced, so it
 belongs to wrench as much as here, and FR-1.11o makes announcing it an
 obligation.
 
-`clank/tasks/infobot/one-emitter/10-*.cancelled` carries the answer as it stood.
+The cancelled task carries the answer as it stood.
 Its premise is what changed rather than its reasoning.

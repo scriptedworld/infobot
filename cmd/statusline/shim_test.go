@@ -90,9 +90,9 @@ func TestAbsentBinaryHonoursNoColor(t *testing.T) {
 // REACHED THROUGH A SYMLINK, the shim must resolve to where the REAL file is
 // and find the binary there.
 //
-// Claude Code reaches the status line through `silo/bin/statusline`, a symlink
+// Claude Code reaches the status line through a symlink in another directory
 // to `infobot/bin/infobot`. `dirname "$0"` on the symlink's own path gives
-// silo/bin, so the binary the shim looked for was silo/bin/statusline, which is
+// that directory, so the binary the shim looked for was the symlink itself, which is
 // the symlink, which is the shim. It exec'd itself.
 //
 // That ran for 35 minutes across ten sessions on 2026-08-28 and the only
@@ -109,7 +109,7 @@ func TestShimReachedThroughASymlinkDoesNotExecItself(t *testing.T) {
 	}
 
 	// A symlink to the shim, in a directory holding nothing else, which is the
-	// shape silo/bin has.
+	// shape that directory has.
 	root, err := filepath.Abs("../..")
 	if err != nil {
 		t.Fatal(err)

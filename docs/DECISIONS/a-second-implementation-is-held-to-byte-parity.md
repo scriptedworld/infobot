@@ -44,7 +44,7 @@ against a description of it.
 ## What is decided
 
 **The Go build stays the deployed one.** `bin/infobot` execs `bin/statusline`,
-which is Go, and nothing in `silo/settings.json` changes. The Zig tree is built
+which is Go, and nothing in the harness settings file changes. The Zig tree is built
 by hand and run by the parity harnesses.
 
 **Parity is the acceptance test, and it is measured rather than asserted.**
@@ -103,9 +103,8 @@ against Go's 13MB and 9MB. The output was identical the whole time.
 That is the strongest argument in this file and it arrived last. A parity
 harness compares what a program PRODUCES, and two implementations agreeing to
 the byte can differ by thirty times in what they cost to produce it. The defect
-is this tree's own, in `clank/tasks/infobot/zig-memory/10-*`, and it is fixable;
-the point that survives fixing it is that nothing in the acceptance test could
-have raised it.
+is this tree's own and it is fixable; the point that survives fixing it is that
+nothing in the acceptance test could have raised it.
 
 So deploying it would trade a fully gated implementation for a half gated one
 that uses thirty times the memory, to gain 1.7ms of system time on a render

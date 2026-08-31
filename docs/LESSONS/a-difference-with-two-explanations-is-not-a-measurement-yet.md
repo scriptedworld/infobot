@@ -95,4 +95,4 @@ rather than a number they have to trust.
 The harness is `.ephemera/schema-cost/`, self-contained: `./run.sh 400` builds
 what it times, blob included, and diffs the four outputs to prove they did the
 same work. The decision it fed is silo's `c4ef97a`; the task is
-`clank/tasks/infobot/published-form/10-*`.
+the task tracker.

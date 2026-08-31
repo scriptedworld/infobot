@@ -7,7 +7,7 @@ why the earlier call was wrong.
 ## What was decided before
 
 Go was settled as the language. The timing was not, and the recommendation in
-`clank/tasks/infobot/status-line/05-*` was to defer: two of the four arguments
+the task tracker was to defer: two of the four arguments
 for porting had not survived checking, the gate read the Python cleanly once the
 render moved out of the extensionless entry point, and the display was still
 changing shape most days. Porting a moving target means porting twice.
