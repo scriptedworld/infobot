@@ -18,8 +18,15 @@ transcript: Go 2.8ms against Zig 13.2ms, 3.08M instructions against 58.0M, and
 peak RSS of 8.9-13.6MB against 26-371MB. Identical output, nineteen times the
 instructions, and the cause was an arena that never freed.
 
-The toolchain's ecosystem is the second reason and would have been enough on
-its own, but it is not what decided this.
+**The cost and the ecosystem are the same reason, not two.** The Zig build was
+hand-spun throughout because there was nothing to reach for: YAML emitted by
+hand rather than by a library, and the rest written the same way. An arena that
+never frees is what seat-of-the-pants allocation looks like when nobody has
+already solved it for you.
+
+So the 19x is not a fact about Zig the language. It is what a hand-rolled
+implementation costs, and needing to hand-roll is the ecosystem argument
+arriving as a number instead of an opinion.
 
 **Both cost measurements in this repository's history were taken on the same
 axis and only one was trustworthy.** A later run using a Python wrapper, ten
