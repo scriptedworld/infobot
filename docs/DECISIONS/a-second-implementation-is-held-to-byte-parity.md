@@ -1,9 +1,16 @@
 # A second implementation is held to byte parity, and is not deployed
 
 **RETIRED 2026-08-31. The Zig tree is deleted and the parity check with it.**
-Go remains the deployed and only implementation. The reasoning below is kept
-because it is why a second implementation was worth building at all, and
-because the parity harness is the part worth rebuilding if a third ever exists.
+Go remains the deployed and only implementation.
+
+The out-of-date second implementation is at **`2c19f0b`**, the last commit
+holding `zig/`:
+
+    git show 2c19f0b:zig/README.md
+    git checkout 2c19f0b -- zig/
+
+The reasoning below is kept because it is why a second implementation was worth
+building at all, and because the parity harness is what a third would want.
 
 Why it went, on cost first. `docs/LESSONS/byte-parity-cannot-see-what-a-program-costs.md`
 measured it with `poop` and `hyperfine -N` under `taskset` on a 6.3MB
