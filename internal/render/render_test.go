@@ -387,16 +387,21 @@ func TestBarShrinksWithThePaneThenGoesWhole(t *testing.T) {
 
 // COVERS: FR-3.3, FR-5.12 | edge
 //
-// With the width unknown the bar is a fixed fifty cells: there is nothing to
-// subtract from, so fifty is a chosen number rather than a fit.
-func TestUnknownWidthRendersTheFullForm(t *testing.T) {
+// With the width unknown there is NO BAR AT ALL. A bar is a claim about how
+// much room there is, and with nothing to fit against, any length is a guess
+// the host then truncates. The numbers say the same thing at a known cost, so
+// the row stays short and left-aligned.
+func TestUnknownWidthDrawsNoBar(t *testing.T) {
 	isolate(t)
 	t.Setenv("NO_COLOR", "1")
 	rows := render.Build(payload.Map{
 		"context_window": window(50),
 	}, "/home/me", 0, clock)
-	if got := strings.Count(rows[0], "▰") + strings.Count(rows[0], "▱"); got != 50 {
-		t.Errorf("bar is %d cells, want the 50-cell fallback", got)
+	if got := strings.Count(rows[0], "▰") + strings.Count(rows[0], "▱"); got != 0 {
+		t.Errorf("bar is %d cells, want none when the width is unknown", got)
+	}
+	if !strings.Contains(rows[0], "50%") {
+		t.Errorf("the percentage must survive when the bar does not: %q", rows[0])
 	}
 }
 
@@ -408,7 +413,7 @@ func TestLimitSegmentShowsNoTokenCounts(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	got := render.LimitSegment("⏳ 5hr", payload.Map{
 		"used_percentage": 34.0, "resets_at": at(3600),
-	}, 5*3600, false, clock)
+	}, 5*3600, false, true, clock)
 	if strings.Contains(got, "/") || strings.Contains(got, "consumed") {
 		t.Errorf("counts appeared in a window that carries none: %q", got)
 	}
@@ -420,7 +425,7 @@ func TestLimitSegmentShowsNoTokenCounts(t *testing.T) {
 // COVERS: FR-1.3 | negative
 func TestLimitSegmentDroppedWithoutAPercentage(t *testing.T) {
 	for _, w := range []payload.Map{nil, {}, {"resets_at": at(3600)}} {
-		if got := render.LimitSegment("⏳ 5hr", w, 5*3600, false, clock); got != "" {
+		if got := render.LimitSegment("⏳ 5hr", w, 5*3600, false, true, clock); got != "" {
 			t.Errorf("LimitSegment(%v) = %q, want empty", w, got)
 		}
 	}
@@ -432,8 +437,8 @@ func TestLimitSegmentDroppedWithoutAPercentage(t *testing.T) {
 // drawing before anything is cut.
 func TestCompactGaugesReplaceBarsWhenTheRowIsTight(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
-	wide := render.LimitSegment("⏳ 5hr", payload.Map{"used_percentage": 34.0}, 5*3600, false, clock)
-	tight := render.LimitSegment("⏳ 5hr", payload.Map{"used_percentage": 34.0}, 5*3600, true, clock)
+	wide := render.LimitSegment("⏳ 5hr", payload.Map{"used_percentage": 34.0}, 5*3600, false, true, clock)
+	tight := render.LimitSegment("⏳ 5hr", payload.Map{"used_percentage": 34.0}, 5*3600, true, true, clock)
 	if !strings.Contains(wide, "▰") {
 		t.Errorf("wide form has no gauge: %q", wide)
 	}

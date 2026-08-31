@@ -18,7 +18,7 @@ func TestResetsAtIsANumericEpoch(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	numeric := render.LimitSegment("5hr", payload.Map{
 		"used_percentage": 34.0, "resets_at": at(3600),
-	}, 5*3600, false, clock)
+	}, 5*3600, false, true, clock)
 	if !strings.Contains(numeric, "1h00m") {
 		t.Errorf("a numeric epoch gave no countdown: %q", numeric)
 	}
@@ -26,7 +26,7 @@ func TestResetsAtIsANumericEpoch(t *testing.T) {
 	for _, spelled := range []any{"2026-08-28T12:00:00Z", "4102444800", true, nil} {
 		got := render.LimitSegment("5hr", payload.Map{
 			"used_percentage": 34.0, "resets_at": spelled,
-		}, 5*3600, false, clock)
+		}, 5*3600, false, true, clock)
 		if got == "" {
 			t.Errorf("resets_at %v dropped the whole window", spelled)
 		}

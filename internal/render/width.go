@@ -181,9 +181,27 @@ func herdrWidth() int {
 		index = 0
 	}
 	if layout.Zoomed && layout.Panes[index].PaneID == layout.FocusedPaneID {
-		return layout.Area.Width
+		return usable(layout.Area.Width)
 	}
-	return layout.Panes[index].Rect.Width
+	return usable(layout.Panes[index].Rect.Width)
+}
+
+// usable trims what herdr reports to what can actually be drawn into.
+//
+// herdr's rectangle is the pane it owns, and it is wider than the columns the
+// line gets: the reported number overshoots by enough to push a full-width row
+// past the edge, and the host then cuts the tail with an ellipsis.
+//
+// THE TWO ERRORS ARE NOT EQUALLY BAD, which is why this leans one way. A width
+// read too small wastes a few columns and nobody ever notices. One read too
+// large truncates, visibly, on every render. So the trim is deliberate rather
+// than a fudge, and it is applied here rather than to every host because it is
+// herdr's rectangle that is generous.
+func usable(reported int) int {
+	if reported <= herdrTrim {
+		return 0
+	}
+	return reported - herdrTrim
 }
 
 func atoi(text string) int {

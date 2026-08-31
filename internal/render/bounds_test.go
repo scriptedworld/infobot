@@ -151,8 +151,8 @@ func TestAtMostOneSubprocessAndOnlyForTheWidth(t *testing.T) {
 	t.Setenv("HERDR_PANE_ID", "w1:p1")
 	t.Setenv("HERDR_BIN_PATH", script)
 
-	if got := render.TerminalWidth(); got != 120 {
-		t.Fatalf("TerminalWidth = %d, want 120", got)
+	if got := render.TerminalWidth(); got != 110 {
+		t.Fatalf("TerminalWidth = %d, want 120 less the 10-column trim", got)
 	}
 	if got := calls(t, log); got != 1 {
 		t.Errorf("%d subprocesses for one width query, want 1", got)

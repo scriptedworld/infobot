@@ -65,7 +65,12 @@ func sessionPart(data payload.Map) string {
 
 // limitParts is the two rate limit windows, each dropped when its data is
 // absent.
-func limitParts(data payload.Map, compact bool, now time.Time) []string {
+//
+// `reading` is whether there is room to print the percentage beside each bar.
+// It is decided from the WIDTH alone and never from whether compaction
+// happened, so the gauges do not depend on a decision taken after they are
+// built.
+func limitParts(data payload.Map, compact, reading bool, now time.Time) []string {
 	limits := data.Obj("rate_limits")
 	var parts []string
 	for _, window := range []struct {
@@ -76,7 +81,7 @@ func limitParts(data payload.Map, compact bool, now time.Time) []string {
 		{hourglass + " 5hr", "five_hour", fiveHour},
 		{calendar + " 7d", "seven_day", sevenDay},
 	} {
-		seg := LimitSegment(window.label, limits.Obj(window.key), window.span, compact, now)
+		seg := LimitSegment(window.label, limits.Obj(window.key), window.span, compact, reading, now)
 		if seg != "" {
 			parts = append(parts, seg)
 		}
@@ -118,7 +123,7 @@ func compose(data payload.Map, home string, width int, compact bool, now time.Ti
 	if part := sessionPart(data); part != "" {
 		tail = append(tail, part)
 	}
-	meters := limitParts(data, compact, now)
+	meters := limitParts(data, compact, width >= readingMin, now)
 
 	identity, meters = placeContext(data.Obj("context_window"), identity, tail, meters, width)
 	return [][]string{append(identity, tail...), meters}
@@ -140,7 +145,11 @@ func compose(data payload.Map, home string, width int, compact bool, now time.Ti
 // session the context and rate-limit fields are all absent, and a stray empty
 // row looks like a fault.
 func Build(data payload.Map, home string, width int, now time.Time) []string {
-	rows := compose(data, home, width, false, now)
+	// An unknown width takes the compact form outright. There is nothing to
+	// fit against, so the gauges give way to the percentages they draw and the
+	// row stays short and left-aligned rather than being drawn at a guessed
+	// length and cut by the host.
+	rows := compose(data, home, width, width == 0, now)
 	// The gauges give way to the percentages they draw rather than letting the
 	// row run past the budget, which is the rule the context bar follows too.
 	// Measured after composing rather than before, because the context segment
@@ -189,12 +198,22 @@ func costForms(data payload.Map, transcripts string) (string, string) {
 // row has already given its slack to the context bar. With no meter row there
 // is nowhere for it that is not somewhere else's space, so it is dropped.
 func alignCost(lines []string, data payload.Map, width int) []string {
-	if len(lines) < 2 || width == 0 {
+	if len(lines) < 2 {
 		return lines
 	}
 	last := len(lines) - 1
-	room := width - margin - VisibleWidth(lines[last])
 	long, short := costForms(data, "")
+	// With no width to align against, the cost JOINS the row rather than being
+	// dropped. Pushing it right needs a right edge to push it to, and there
+	// isn't one; carried inline it reads as one more thing on a left-aligned
+	// row, separated the way the meters are separated from each other.
+	if width == 0 {
+		if long != "" {
+			lines[last] += sep() + long
+		}
+		return lines
+	}
+	room := width - margin - VisibleWidth(lines[last])
 	for _, segment := range []string{long, short} {
 		gap := room - VisibleWidth(segment)
 		if segment != "" && gap >= costGutter {

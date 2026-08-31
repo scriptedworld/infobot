@@ -64,6 +64,14 @@ const (
 	// resolution, and a fixed width keeps the row from moving under them as the
 	// context bar above grows.
 	windowCells = 10
+	// readingMin is the width at which the percentage is printed beside each
+	// gauge. Below it the row renders as it always has: the number is declined
+	// where there is no room to hold it, rather than shown and then truncated.
+	readingMin = 80
+	// herdrTrim is how much of herdr's reported pane width is not actually
+	// drawable. Set from measurement rather than derived: at the full reported
+	// figure a wide row overshoots and the host truncates it.
+	herdrTrim = 10
 	// costGutter is the clear space kept between the meter row and the cost
 	// pushed to its right, so the two read as separate things.
 	costGutter = 3
@@ -284,7 +292,12 @@ func rowWidth(parts []string) int {
 // does: one more cell is one more column and nothing else moves.
 func fitted(cw payload.Map, others []string, at, width int) string {
 	if width == 0 {
-		return ContextSegment(cw, barFallback)
+		// NO BAR WHEN THE WIDTH IS UNKNOWN. A bar is a claim about how much
+		// room there is, and with nothing to fit against, any length is a
+		// guess that the host then truncates. The numbers say the same thing
+		// and cost a known handful of columns, so the row stays short and
+		// left-aligned instead of being cut.
+		return ContextSegment(cw, 0)
 	}
 	// The bar also brings the space that separates it from the counts, which
 	// the bar-less form measured here does not have.
@@ -320,9 +333,15 @@ func elapsedFraction(resetsAt float64, span int, now time.Time) (float64, bool) 
 // label carries the emoji and the name together because they are one fixed
 // string at both call sites.
 //
-// The percentage is drawn rather than printed. It is the same bar as the
-// context window's, on the same ramp, so 80% is the same shade wherever it
-// appears and one glance reads all three meters.
+// The percentage is drawn AND printed. The bar is the same one the context
+// window uses, on the same ramp, so 80% is the same shade wherever it appears
+// and one glance reads all three meters.
+//
+// The number is there because a bar stops discriminating exactly where it
+// matters most: near its end, one cell covers several points, so 91% and 99%
+// draw the same and the reading is least useful when the decision is most
+// expensive. The bar answers "roughly where am I" at a glance and the number
+// answers "how bad is it" when the glance is not enough.
 //
 // The countdown stays as a number because a bar cannot carry it, and because it
 // is what makes the gauge actionable: half spent with four hours to go reads
@@ -331,7 +350,7 @@ func elapsedFraction(resetsAt float64, span int, now time.Time) (float64, bool) 
 // It is deliberately UNCOLOURED. It wants its own scale and probably an
 // inverted one, running TOWARD green as it nears zero, since a reset getting
 // closer is good news. Undecided, so left plain rather than guessed at.
-func LimitSegment(label string, window payload.Map, span int, compact bool, now time.Time) string {
+func LimitSegment(label string, window payload.Map, span int, compact, reading bool, now time.Time) string {
 	if window == nil {
 		return ""
 	}
@@ -347,9 +366,19 @@ func LimitSegment(label string, window payload.Map, span int, compact bool, now 
 	if elapsed, ok := elapsedFraction(resetsAt, span, now); ok {
 		tint = paceTint(pct, elapsed)
 	}
+	// The `@` is inside the tint, so the reading is one coloured token rather
+	// than a plain sigil against a coloured number. It carries the same colour
+	// as the bar it stands beside, which is what says the two mean one thing.
+	number := tinted(fmt.Sprintf("@%.0f%%", pct), tint)
 	gauge := Bar(pct, windowCells, tint)
+	if reading {
+		// Two spaces, not one. The bar's last cell and the number mean the same
+		// thing and are the same colour, so a single space reads as one run and
+		// the eye does not find the boundary.
+		gauge += "  " + number
+	}
 	if compact {
-		gauge = tinted(fmt.Sprintf("%.0f%%", pct), tint)
+		gauge = number
 	}
 	return join(label, gauge, Countdown(resetsAt, now))
 }

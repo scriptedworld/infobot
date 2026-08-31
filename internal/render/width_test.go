@@ -52,8 +52,8 @@ func TestZoomedPaneIsFittedToTheTabArea(t *testing.T) {
       "zoomed":true,
       "panes":[{"pane_id":"w4:p1","rect":{"width":99}},
                {"pane_id":"w4:p2","rect":{"width":96}}]}}}`))
-	if got := render.TerminalWidth(); got != 195 {
-		t.Errorf("TerminalWidth = %d, want the tab area 195, not the stale rect 99", got)
+	if got := render.TerminalWidth(); got != 185 {
+		t.Errorf("TerminalWidth = %d, want the tab area 195 less the 10-column trim, not the stale rect 99", got)
 	}
 }
 
@@ -71,8 +71,8 @@ func TestUnfocusedPaneUnderZoomKeepsItsOwnRectangle(t *testing.T) {
       "zoomed":true,
       "panes":[{"pane_id":"w4:p1","rect":{"width":99}},
                {"pane_id":"w4:p2","rect":{"width":96}}]}}}`))
-	if got := render.TerminalWidth(); got != 99 {
-		t.Errorf("TerminalWidth = %d, want this pane's own 99", got)
+	if got := render.TerminalWidth(); got != 89 {
+		t.Errorf("TerminalWidth = %d, want this pane's own 99 less the 10-column trim", got)
 	}
 }
 
@@ -89,8 +89,8 @@ func TestLonePaneAnswersEvenWhenTheIdDoesNotMatch(t *testing.T) {
       "focused_pane_id":"w1:p1",
       "zoomed":false,
       "panes":[{"pane_id":"w1:p1","rect":{"width":120}}]}}}`))
-	if got := render.TerminalWidth(); got != 120 {
-		t.Errorf("TerminalWidth = %d, want the lone pane's 120", got)
+	if got := render.TerminalWidth(); got != 110 {
+		t.Errorf("TerminalWidth = %d, want the lone pane's 120 less the 10-column trim", got)
 	}
 }
 
