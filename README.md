@@ -16,8 +16,19 @@ whichever multiplexer owns the pane how wide it is, because every other route to
 the width fails under Claude Code. The only files it opens are the rate table
 and the session's own transcripts, both for the cost segment.
 
-It runs on every Claude Code event, so its startup cost is paid constantly. A
-render is 11.8ms and about 9MB.
+It runs on every Claude Code event, so its startup cost is paid constantly, and
+that cost is why it is Go rather than the Python it replaced.
+
+**Measure it yourself rather than taking a figure from here.** A render costs
+what your transcript makes it cost, and a number with no payload beside it says
+nothing:
+
+    python3 bench/bench.py go 10 <a-transcript.jsonl> ./bin/infobot
+
+It reports wall time per render and peak RSS, and its docstring says why it
+measures fork to exit rather than the render alone. `docs/PROJECT.md` carries
+the figures this project was built against, with the conditions they were taken
+under.
 
 ## Requirements
 
