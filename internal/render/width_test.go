@@ -3,10 +3,30 @@ package render_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/scriptedworld/infobot/internal/render"
 )
+
+// fakeTmux puts an executable named `tmux` at the front of PATH and returns the
+// file it records its arguments to.
+//
+// The reply is the same whatever it is asked, so an assertion here is about the
+// QUESTION rather than the answer. That is the point: the bug this guards was a
+// well-formed reply about the wrong pane, which no assertion on the number can
+// catch.
+func fakeTmux(t *testing.T, reply string) string {
+	t.Helper()
+	dir := t.TempDir()
+	argv := filepath.Join(dir, "argv")
+	script := "#!/bin/sh\nprintf '%s\\n' \"$*\" > " + argv + "\nprintf '%s\\n' " + reply + "\n"
+	if err := os.WriteFile(filepath.Join(dir, "tmux"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	return argv
+}
 
 // fakeHost writes an executable that prints body on stdout, so the width
 // routes can be exercised without a multiplexer.
@@ -36,6 +56,57 @@ func TestNoHostMeansUnknownRatherThanEighty(t *testing.T) {
 	noHosts(t)
 	if got := render.TerminalWidth(); got != 0 {
 		t.Errorf("TerminalWidth = %d, want 0 for unknown", got)
+	}
+}
+
+// COVERS: FR-3.7 | regression
+//
+// An untargeted `display-message` answers for the ACTIVE pane of the current
+// client, not the pane that asked. Measured 2026-09-01 from pane %5 at 257
+// columns with a 60-column %6 focused: the untargeted form said 60.
+//
+// Focusing a wider pane is the damaging direction, because the row is then
+// built past the edge and the host cuts its tail. The assertion is on the
+// argv rather than on the width: a reply about the wrong pane is well formed,
+// so only the question distinguishes the two.
+func TestTmuxIsAskedAboutTheCallingPaneNotTheActiveOne(t *testing.T) {
+	noHosts(t)
+	t.Setenv("TMUX", "/tmp/tmux-1000/default,1,0")
+	t.Setenv("TMUX_PANE", "%5")
+	argv := fakeTmux(t, "257")
+
+	if got := render.TerminalWidth(); got != 257 {
+		t.Errorf("TerminalWidth = %d, want the calling pane's 257", got)
+	}
+	asked, err := os.ReadFile(argv)
+	if err != nil {
+		t.Fatalf("tmux was never run: %v", err)
+	}
+	if !strings.Contains(string(asked), "-t %5") {
+		t.Errorf("tmux was asked %q, want it targeted at the calling pane %%5", strings.TrimSpace(string(asked)))
+	}
+}
+
+// COVERS: FR-3.3 | edge
+//
+// Without TMUX_PANE there is no better question than the old one, so the
+// untargeted form stays as the fallback rather than the route going unknown.
+// A width read from the active pane beats no width at all.
+func TestTmuxWithoutAPaneIdStillAsks(t *testing.T) {
+	noHosts(t)
+	t.Setenv("TMUX", "/tmp/tmux-1000/default,1,0")
+	t.Setenv("TMUX_PANE", "")
+	argv := fakeTmux(t, "180")
+
+	if got := render.TerminalWidth(); got != 180 {
+		t.Errorf("TerminalWidth = %d, want 180 from the untargeted fallback", got)
+	}
+	asked, err := os.ReadFile(argv)
+	if err != nil {
+		t.Fatalf("tmux was never run: %v", err)
+	}
+	if strings.Contains(string(asked), "-t") {
+		t.Errorf("tmux was asked %q, want no target when the pane id is unknown", strings.TrimSpace(string(asked)))
 	}
 }
 

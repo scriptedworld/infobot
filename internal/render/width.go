@@ -104,9 +104,30 @@ func ask(argv ...string) string {
 
 // tmuxWidth is the pane columns from tmux, measured at 3.2ms and affordable
 // once per render.
+//
+// TARGET THE CALLING PANE. An untargeted `display-message` resolves against the
+// ACTIVE pane of the current client, not the pane whose process is asking. In a
+// split those are different panes, so the line was fitted to whichever pane
+// happened to be focused when the render fired. Measured 2026-09-01: called
+// from pane %5 at 257 columns with a 60-column %6 focused, the untargeted form
+// answered 60 and `-t %5` answered 257.
+//
+// Focusing a WIDER pane is the damaging direction. The row is then built past
+// the edge and the host cuts its tail, which is the end of the meter row, and
+// the line re-renders on a ten second interval so no interaction is needed for
+// it to happen. This is FR-3.7 for tmux: the width is the one the pane is DRAWN
+// at, not whatever a rectangle elsewhere reports.
+//
+// TMUX_PANE is set in every pane's environment and Claude Code passes it
+// through, which is what makes the target available. Without it there is no
+// better question to ask than the old one, so the untargeted form stays as the
+// fallback rather than the route returning unknown.
 func tmuxWidth() int {
 	if os.Getenv("TMUX") == "" {
 		return 0
+	}
+	if pane := os.Getenv("TMUX_PANE"); pane != "" {
+		return atoi(ask("tmux", "display-message", "-p", "-t", pane, "#{pane_width}"))
 	}
 	return atoi(ask("tmux", "display-message", "-p", "#{pane_width}"))
 }
