@@ -237,10 +237,15 @@ it.
 
 That is the right default and it has an ordering consequence worth writing down:
 **infobot is verified against the wrench that is pushed, not the one that is
-written.** Every green run here until wrench lands is a run against the older
-pack. After wrench is pushed, this repository needs
-`go get github.com/scriptedworld/wrench/go@latest`, the suite again, and a
-rebuild — in that order, and none of it is optional.
+written.** Every green run here between 2026-09-03 and wrench landing was a run
+against the older pack.
+
+**Done 2026-09-04, in that order.** wrench pushed at `f34be14`;
+`go get github.com/scriptedworld/wrench/go@latest` took the pseudo-version
+`v0.0.0-20260904181338-f34be142d905`; the suite passes; the rebuilt
+`bin/statusline` no longer contains `WRENCH_ALLOW_EXTERNAL_SCHEMA_REFS`, which
+is how the upgrade is checkable rather than assumed. None of it is optional next
+time either.
 
 The schema infobot compiles carries no `$ref`, so wrench's reference change
 cannot reach it. That is a reason to expect the upgrade to be quiet, not a reason

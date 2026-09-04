@@ -3,7 +3,7 @@ module github.com/scriptedworld/infobot
 go 1.26.6
 
 require (
-	github.com/scriptedworld/wrench/go v0.0.0-20260901010011-8cf1c4af1b89
+	github.com/scriptedworld/wrench/go v0.0.0-20260904181338-f34be142d905
 	golang.org/x/text v0.38.0
 )
 

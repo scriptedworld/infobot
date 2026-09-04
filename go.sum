@@ -4,8 +4,8 @@ github.com/dlclark/regexp2 v1.11.0 h1:G/nrcoOa7ZXlpoa/91N3X7mM3r8eIlMBBJZvsz/mxK
 github.com/dlclark/regexp2 v1.11.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 h1:1EYB5IzjZawrrnELUi78f9fPu57HuXjmddZPjrls/28=
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.3/go.mod h1:JXeL+ps8p7/KNMjDQk3TCwPpBy0wYklyWTfbkIzdIFU=
-github.com/scriptedworld/wrench/go v0.0.0-20260901010011-8cf1c4af1b89 h1:y3vn9XgvKWtzpZ8Vq1AEQ/nx1XJhv2yn+aUGxOqzYwk=
-github.com/scriptedworld/wrench/go v0.0.0-20260901010011-8cf1c4af1b89/go.mod h1:hxdVS273iAZWxY0dX0CciUnE4wJ81Y8enH6uTdVBgnQ=
+github.com/scriptedworld/wrench/go v0.0.0-20260904181338-f34be142d905 h1:O56Fxig/IK2qytxAb9SRhQYWa58iol7TbyEaEA0ahtM=
+github.com/scriptedworld/wrench/go v0.0.0-20260904181338-f34be142d905/go.mod h1:hxdVS273iAZWxY0dX0CciUnE4wJ81Y8enH6uTdVBgnQ=
 go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
 go.yaml.in/yaml/v3 v3.0.5/go.mod h1:HVTZu1O7/Vkt2N+BFy8Zza+lnLsABggaTM2ZpNIGuKg=
 golang.org/x/text v0.38.0 h1:sXmwo9DwP3OK9EZ7PqAdaooSGozfl/3a6/xJcbzPRhE=
