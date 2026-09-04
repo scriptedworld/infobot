@@ -202,28 +202,51 @@ number, so nothing a schema states about the decoded structure reaches
 FR-1.11q's rule about the spelling. The schema and the byte fixture cover
 different halves.
 
-## The wrench link is decided by evidence and waiting on a decision
+## The wrench link is taken, and the announcement it obliges is not made
 
-wrench declined on 2026-08-28 for two reasons and both have expired: its gate is
-green, and its float behaviour is fixed by its own FR-4.8 rather than being
-unspecified. Measured since, `.ephemera/wrench-parity`:
+**Landed 2026-09-03.** `internal/state/state.go` imports
+`github.com/scriptedworld/wrench/go`, writes through `wrench.SaveYAMLFile`, and
+the 133-line hand emitter is deleted. `gate/05` was named here as the blocker
+and was never the blocker: `go get github.com/scriptedworld/wrench/go@latest`
+resolves, and `go.mod` carries the dependency at a pseudo-version because the Go
+pack has no tags, which is a different problem and still open.
 
-    the TestCanonicalForm fixture      byte-identical
-    every edge the fixture misses      agrees, whole-number floats included
-    key order                          both sort, and agree on the hard cases
+FR-1.11p is rewritten: one emitter and a conformance check, rather than two
+emitters pinned by two fixtures. That is the better of the two, and it is what
+this section predicted when it was still a proposal.
 
-**Two costs, both real and both small.** The import path moves to
-`github.com/scriptedworld/wrench/go` when wrench's `gate/05` lands, on no date
-and in two trees now that `bolt.go` consumes it. And linking would change
-infobot's bytes on about fourteen escape spellings, where Go names what this
-spells `\xNN`; `TestCanonicalForm` holds none of them, so the fixture would pass
-without noticing.
+**The announcement FR-1.11o obliges has not been made.** Linking changed the
+emitted bytes on three escape spellings — U+2028 from `\u2028` to `\L`, U+2029
+from `\u2029` to `\P`, U+0085 from `\x85` to `\N`. Both spellings escape and
+both round-trip, and the change reaches only a value carrying one of those three
+characters, which a `cwd` or a model name does not. That makes it small, not
+exempt: FR-1.11o says a change to the published form is announced **before it
+lands rather than discovered by whatever breaks**, and it landed first.
 
-Taking the link turns FR-1.11p from two emitters pinned by two fixtures into one
-emitter with a conformance check, which is better than either option available
-when wrench declined. It is a change to how a published form is produced, so it
-belongs to wrench as much as here, and FR-1.11o makes announcing it an
-obligation.
+The reader is silo's `bin/board`, which matches anchored patterns against the
+quoted key. Those patterns are unaffected by an escape inside a value, so the
+expected impact is none — but "we checked and it is none" is the announcement,
+and nobody has sent it.
 
-The cancelled task carries the answer as it stood.
-Its premise is what changed rather than its reasoning.
+**This repository does not build against the wrench beside it.** `go.mod` names
+`github.com/scriptedworld/wrench/go` at a pseudo-version fetched from GitHub and
+there is no `replace`, so the local checkout is invisible here: a rebuilt
+`bin/statusline` on 2026-09-04 still contained `WRENCH_ALLOW_EXTERNAL_SCHEMA_REFS`,
+a string wrench had removed that morning, because the published pack still has
+it.
+
+That is the right default and it has an ordering consequence worth writing down:
+**infobot is verified against the wrench that is pushed, not the one that is
+written.** Every green run here until wrench lands is a run against the older
+pack. After wrench is pushed, this repository needs
+`go get github.com/scriptedworld/wrench/go@latest`, the suite again, and a
+rebuild — in that order, and none of it is optional.
+
+The schema infobot compiles carries no `$ref`, so wrench's reference change
+cannot reach it. That is a reason to expect the upgrade to be quiet, not a reason
+to skip it.
+
+**wrench's decision document is spent.**
+`docs/DECISIONS/infobots-hand-emitted-yaml-is-a-considered-duplicate.md` resolved
+a duplication that this change ended. It is rewritten there rather than here, and
+the fixture it defended stays on its own merits.

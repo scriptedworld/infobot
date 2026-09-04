@@ -51,11 +51,16 @@ func full() payload.Map {
 // matches anchored patterns on the quoted key and the single space after the
 // colon, and takes the number bare.
 //
-// It is also infobot's half of FR-1.11p. These same bytes are a fixture in
-// wrench, and neither suite reaches into the other's tree, because a check
-// needing a sibling repository present fails for the wrong reason on a fresh
-// clone. So the pin is two tests that never meet, and editing this one to make
-// it pass is the way the pin comes undone.
+// It is also FR-1.11p, which changed shape on 2026-09-03 without changing what
+// it is for. It was a mutual pin between two emitters: infobot's hand emitter
+// here, and a frozen copy of its output as a fixture in wrench. The port deleted
+// the hand emitter, so wrench's pack now writes these bytes and this is a
+// conformance check against it rather than half of a pin.
+//
+// That is stronger, because the thing it guards is real. wrench's fixture never
+// re-derived infobot's output and so could not fail when infobot moved; this
+// test runs the emitter that actually writes the file. Editing it to make it
+// pass is still how the guarantee comes undone.
 func TestCanonicalForm(t *testing.T) {
 	want := `"context_percent": 48.2
 "context_remaining": 520000
@@ -379,9 +384,18 @@ func TestTheLineBreakSetIsEscaped(t *testing.T) {
 		// 1.1 makes these line breaks alongside the three above, and 1.2 does
 		// not, so which of them fold is the reader's version rather than the
 		// character.
-		{"\u2028", `"cwd": "/a\u2028b"`},
-		{"\u2029", `"cwd": "/a\u2029b"`},
-		{"\u0085", `"cwd": "/a\x85b"`},
+		//
+		// THE SPELLING CHANGED WHEN THE EMITTER DID, and the requirement did
+		// not. FR-1.11r is that these three are escaped rather than emitted
+		// raw, because a parser accepts them raw and hands back a space. The
+		// hand emitter spelled them `\u2028`, `\u2029` and `\x85`; wrench
+		// spells them with YAML's own names for the same code points. Both
+		// escape; both round-trip. This is the byte change FR-1.11o obliges
+		// infobot to announce, and it reaches only values carrying one of these
+		// characters, which a cwd or a model name does not.
+		{"\u2028", `"cwd": "/a\Lb"`},
+		{"\u2029", `"cwd": "/a\Pb"`},
+		{"\u0085", `"cwd": "/a\Nb"`},
 	} {
 		if got := cwdLine(t, "/a"+c.r+"b"); got != c.want {
 			t.Errorf("got %q, want %q", got, c.want)
