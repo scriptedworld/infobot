@@ -53,7 +53,7 @@ import (
 
 // inputKeys are what used_percentage is computed from: the input side only,
 // never output.
-var inputKeys = []string{
+var inputKeys = []string{ //nolint:gochecknoglobals // the input key list is read-only after init
 	"input_tokens",
 	"cache_creation_input_tokens",
 	"cache_read_input_tokens",
@@ -120,7 +120,7 @@ func Write(data payload.Map, now time.Time) {
 	if target == "" {
 		return
 	}
-	if os.MkdirAll(filepath.Dir(target), 0o755) != nil {
+	if os.MkdirAll(filepath.Dir(target), 0o755) != nil { //nolint:gosec // read by silo's board
 		return
 	}
 
@@ -150,6 +150,8 @@ var statusSchemaJSON string
 // subject is a Claude Code session: wrench's shipped set is the vocabulary a
 // generic runner ecosystem shares, and this is not a word in it. See wrench's
 // docs/DECISIONS/what-earns-a-place-in-the-shipped-set.md, part 3.
+//
+//nolint:gochecknoglobals // read-only after init
 var statusSchema = sync.OnceValues(func() (wrench.Schema, error) {
 	return wrench.CompileSchema(
 		"https://scriptedworld.github.io/infobot/status.schema.json",

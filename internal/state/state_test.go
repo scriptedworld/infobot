@@ -11,6 +11,7 @@ import (
 	"github.com/scriptedworld/infobot/internal/state"
 )
 
+//nolint:gochecknoglobals // fixed, for determinism
 var stamp = time.Date(2026, 8, 26, 16, 25, 52, 0,
 	time.FixedZone("", -7*3600))
 

@@ -16,9 +16,9 @@ import (
 // where nothing is happening, then yellow to red compressed into 75-90, so the
 // colour moves fastest exactly where a glance needs to tell 80 from 88.
 var (
-	green  = rgb{60, 200, 90}
-	yellow = rgb{235, 220, 40}
-	red    = rgb{225, 45, 45}
+	green  = rgb{60, 200, 90}  //nolint:gochecknoglobals // colours built once and read per render
+	yellow = rgb{235, 220, 40} //nolint:gochecknoglobals // colours built once and read per render
+	red    = rgb{225, 45, 45}  //nolint:gochecknoglobals // colours built once and read per render
 )
 
 const (
@@ -48,9 +48,11 @@ const (
 //
 // Bold is the one part that cannot fade, so it is on across the whole band.
 var (
-	backdrop = rgb{26, 27, 38}    // #1a1b26, the terminal's own background
-	alarmFG  = rgb{250, 240, 120} // pale yellow, the far end of the foreground fade
-	alarmBG  = rgb{180, 25, 25}   // deep red, the far end of the background fade
+	backdrop = rgb{26, 27, 38} //nolint:gochecknoglobals // #1a1b26, the terminal's own background
+	//nolint:gochecknoglobals // pale yellow, the far end of the foreground fade
+	alarmFG = rgb{250, 240, 120}
+	//nolint:gochecknoglobals // deep red, the far end of the background fade
+	alarmBG = rgb{180, 25, 25}
 )
 
 // The ENCOM teal, the same value the i3 bar and claws use ($encom_teal,
@@ -78,7 +80,7 @@ type paceStop struct {
 }
 
 // The pace stops, here because they are built from the palette above.
-var paceStops = []paceStop{
+var paceStops = []paceStop{ //nolint:gochecknoglobals // colours built once and read per render
 	{0.0, rgb{70, 140, 235}},   // blue: the window is barely being touched
 	{70.0, rgb{220, 225, 230}}, // white: under-spending it
 	{100.0, green},             // lands exactly full as it resets

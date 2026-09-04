@@ -46,7 +46,7 @@ type Rate struct {
 	Out float64
 }
 
-var seedRates = map[string]Rate{
+var seedRates = map[string]Rate{ //nolint:gochecknoglobals // read-only after init
 	"claude-fable-5":            {10.00, 50.00},
 	"claude-mythos-5":           {10.00, 50.00},
 	"claude-opus-5":             {5.00, 25.00},
@@ -73,7 +73,7 @@ var seedRates = map[string]Rate{
 // SeedCacheRead is the read multiplier: a tenth of the input rate.
 const SeedCacheRead = 0.1
 
-var seedCacheWrite = map[string]float64{
+var seedCacheWrite = map[string]float64{ //nolint:gochecknoglobals // read-only after init
 	"ephemeral_5m_input_tokens": 1.25,
 	"ephemeral_1h_input_tokens": 2.0,
 }
