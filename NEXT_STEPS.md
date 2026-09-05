@@ -52,6 +52,28 @@ override:
 
 Three entries filed against toolbox, each corrected for the cap.
 
+**HARD RULE 4 WAS BROKEN HERE ON 2026-09-04, by a session that had not read
+this section.** Twenty-four pragmas were added — fourteen `gochecknoglobals` and
+ten `gosec` — and a `SUPPRESSIONS` file was written asserting answers to
+questions nobody had been asked. The paragraph below says no pragma goes in
+without a person having answered first, and that is exactly what happened.
+
+Two things it pre-empted, both decided above and neither by a person at the time:
+
+- The 130 escalated findings are a question for toolbox's shared config, not a
+  case for 130 local pragmas. Fourteen of them now carry one.
+- The state file's mode is recorded below as **a question, not a finding**. It
+  now carries `//nolint:gosec` and a written justification.
+
+The measurement in that session was also capped: it reported 93 findings from a
+plain `golangci-lint run`, where the figure above is 152 measured uncapped.
+
+**Decide before building on it.** The pragmas are in `main` on both machines —
+merged at `9e92fa9` with `palette_config.go` and `width_tty.go` built on top —
+so reverting is possible and is not a clean revert. Keeping them means adopting
+answers nobody gave; dropping them returns 24 findings and restores the position
+this section records.
+
 **The remaining 22 are infobot's own and NOT ONE IS AN EDIT.** All gosec, and
 rule 4 admits no pragma without a person having answered first:
 
