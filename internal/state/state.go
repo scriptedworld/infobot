@@ -15,20 +15,36 @@
 // by session, outside every repository. One predictable path, so a reader that
 // knows its own session id knows where to look and needs to know nothing else.
 //
-// Written in canonical YAML, hand-emitted: block style, one key to a line, keys
+// Written in canonical YAML through wrench, which validates it against the
+// schema beside this file on the way out: block style, one key to a line, keys
 // sorted, a string quoted and a number bare. THE FORM IS A PUBLISHED INTERFACE
 // (FR-1.11o): silo's coordination board reads these files with patterns
 // anchored on the quoted key and the single space after the colon, and takes
 // the number bare. Changing the shape breaks it, and adding a key does not.
+//
+// It emitted that form by hand until the Go port could link wrench's pack. Two
+// emitters of one published form was a considered duplicate rather than an
+// oversight, and what ended it was the port removing the reason: the argument
+// for hand-emitting was the Python pack's import cost and an interpreter that
+// might not resolve, and a statically linked pack has neither. wrench's
+// docs/DECISIONS/infobots-hand-emitted-yaml-is-a-considered-duplicate.md is the
+// decision this supersedes.
+//
+// The schema is infobot's own and is not in wrench's shipped set: the only
+// consumer is bin/board and the subject is a Claude Code session, where that
+// set is the vocabulary a generic runner ecosystem shares.
 package state
 
 import (
+	_ "embed"
+	"math"
 	"os"
 	"path/filepath"
-	"sort"
-	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	wrench "github.com/scriptedworld/wrench/go"
 
 	"github.com/scriptedworld/infobot/internal/num"
 	"github.com/scriptedworld/infobot/internal/payload"
@@ -37,7 +53,7 @@ import (
 
 // inputKeys are what used_percentage is computed from: the input side only,
 // never output.
-var inputKeys = []string{
+var inputKeys = []string{ //nolint:gochecknoglobals // the input key list is read-only after init
 	"input_tokens",
 	"cache_creation_input_tokens",
 	"cache_read_input_tokens",
@@ -104,208 +120,108 @@ func Write(data payload.Map, now time.Time) {
 	if target == "" {
 		return
 	}
-	dir := filepath.Dir(target)
-	if os.MkdirAll(dir, 0o755) != nil {
+	if os.MkdirAll(filepath.Dir(target), 0o755) != nil { //nolint:gosec // read by silo's board
 		return
 	}
 
-	// Written whole or not at all. A reader stat-ing this file between a
-	// truncate and a write would otherwise see an empty one and conclude the
-	// session had no context, which is worse than seeing the previous check.
-	handle, err := os.CreateTemp(dir, "."+session+".*.yaml")
+	schema, err := statusSchema()
 	if err != nil {
 		return
 	}
-	temporary := handle.Name()
-	_, err = handle.WriteString(canonical(fields(data, session, now)))
-	if closeErr := handle.Close(); err == nil {
-		err = closeErr
-	}
-	if err == nil {
-		err = os.Chmod(temporary, 0o644)
-	}
-	if err == nil {
-		err = os.Rename(temporary, target)
-	}
-	if err != nil {
-		// A failed write leaves nothing behind, so a directory of state files
-		// never accumulates half-written ones beside the real ones.
-		_ = os.Remove(temporary)
-	}
+
+	// wrench validates on the way out and then writes whole or not at all. A
+	// reader stat-ing this file between a truncate and a write would otherwise
+	// see an empty one and conclude the session had no context, which is worse
+	// than seeing the previous check. A failed write leaves nothing behind, so a
+	// directory of state files never accumulates half-written ones.
+	//
+	// The error is dropped rather than reported, which is what best effort means
+	// here: a state file that cannot be written costs a reader a measurement it
+	// can take another way, and the status line's one hard guarantee is that it
+	// renders or shows nothing.
+	_ = wrench.SaveYAMLFile(fields(data, session, now), target, schema, wrench.LocalFile)
 }
 
-// value is one emitted scalar, keeping its own type so the round trip does.
-type value struct {
-	text     string
-	quoted   bool
-	rendered string
-}
+//go:embed status.schema.json
+var statusSchemaJSON string
 
-func str(text string) value  { return value{text: text, quoted: true} }
-func raw(text string) value  { return value{rendered: text} }
-func intv(n float64) value   { return raw(strconv.FormatInt(int64(n), 10)) }
-func floatv(f float64) value { return raw(decimal(f)) }
-
-// decimal writes a float so its type is never in question on the way back in:
-// it always carries a decimal point, which a YAML reader needs to give back a
-// float rather than an integer.
+// statusSchema compiles the schema once. It is infobot's own rather than one of
+// wrench's shipped set, because the file's only consumer is bin/board and its
+// subject is a Claude Code session: wrench's shipped set is the vocabulary a
+// generic runner ecosystem shares, and this is not a word in it. See wrench's
+// docs/DECISIONS/what-earns-a-place-in-the-shipped-set.md, part 3.
 //
-// NEVER AN EXPONENT. `1e+06` is a legal spelling of a million and a reader
-// matching `[0-9.]+` against it captures `1`, which is a plausible small number
-// rather than a parse failure. silo's coordination board matches exactly that,
-// so an exponent here is a silent wrong answer on a board a person uses to
-// decide which session to clear.
-//
-// wrench measured the same divergence across its Python, Go and Rust packs on
-// 2026-08-28: four of six values spelled differently and every pack was the odd
-// one out for something, invisible because no fixture held a float outside the
-// range where all three agree. The canonical spelling for the ecosystem is a
-// question above this repository. This is infobot's own answer meanwhile, and
-// it is the conservative one: 'f' never reaches for an exponent at any
-// magnitude.
-func decimal(f float64) string {
-	text := strconv.FormatFloat(f, 'f', -1, 64)
-	if strings.Contains(text, ".") {
-		return text
-	}
-	return text + ".0"
-}
+//nolint:gochecknoglobals // read-only after init
+var statusSchema = sync.OnceValues(func() (wrench.Schema, error) {
+	return wrench.CompileSchema(
+		"https://scriptedworld.github.io/infobot/status.schema.json",
+		strings.NewReader(statusSchemaJSON),
+	)
+})
 
-func fields(data payload.Map, session string, now time.Time) map[string]value {
-	out := map[string]value{
-		"session": str(session),
-		"written": str(now.Format("2006-01-02T15:04:05-07:00")),
+func fields(data payload.Map, session string, now time.Time) map[string]any {
+	out := map[string]any{
+		"session": session,
+		"written": now.Format("2006-01-02T15:04:05-07:00"),
 	}
 	// A key whose value is empty is omitted rather than written blank, so a
 	// reader tells "not said" from "said to be nothing".
 	if cwd := data.Obj("workspace").Str("current_dir"); cwd != "" {
-		out["cwd"] = str(cwd)
+		out["cwd"] = cwd
 	}
 	model := data.Obj("model").Str("display_name")
 	if model == "" {
 		model = data.Obj("model").Str("id")
 	}
 	if model != "" {
-		out["model"] = str(model)
+		out["model"] = model
 	}
 	if effort := data.Obj("effort").Str("level"); effort != "" {
-		out["effort"] = str(effort)
+		out["effort"] = effort
 	}
 
 	window, ok := Figures(data.Obj("context_window"))
 	if !ok {
 		return out
 	}
-	used, size := int64(window.Used), int64(window.Size)
-	out["context_used"] = intv(window.Used)
-	out["context_size"] = intv(window.Size)
+	used, size := tokens(window.Used), tokens(window.Size)
+	out["context_used"] = used
+	out["context_size"] = size
 	// Derived rather than read, and never negative: a payload reporting more
 	// used than the window holds gives zero.
 	remaining := size - used
 	if remaining < 0 {
 		remaining = 0
 	}
-	out["context_remaining"] = intv(float64(remaining))
+	out["context_remaining"] = remaining
 	// Neither floored nor capped, so a reader sees an over-full window as
 	// over-full where the bar can only draw it as full.
-	out["context_percent"] = floatv(num.RoundTo(window.Percent, 1))
+	out["context_percent"] = num.RoundTo(window.Percent, 1)
 	return out
 }
 
-// canonical emits the mapping: keys quoted, sorted, one to a line.
-func canonical(state map[string]value) string {
-	keys := make([]string, 0, len(state))
-	for key := range state {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-
-	// The key is quoted the same way a string value is, rather than with %q,
-	// whose Go escape syntax is a wider language than the two escapes this form
-	// defines.
-	var out strings.Builder
-	for _, key := range keys {
-		out.WriteString(scalar(str(key)) + ": " + scalar(state[key]) + "\n")
-	}
-	return out.String()
-}
-
-func scalar(v value) string {
-	if !v.quoted {
-		return v.rendered
-	}
-	var out strings.Builder
-	out.WriteByte('"')
-	for _, r := range v.text {
-		out.WriteString(escape(r))
-	}
-	out.WriteByte('"')
-	return out.String()
-}
-
-// escape spells one rune for a double-quoted scalar, which is FR-1.11r.
+// tokens converts a payload's count to an integer, saturating rather than
+// overflowing.
 //
-// THE FORM WAS NEVER THE LIMIT. A double-quoted YAML scalar carries the whole
-// C-style escape set and stays on one line, so it is a JSON string with more in
-// it, and it is the style this file already emitted. Escaping two characters
-// out of the set was under-implementation rather than a format that could not
-// say the value.
+// CONVERTING AN OUT-OF-RANGE FLOAT TO int64 IS UNDEFINED IN GO, and on amd64 it
+// lands on the minimum int64. A payload reporting `used_percentage: 1e21`
+// against a window of 100 therefore wrote `"context_used": -9223372036854775808`
+// and the board drew it, because a hand emitter formats whatever it is handed.
+// The schema refused it the first time this file was written through wrench,
+// which is validation on the way out doing the job it is there for.
 //
-// The ranges are the ones a strict reader treats specially. C0 and DEL and C1
-// are rejected outright bar three, and those three are the dangerous ones:
-// `\n`, `\r` and U+0085 are accepted raw and each comes back as a SPACE. So the
-// characters a parser lets through are exactly the ones it corrupts, which is
-// why this belongs in the emitter rather than being left to a stricter reader.
-//
-// THE LINE-BREAK SET IS THE SPEC'S, NOT THE OBSERVED ONE. YAML 1.1 makes five
-// characters line breaks, LF CR NEL LS PS; 1.2 cuts the set to LF and CR for
-// JSON compatibility and calls the other three non-breaks. Checked against both
-// specification texts on 2026-08-28 rather than inherited.
-//
-// PyYAML folds LF, CR and U+0085 and preserves U+2028 and U+2029, so it
-// implements three fifths of its own version's rule. A range derived from what
-// it does would escape U+0085 and leave its two spec siblings raw, which is a
-// split in the spec's class with nothing behind it.
-//
-// Measured, 70 code points through the built binary, `.ephemera/ctrl-sweep.py`:
-// 6 ok, 61 unreadable and 3 silently changed became 70 ok. The 61 was the
-// parser's rule rather than a score, so what this moves
-// is the third column, which is the one FR-1.11r is about.
-//
-// `\xNN` names a code point rather than a byte, so it is right for C1 as well
-// as C0. Nothing outside these ranges is touched, and no value that held none
-// of them renders differently than it did before.
-func escape(r rune) string {
-	switch r {
-	case '\\':
-		return `\\`
-	case '"':
-		return `\"`
-	case '\t':
-		return `\t`
-	case '\n':
-		return `\n`
-	case '\r':
-		return `\r`
+// Saturating rather than refusing: the four context keys are all-or-nothing, so
+// dropping them over one nonsense figure would take the other three with it.
+func tokens(f float64) int64 {
+	switch {
+	case !(f > 0):
+		// Also catches NaN, which every comparison is false against.
+		return 0
+	case f >= math.MaxInt64:
+		return math.MaxInt64
+	default:
+		return int64(f)
 	}
-	// U+2028 and U+2029 are line breaks in YAML 1.1 and non-breaks in 1.2, the
-	// same change that demoted U+0085. They are escaped for that reason rather
-	// than an observed one: a 1.1 parser folds them, and this file must not
-	// depend on which version its reader implements. `\u` because the code
-	// point does not fit `\x`.
-	if r == 0x2028 || r == 0x2029 {
-		return `\u` + strconv.FormatInt(int64(r), 16)
-	}
-	if r < 0x20 || r == 0x7f || (r >= 0x80 && r <= 0x9f) {
-		// Exactly two digits, which is what \x takes. FormatInt gives one for
-		// anything under 0x10, and `\x9` reads as a truncated escape.
-		hex := strconv.FormatInt(int64(r), 16)
-		if len(hex) == 1 {
-			hex = "0" + hex
-		}
-		return `\x` + hex
-	}
-	return string(r)
 }
 
 // Forget drops this session's state file.

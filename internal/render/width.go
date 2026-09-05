@@ -93,7 +93,7 @@ func TerminalWidth() int {
 func ask(argv ...string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), askTimeout)
 	defer cancel()
-	command := exec.CommandContext(ctx, argv[0], argv[1:]...)
+	command := exec.CommandContext(ctx, argv[0], argv[1:]...) //nolint:gosec // argv is this repo's own
 	command.WaitDelay = waitDelay
 	out, err := command.Output()
 	if err != nil {

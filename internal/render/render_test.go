@@ -16,7 +16,7 @@ func strip(text string) string { return ansi.ReplaceAllString(text, "") }
 
 // clock is a fixed instant, so a countdown is asserted as a string rather than
 // as a shape.
-var clock = time.Unix(1_800_000_000, 0)
+var clock = time.Unix(1_800_000_000, 0) //nolint:gochecknoglobals // fixed, for determinism
 
 func at(seconds int64) float64 { return float64(clock.Unix() + seconds) }
 

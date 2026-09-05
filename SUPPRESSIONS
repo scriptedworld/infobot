@@ -1,0 +1,85 @@
+# infobot, suppressions
+
+Every `//nolint`, `# nosec` or equivalent in this repository, with the question
+that was asked and the answer that was given. **A suppression that is not here
+is a defect**, because the register is the only thing standing between a
+silenced check and nobody remembering why.
+
+## S-1, package-level tables Go cannot declare immutable
+
+**Fourteen marks, one rule, six files.**
+
+    internal/pricing/pricing.go     ×2   //nolint:gochecknoglobals    the seed rate tables
+    internal/render/palette.go      ×7   //nolint:gochecknoglobals    the colours and the pace stops
+    internal/render/render_test.go       //nolint:gochecknoglobals    the fixed clock
+    internal/state/state.go         ×2   //nolint:gochecknoglobals    the input key list, and the compiled schema
+    internal/state/state_test.go         //nolint:gochecknoglobals    the fixed timestamp
+    internal/usage/usage.go              //nolint:gochecknoglobals    the counter names
+
+**The rule is "no package-level mutable state" and none of these is mutable.**
+Every one is built once at initialisation and only read afterwards: a table of
+model rates, six colours and a list of pace stops, the keys an input payload may
+carry, a `sync.OnceValues` that compiles the status schema on first use, the
+names of the counters, and two fixed values that make a test deterministic.
+
+**Go has no way to say so.** `const` reaches strings, numbers and booleans, and
+none of these is one: they are maps, slices and structs. So the language offers
+package-level `var` and nothing else, and the linter reads the only construct
+available as the thing it warns about. That is the gap being registered — not a
+disagreement about whether mutable global state is bad.
+
+**Why marks rather than a config change.** toolbox's shared golangci
+configuration already scopes this linter off for `styles?.go`, on the argument
+that Lip Gloss styles are conventionally package-level and confining them to
+their own file is good practice independently. `internal/render/palette.go` is
+that case exactly and could have joined the path pattern. The other seven are
+not: they are data tables and test fixtures sitting beside the code that uses
+them, where moving them to a file named for the linter would be arranging the
+source to suit a tool.
+
+Widening a shared configuration reaches five other repositories on the strength
+of one repository's findings, and none of them has met this yet. So it is marked
+here, where the argument is, and if a second Go project arrives with the same
+shape the config is the right place to revisit.
+
+**What would retire this entry.** Go gaining immutable composite declarations,
+which is not close; or these tables moving behind accessor functions, which
+would trade a linter finding for indirection nobody reading the code wants.
+
+Line numbers are deliberately not recorded. They go stale on the next edit and a
+stale line number is worse than none. `grep -rn nolint internal/` is the current
+list and it is one command.
+
+## S-2, gosec on the shims, the width probe and the transcript reads
+
+**Ten marks, four rules, four files.**
+
+    cmd/statusline/shim_test.go  ×3   //nolint:gosec    writing an executable shim
+    cmd/statusline/shim_test.go  ×2   //nolint:gosec    running the shim it just wrote
+    internal/render/width.go          //nolint:gosec    asking the terminal its width
+    internal/state/state.go           //nolint:gosec    creating the state directory
+    internal/usage/usage.go      ×3   //nolint:gosec    reading a transcript by path
+
+**G306, a file written 0755.** `shim_test.go` writes a shell script and then
+runs it. A shim that is not executable is not a shim, so 0600 would test
+something other than the thing. The file is in a per-test temporary directory
+that goes away with the test.
+
+**G204, a subprocess built from a variable.** Two are the same test running the
+shim whose path it just chose. The third is `width.go` asking the terminal how
+wide it is; the argv comes from this repository's own configuration and not from
+a payload, and the alternative to running a command is not knowing the width.
+
+**G301, a directory created 0755.** `~/.local/state/infobot` holds status files
+that silo's board reads, so the directory is deliberately readable. Nothing in
+it is a secret: it carries a session id, a model name, a working directory and
+four numbers.
+
+**G304, a file opened by a path from a variable.** All three read a Claude Code
+transcript whose path arrives in the hook payload. That is the input this program
+exists to read, and gosec is right that it is variable and wrong that it is
+avoidable: there is no fixed path a transcript lives at.
+
+**What would retire these.** For G204 in `width.go`, a terminal-width syscall
+rather than a subprocess. For the rest, nothing: each is the operation the code
+is for, and the mark records that somebody looked rather than that nobody did.

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scriptedworld.github.io/infobot/status.schema.json",
+  "title": "status",
+  "description": "What a session's context window is doing, written on every render and left at a predictable path keyed by session. An agent cannot measure its own context: the numbers arrive in the payload the status line is handed and nothing else in the session sees them, so a reader that would otherwise tail a transcript and sum usage records reads this instead. Held here rather than in wrench's shipped set: bin/board is the only consumer, which makes this infobot's contract with one reader rather than a word in the bolt/wrench/toolbox vocabulary. See wrench's docs/DECISIONS/what-earns-a-place-in-the-shipped-set.md, part 3.",
+
+  "type": "object",
+  "required": ["session", "written"],
+
+  "properties": {
+    "session": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The session this describes, which is also what names the file. A reader knowing its own session id knows where to look and needs to know nothing else."
+    },
+
+    "written": {
+      "type": "string",
+      "minLength": 1,
+      "description": "When the render that produced this happened. A reader finding a file for a session that has ended has no other way to tell a live measurement from one left behind."
+    },
+
+    "cwd": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where the session is working. Absent rather than empty when the payload did not say, so a reader tells 'not said' from 'said to be nothing'."
+    },
+
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The model's display name, or its id when there is no display name. Absent when the payload carried neither."
+    },
+
+    "effort": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The effort level the session is running at. Absent when the payload did not carry one."
+    },
+
+    "context_used": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Tokens the window holds, counted on the input side alone. The output side is not part of what a window is full of."
+    },
+
+    "context_size": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The window's capacity as the payload reported it, rather than a constant per model, because the same model runs at more than one size."
+    },
+
+    "context_remaining": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Derived rather than read, and never negative: a payload reporting more used than the window holds gives zero here. A negative would read as a bug in whatever drew it."
+    },
+
+    "context_percent": {
+      "type": "number",
+      "minimum": 0,
+      "description": "How full the window is, neither floored nor capped, so a reader sees an over-full window as over-full where a bar can only draw it as full. Type is all a schema can say: that the spelling carries a decimal point and never an exponent is the encoder's guarantee, and it matters because a reader matching digits against 1e+06 captures 1, which is a plausible small number rather than a parse failure."
+    }
+  },
+
+  "dependentRequired": {
+    "context_used": ["context_size", "context_remaining", "context_percent"],
+    "context_size": ["context_used", "context_remaining", "context_percent"],
+    "context_remaining": ["context_used", "context_size", "context_percent"],
+    "context_percent": ["context_used", "context_size", "context_remaining"]
+  }
+}

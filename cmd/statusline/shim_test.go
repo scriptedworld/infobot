@@ -25,18 +25,20 @@ func shimIn(t *testing.T, name string, withBinary bool) (string, int) {
 	}
 	dir := t.TempDir()
 	shim := filepath.Join(dir, name)
+	//nolint:gosec // a shim must be executable
 	if err := os.WriteFile(shim, source, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if withBinary {
 		target := map[string]string{"infobot": "statusline", "forget-session": "forget"}[name]
 		stub := "#!/bin/sh\ncat >/dev/null\necho RAN-THE-BINARY\n"
+		//nolint:gosec // a shim must be executable
 		if err := os.WriteFile(filepath.Join(dir, target), []byte(stub), 0o755); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	cmd := exec.Command(shim)
+	cmd := exec.Command(shim) //nolint:gosec // a shim has to be executable to be a shim
 	cmd.Stdin = strings.NewReader(`{"session_id":"shim-check"}`)
 	out, err := cmd.Output()
 	code := 0
@@ -120,6 +122,7 @@ func TestShimReachedThroughASymlinkDoesNotExecItself(t *testing.T) {
 	}
 	home := t.TempDir()
 	shim := filepath.Join(home, "infobot")
+	//nolint:gosec // a shim must be executable
 	if err := os.WriteFile(shim, source, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +137,7 @@ func TestShimReachedThroughASymlinkDoesNotExecItself(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := exec.Command(link)
+	cmd := exec.Command(link) //nolint:gosec // a shim has to be executable to be a shim
 	cmd.Stdin = strings.NewReader(`{"session_id":"symlink-check"}`)
 	// A loop would run until this fires rather than failing, so the timeout is
 	// the assertion as much as the output is.

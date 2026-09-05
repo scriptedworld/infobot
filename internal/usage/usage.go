@@ -28,7 +28,7 @@ import (
 // measured on one opened by a clear, the field first appears on record 18.
 const claimLines = 40
 
-var counts = []string{
+var counts = []string{ //nolint:gochecknoglobals // the counter names are read-only after init
 	"input_tokens",
 	"output_tokens",
 	"cache_read_input_tokens",
@@ -129,7 +129,7 @@ func stem(path string) string {
 // originOf is the session a transcript belongs to: its recorded origin, else
 // its own name.
 func originOf(path string) string {
-	handle, err := os.Open(path)
+	handle, err := os.Open(path) //nolint:gosec // the transcript path arrives in the hook payload
 	if err != nil {
 		return stem(path)
 	}
@@ -228,7 +228,7 @@ func copyOf(from map[string]float64) map[string]float64 {
 // A transcript being appended to by the session that is rendering can end
 // mid-line, so the offset advances only over lines that arrived complete.
 func scan(path string, start int64) (Totals, int64) {
-	handle, err := os.Open(path)
+	handle, err := os.Open(path) //nolint:gosec // the transcript path arrives in the hook payload
 	if err != nil {
 		return Totals{}, 0
 	}
@@ -320,7 +320,7 @@ func load(sessionID string) offsets {
 	if path == "" {
 		return empty
 	}
-	raw, err := os.ReadFile(path)
+	raw, err := os.ReadFile(path) //nolint:gosec // the transcript path arrives in the hook payload
 	if err != nil {
 		return empty
 	}
