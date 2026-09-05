@@ -70,11 +70,33 @@ func runeWidth(r rune) int {
 // this line in the tmux pane, which is the narrower of the two, so tmux answers
 // whenever it is there and herdr answers when it is not. Each route costs one
 // subprocess of a few milliseconds and only the winning one runs.
+//
+// ttyWidth is LAST and is the terminal itself, reached by walking the process
+// tree to an ancestor that still holds it. It is outermost by definition, so
+// it must not answer while a multiplexer owns the pane: the terminal behind a
+// pane is wider than the pane, and answering with it overflows every render.
+// See width_tty.go. Before it existed this returned 0 in a bare kitty or
+// ghostty, which is every session not run under a multiplexer.
 func TerminalWidth() int {
 	if w := tmuxWidth(); w != 0 {
 		return w
 	}
-	return herdrWidth()
+	if w := herdrWidth(); w != 0 {
+		return w
+	}
+	// A HOST THAT IS PRESENT BUT DID NOT ANSWER MUST STAY UNKNOWN. Falling
+	// through to the terminal here is the one genuinely damaging answer: the
+	// terminal behind a pane is WIDER than the pane, so a hung tmux or a herdr
+	// pane whose id no longer matches would each produce a row built past the
+	// edge and truncated on every render.
+	//
+	// Unknown costs the compact form. Overflow costs a cut tail, ten seconds
+	// later, forever. The two errors are not equally bad, which is the same
+	// argument `usable` makes about herdr's generous rectangle.
+	if os.Getenv("TMUX") != "" || os.Getenv("HERDR_PANE_ID") != "" {
+		return 0
+	}
+	return ttyWidth()
 }
 
 // ask puts a question to a host and hands back its stdout, trimmed. An empty

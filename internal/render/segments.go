@@ -10,6 +10,31 @@ import (
 	"github.com/scriptedworld/infobot/internal/state"
 )
 
+// margin is what Claude Code keeps for itself, so the pane width is NOT the
+// budget.
+//
+// 3 IS THE DEFAULT AND IS KNOWN TO BE TOO SMALL HERE. It assumes the host
+// indents two columns and keeps one at the right. Measured 2026-09-05 by
+// screenshotting the terminal: at a real 313 columns the line rendered 309 and
+// Claude Code cut BOTH rows with its own ellipsis, losing the end of the
+// session id and the saved figure. 8 renders complete.
+//
+// The default stays 3 rather than moving to 8, and that is deliberate. Raising
+// it breaks TestCostShortensThenDropsAsTheRowNarrows at width 79, which asserts
+// the cost never recovers a form it has already surrendered as the pane
+// narrows. That is a REAL non-monotonicity in the layout, latent at 3 and
+// exposed at 8, and papering over it by editing the test would hide a bug the
+// test exists to catch. Filed rather than fixed; this machine sets 8 in
+// layout.json, which is what configuration is for.
+//
+// A var, not a const: ~/.config/infobot/layout.json overrides it. The number is
+// a claim about the HOST'S CHROME, which this process cannot measure from the
+// inside, and being wrong by a column truncates every render. Configuration is
+// what lets it be dialled against what is actually drawn rather than rebuilt
+// against a guess, and it is why the wrong value survived as long as it did.
+// See layout_config.go.
+var margin = 3 //nolint:gochecknoglobals // overridden by layout.json at startup
+
 const (
 	brain     = "🧠"
 	hourglass = "⏳"
@@ -56,9 +81,6 @@ const (
 	// columns, so an eight-cell floor wraps the row, costing the whole line to
 	// save a bar that at 12% a cell was not saying much.
 	barMin = 8
-	// margin is what Claude Code keeps for itself, so the pane width is NOT the
-	// budget. It indents two columns and then keeps one at the right.
-	margin = 3
 	// windowCells is fixed rather than a share of the slack. The rate limit
 	// windows are checked occasionally, not watched, so 10% a cell is enough
 	// resolution, and a fixed width keeps the row from moving under them as the

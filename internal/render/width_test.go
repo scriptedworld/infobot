@@ -49,13 +49,26 @@ func noHosts(t *testing.T) {
 
 // COVERS: FR-3.3, FR-3.4 | negative
 //
-// A host that cannot be asked yields unknown, which means render the full form.
-// The fabricated 80x24 a library would return is never used: believing it would
-// truncate a 223-column pane to 80, worse than not adapting at all.
-func TestNoHostMeansUnknownRatherThanEighty(t *testing.T) {
+// With no multiplexer, the answer is the TERMINAL or unknown, and never the
+// fabricated 80 a library would hand back. Believing that 80 would truncate a
+// 223-column pane, which is worse than not adapting at all.
+//
+// This asserts the fabrication is absent rather than asserting 0. Until
+// 2026-09-05 the two were the same thing, because no route existed for a bare
+// terminal and unknown was all that was left; ttyWidth now reaches the terminal
+// through an ancestor that still holds it, so a real width here is a pass. What
+// must never appear is 80, and that is what is checked.
+//
+// 24 is checked with it. A library returning the 80x24 pair would produce both,
+// and a width of 24 is the same fabrication wearing the rows.
+func TestNoHostMeansTheTerminalOrUnknownButNeverEighty(t *testing.T) {
 	noHosts(t)
-	if got := render.TerminalWidth(); got != 0 {
-		t.Errorf("TerminalWidth = %d, want 0 for unknown", got)
+	got := render.TerminalWidth()
+	if got == 80 || got == 24 {
+		t.Errorf("TerminalWidth = %d, which is the fabricated fallback", got)
+	}
+	if got < 0 {
+		t.Errorf("TerminalWidth = %d, want unknown or a real width", got)
 	}
 }
 

@@ -234,6 +234,7 @@ func Main(stdin io.Reader, stdout io.Writer) int {
 	// happens to have. This is the one entry point, so it is the one place the
 	// configured palette can be picked up exactly once.
 	loadPalette()
+	loadLayout()
 
 	raw, err := io.ReadAll(stdin)
 	if err != nil {
