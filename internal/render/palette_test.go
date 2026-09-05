@@ -70,14 +70,14 @@ func rampAt(t *testing.T, pct float64) [3]int {
 func TestRampIsTwoStraightLines(t *testing.T) {
 	colourful(t)
 	at := func(pct float64) [3]int { return rampAt(t, pct) }
-	if got, want := at(0), [3]int{60, 200, 90}; got != want {
+	if got, want := at(0), [3]int{43, 255, 158}; got != want {
 		t.Errorf("bottom of the ramp = %v, want green %v", got, want)
 	}
-	if got, want := at(75), [3]int{235, 220, 40}; got != want {
+	if got, want := at(75), [3]int{255, 212, 38}; got != want {
 		t.Errorf("the pivot = %v, want yellow %v", got, want)
 	}
 	// Red arrives at the alarm boundary, not before it.
-	if got, want := at(89.999), [3]int{225, 45, 45}; got != want {
+	if got, want := at(89.999), [3]int{255, 46, 110}; got != want {
 		t.Errorf("top of the ramp = %v, want red %v", got, want)
 	}
 	// The second leg is steeper: 75 to 90 covers the same colour distance as
@@ -101,10 +101,10 @@ func TestAlarmFadesInRatherThanSwitchingOn(t *testing.T) {
 			"context_window_size": 200000.0, "used_percentage": pct,
 		}, 0)
 	}
-	if got := counts(90); !strings.Contains(got, "\033[1;38;2;225;45;45;48;2;26;27;38m") {
+	if got := counts(90); !strings.Contains(got, "\033[1;38;2;255;46;110;48;2;13;10;32m") {
 		t.Errorf("at 90 the alarm is not red on the terminal backdrop: %q", got)
 	}
-	if got := counts(100); !strings.Contains(got, "\033[1;38;2;250;240;120;48;2;180;25;25m") {
+	if got := counts(100); !strings.Contains(got, "\033[1;38;2;255;232;92;48;2;115;21;50m") {
 		t.Errorf("at 100 the alarm has not arrived in full: %q", got)
 	}
 	// Bold is on across the whole band and cannot fade.
@@ -180,7 +180,7 @@ func TestRunsShareOneEscapeAndOpenWithAReset(t *testing.T) {
 	if got := strings.Count(tinted, "\033[38;2;1;2;3m"); got != 1 {
 		t.Errorf("tinted fill emitted %d escapes, want 1 for the run", got)
 	}
-	if got := strings.Count(tinted, "\033[38;2;0;95;95m"); got != 1 {
+	if got := strings.Count(tinted, "\033[38;2;12;90;102m"); got != 1 {
 		t.Errorf("empty track emitted %d escapes, want 1 for the run", got)
 	}
 
@@ -204,10 +204,10 @@ func TestRunsShareOneEscapeAndOpenWithAReset(t *testing.T) {
 func TestEmptyCellsAndRailShareOneColourAndNoBackground(t *testing.T) {
 	colourful(t)
 	bar := render.Bar(10, 20, "")
-	if !strings.Contains(bar, "\033[38;2;0;95;95m▱") {
+	if !strings.Contains(bar, "\033[38;2;12;90;102m▱") {
 		t.Errorf("empty cells are not the dim cyan: %q", bar)
 	}
-	if strings.Contains(bar, "48;2;0;95;95") {
+	if strings.Contains(bar, "48;2;12;90;102") {
 		t.Errorf("empty cells carry a background: %q", bar)
 	}
 
@@ -220,20 +220,20 @@ func TestEmptyCellsAndRailShareOneColourAndNoBackground(t *testing.T) {
 			"five_hour": map[string]any{"used_percentage": 30.0},
 		},
 	}, "/home/me", 120, clock)
-	if !strings.HasPrefix(rows[0], "\033[38;2;0;95;95m") {
+	if !strings.HasPrefix(rows[0], "\033[38;2;12;90;102m") {
 		t.Errorf("the rail is not the empty cells' colour: %q", rows[0])
 	}
 }
 
 // COVERS: FR-6.11 | property
-func TestPathCarriesTheDesktopTeal(t *testing.T) {
+func TestPathCarriesTheDesktopAccent(t *testing.T) {
 	colourful(t)
 	isolate(t)
 	rows := render.Build(payload.Map{
 		"workspace": map[string]any{"current_dir": "/home/me/x"},
 	}, "/home/me", 120, clock)
-	if !strings.Contains(rows[0], "\033[38;2;0;165;149m") {
-		t.Errorf("path is not the ENCOM teal: %q", rows[0])
+	if !strings.Contains(rows[0], "\033[38;2;255;43;214m") {
+		t.Errorf("path is not the desktop accent: %q", rows[0])
 	}
 }
 
@@ -299,7 +299,7 @@ func TestVerdictFadesInAgainstGreen(t *testing.T) {
 	}, 5*3600, false, true, clock))
 
 	// Early is close to green because almost nothing can be said yet.
-	if early != [3]int{60, 200, 90} {
+	if early != [3]int{43, 255, 158} {
 		t.Errorf("early verdict = %v, want it still green", early)
 	}
 	if late[0] <= early[0] {

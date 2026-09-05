@@ -107,7 +107,7 @@ func TestProjectRootMarkerSitsOutsideTheColour(t *testing.T) {
 	}, "/home/me", 200, clock)
 
 	row := got[0]
-	if !strings.Contains(row, "⌂ \033[38;2;0;165;149m") {
+	if !strings.Contains(row, "⌂ \033[38;2;255;43;214m") {
 		t.Errorf("the marker is inside the path's colour, or absent: %q", row)
 	}
 }

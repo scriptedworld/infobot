@@ -15,10 +15,19 @@ import (
 // Two straight lines rather than one. Green to yellow across the long stretch
 // where nothing is happening, then yellow to red compressed into 75-90, so the
 // colour moves fastest exactly where a glance needs to tell 80 from 88.
+// EVERY COLOUR BELOW IS A SEED, NOT THE SETTING. palette_config.go overlays
+// ~/.config/infobot/palette.json over these at startup, so the palette is
+// configuration and a re-cut reaches the status line without a rebuild. On this
+// estate that file is a symlink into g0bl1n.theme.
+//
+// The seed is D1C3 Goblin, so a machine with no palette.json still matches the
+// terminal behind it. It replaced a MIXTURE on 2026-09-05: the backdrop was
+// Tokyo Night while the path and empty colours were still ENCOM's teal, so the
+// status line matched neither the terminal nor itself.
 var (
-	green  = rgb{60, 200, 90}  //nolint:gochecknoglobals // colours built once and read per render
-	yellow = rgb{235, 220, 40} //nolint:gochecknoglobals // colours built once and read per render
-	red    = rgb{225, 45, 45}  //nolint:gochecknoglobals // colours built once and read per render
+	green  = rgb{43, 255, 158} //nolint:gochecknoglobals // #2BFF9E, built once
+	yellow = rgb{255, 212, 38} //nolint:gochecknoglobals // #FFD426
+	red    = rgb{255, 46, 110} //nolint:gochecknoglobals // #FF2E6E
 )
 
 const (
@@ -39,7 +48,7 @@ const (
 // arrives instead of slamming on.
 //
 // BLACK IS NOT INVISIBLE, which is the trap this walked into first. The palette
-// here is Tokyo Night, #1a1b26 at full opacity in kitty and inherited by herdr,
+// here is D1C3 Goblin, #0D0A20 at full opacity in kitty and inherited by herdr,
 // so a pure black background is a dark notch against it: a seam exactly where
 // the fade exists to have none. Matching the backdrop is what makes it vanish.
 //
@@ -48,29 +57,43 @@ const (
 //
 // Bold is the one part that cannot fade, so it is on across the whole band.
 var (
-	backdrop = rgb{26, 27, 38} //nolint:gochecknoglobals // #1a1b26, the terminal's own background
-	//nolint:gochecknoglobals // pale yellow, the far end of the foreground fade
-	alarmFG = rgb{250, 240, 120}
-	//nolint:gochecknoglobals // deep red, the far end of the background fade
-	alarmBG = rgb{180, 25, 25}
+	//nolint:gochecknoglobals // #0D0A20, the terminal's own background
+	backdrop = rgb{13, 10, 32}
+	//nolint:gochecknoglobals // #FFE85C bright_yellow, far end of the foreground fade
+	alarmFG = rgb{255, 232, 92}
+	//nolint:gochecknoglobals // deep red, far end of the background fade. Derived:
+	// #FF2E6E at 45%, because the palette carries no red dark enough to sit
+	// under text and still read as an alarm rather than as a block of colour.
+	alarmBG = rgb{115, 21, 50}
 )
 
-// The ENCOM teal, the same value the i3 bar and claws use ($encom_teal,
-// #00a595), so the status line reads as part of the desktop instead of beside
-// it.
-const pathColour = "\033[38;2;0;165;149m"
+// The accent, the same value the window frames and the active tag use, so the
+// status line reads as part of the desktop instead of beside it. This was
+// ENCOM's teal (#00a595) until 2026-09-05, long after ENCOM stopped being the
+// palette anywhere else.
+// var rather than const: palette.json overwrites these at startup. See
+// palette_config.go.
+var pathColour = "\033[38;2;255;43;214m" //nolint:gochecknoglobals // #FF2BD6 accent
 
 // The unused cells are an outline glyph and NO background. The glyph carries
 // its own shape, and a background behind it would fill the gaps between the
 // parallelograms and turn the tail of the bar into a solid slab.
 //
-// $encom_dimcyan from the i3 config, one step up from the deepcyan the i3 bar
-// uses for inactive_workspace.
-const emptyColour = "\033[38;2;0;95;95m" // $encom_dimcyan #005f5f
+// A DIM CYAN, derived: #1FE0FF at 40%, because the palette carries no colour
+// both dim enough to read as unused and cool enough to keep the pace scale
+// ordered. It is the faithful translation of what this was, ENCOM's dim cyan.
+//
+// THE RED CHANNEL IS LOAD-BEARING, which is not obvious. The pace scale is
+// checked by asserting that red decreases from hot through on-rate to cold,
+// and `firstFG` on a barely-used bar picks up THIS colour rather than a pace
+// colour. Muted (#6E5A9E, red 110) sits above green (#2BFF9E, red 43) and
+// inverts that order; this (red 12) sits below it. Tried muted first and the
+// pace test caught it.
+var emptyColour = "\033[38;2;12;90;102m" //nolint:gochecknoglobals // #0C5A66, dim cyan
 
-const (
-	sepColour = "\033[38;2;70;80;85m" // dim, so it divides without competing
-	dimColour = "\033[38;2;120;130;135m"
+var (
+	sepColour = "\033[38;2;59;21;102m"   //nolint:gochecknoglobals // #3B1566 selection
+	dimColour = "\033[38;2;142;124;195m" //nolint:gochecknoglobals // #8E7CC3 dark_foreground
 )
 
 // paceStop is one anchor on the diverging pace scale.
@@ -81,8 +104,8 @@ type paceStop struct {
 
 // The pace stops, here because they are built from the palette above.
 var paceStops = []paceStop{ //nolint:gochecknoglobals // colours built once and read per render
-	{0.0, rgb{70, 140, 235}},   // blue: the window is barely being touched
-	{70.0, rgb{220, 225, 230}}, // white: under-spending it
+	{0.0, rgb{46, 123, 255}},   // #2E7BFF blue: the window is barely being touched
+	{70.0, rgb{211, 198, 245}}, // #D3C6F5 light_foreground: under-spending it
 	{100.0, green},             // lands exactly full as it resets
 	{125.0, yellow},            // empties a fifth of the way early
 	{150.0, red},               // empties a third of the way early

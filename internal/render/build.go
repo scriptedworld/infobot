@@ -229,6 +229,12 @@ func alignCost(lines []string, data payload.Map, width int) []string {
 // It exits 0 whatever it is given. Unparseable input is not worth a traceback
 // in the status bar, and a status line that fails shows nothing at all.
 func Main(stdin io.Reader, stdout io.Writer) int {
+	// Called here rather than from init(), which gochecknoinits forbids and
+	// which would also run during tests and read whatever palette the machine
+	// happens to have. This is the one entry point, so it is the one place the
+	// configured palette can be picked up exactly once.
+	loadPalette()
+
 	raw, err := io.ReadAll(stdin)
 	if err != nil {
 		return 0
