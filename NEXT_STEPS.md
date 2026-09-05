@@ -122,9 +122,50 @@ silo's dispatch tooling, so a reader over every session's file already exists
 and has an owner. What remains is narrower, being where intent comes from and
 whose vocabulary it uses.
 
+## The cost recovers a form it already surrendered, at width 79
+
+FACT 2026-09-05. `TestCostShortensThenDropsAsTheRowNarrows` sweeps the width
+down and asserts the cost never returns to a fuller form as the pane narrows.
+With `margin` at 3 it passes. At 8 it fails at width 79, which went back to a
+fuller form than 80 had.
+
+**Latent, not introduced.** The margin change exposed it; the non-monotonicity
+is in the layout. It was not chased because the session was out of context, and
+the default was left at 3 rather than editing the test to accommodate it, which
+would have hidden the bug the test exists to catch.
+
+**This blocks raising the default margin**, which wants to happen: 3 truncates
+against a real terminal. See below.
+
+## The margin default is known wrong and cannot move yet
+
+FACT 2026-09-05, measured by screenshotting the terminal at 313 columns. At
+`margin = 3` the line renders 309 and Claude Code cuts BOTH rows with its own
+ellipsis, losing the end of the session id and the saved figure. At 8 both
+render complete.
+
+**What eats the columns is not a fixed quantity.** The Remote Control indicator
+renders to the RIGHT of the status line when it is on. Nothing in the
+environment or the payload reports whether it is, so the margin cannot be
+derived. FACT: no `CLAUDE_*` variable carries it, and the payload keys are
+`context_window`, `display_name`, `effort`, `id`, `level`, `model`,
+`rate_limits`, `session_id`, `workspace`.
+
+This machine sets 8 in `~/.config/infobot/layout.json`. The compiled default
+moves once the monotonicity above is fixed.
+
 ## The rows want describing in configuration rather than in code
 
-Wanted, not scheduled, and not started. The shape of each row would be lines in
+Wanted, not scheduled, and not started.
+
+**Two pieces of it landed 2026-09-05**, both following `internal/pricing`: the
+palette is `~/.config/infobot/palette.json` and the margin is
+`~/.config/infobot/layout.json`. Both overlay a compiled seed and fall back on
+anything malformed, because a status line that fails shows nothing at all. They
+are separate files deliberately: the palette is a symlink into `g0bl1n.theme`
+and is the same wherever the theme is adopted, while the margin is a fact about
+the terminal and the host build in front of it. That split is the one to keep
+when more of the construction moves to configuration. The shape of each row would be lines in
 a configuration file naming the segments and their order, so changing what the
 status line shows stops being a code change.
 
