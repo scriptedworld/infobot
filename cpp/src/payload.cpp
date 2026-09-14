@@ -12,6 +12,8 @@ Map::Map(simdjson::dom::object object) : object_(object) {}
 
 bool Map::present() const { return object_.has_value(); }
 
+bool Map::has_entries() const { return object_.has_value() && object_->size() > 0; }
+
 std::optional<simdjson::dom::element> Map::find(std::string_view key) const {
     if (!object_) {
         return std::nullopt;

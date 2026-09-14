@@ -34,8 +34,21 @@ add_compile_options(
 )
 
 add_library(infobot STATIC
+    src/environment.cpp
+    src/files.cpp
+    src/gojson.cpp
+    src/gopath.cpp
+    src/gotext.cpp
+    src/host.cpp
     src/num.cpp
+    src/palette.cpp
     src/payload.cpp
+    src/pricing.cpp
+    src/render.cpp
+    src/state.cpp
+    src/usage.cpp
+    src/width.cpp
+    src/width_table.cpp
 )
 target_include_directories(infobot PUBLIC src)
 # Static, so the measured binary carries what it runs and pays no dynamic
@@ -49,6 +62,9 @@ add_executable(infobot-tests
 )
 target_link_libraries(infobot-tests PRIVATE infobot doctest::doctest)
 
+add_executable(statusline cmd/statusline.cpp)
+target_link_libraries(statusline PRIVATE infobot)
+
 # THE CODE UNDER TEST IS INSTRUMENTED AND THE TESTS ARE NOT, which is the
 # boundary `go test -cover` draws for the Go tree. A doctest assertion expands
 # to branches that are taken only when it fails, so an instrumented test file
@@ -59,5 +75,7 @@ target_link_libraries(infobot-tests PRIVATE infobot doctest::doctest)
 # so no file of the program is outside the per-file minimum.
 if(INFOBOT_COVERAGE)
     target_compile_options(infobot PRIVATE --coverage -O0)
+    target_compile_options(statusline PRIVATE --coverage -O0)
     target_link_options(infobot-tests PRIVATE --coverage)
+    target_link_options(statusline PRIVATE --coverage)
 endif()

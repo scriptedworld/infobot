@@ -28,6 +28,10 @@ class Map {
     // Whether this is an object at all, as opposed to absent.
     [[nodiscard]] bool present() const;
 
+    // Whether this is an object holding at least one key, which is Go's
+    // `len(m) > 0`.
+    [[nodiscard]] bool has_entries() const;
+
     // The nested object at key, or an absent Map when it is missing or is not
     // one.
     [[nodiscard]] Map obj(std::string_view key) const;
