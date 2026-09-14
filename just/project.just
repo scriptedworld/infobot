@@ -3,6 +3,35 @@
 # What is here names this project's binaries and where they are used from, which
 # is the part neither the base nor the Go layer can know.
 
+# THIS TREE HOLDS TWO LANGUAGES, so `checks` is overridden here rather than
+# taken from the Go layer: the layer can only know its own jig. The Go half is
+# the layer's two lines unchanged.
+#
+# The C++ jig does not build and does not run tests, by its own contract. It
+# reads a compilation database and a gcov profile, so `cpp-profile` produces
+# both before the jig is asked about them.
+#
+# FROM AN EMPTY BUILD DIRECTORY, every time. gcov leaves a notes file per object
+# at compile time and a counts file per object at run time, and either one
+# surviving from an earlier configuration is read as this run's. Measured
+# 2026-09-14: after the test sources stopped being instrumented, their notes
+# files outlived the change and the jig failed both test files at 0% of lines.
+
+# all the quality tooling, both languages
+checks:
+    @just _verdict common-quality
+    @just _verdict go-std-quality --definitions go-std-quality
+    @just cpp-profile
+    @just _verdict cpp-std-quality --definitions cpp-std-quality
+
+# the C++ suite, instrumented, leaving the database and profile the jig reads
+cpp-profile:
+    rm -rf cpp/build
+    cmake -S cpp -B cpp/build -G Ninja -DINFOBOT_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
+    cmake --build cpp/build
+    ln -sfn cpp/build/compile_commands.json compile_commands.json
+    cpp/build/infobot-tests
+
 # Two binaries, and the committed shims beside them are what Claude Code
 # invokes. The shim is the committed half and the binary is not, which is
 # FR-1.13 rather than a packaging preference: a build that has not run and a

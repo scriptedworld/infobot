@@ -87,6 +87,7 @@ neither `shellcheck` nor `shfmt` is installed on this machine yet.
     bin/forget         the built cleanup. Gitignored.
     cmd/               two entry points, one delegating call each
     internal/          the program: render, state, usage, pricing, payload, num
+    cpp/               a C++ implementation, measured and not deployed
     Justfile           the two-word interface; recipes in just/
     README.md          the front door: what it is, how to build and wire it
     LICENSE, NOTICE    Apache 2.0

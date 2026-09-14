@@ -1,0 +1,11 @@
+# infobot's values for the placeholders in bolt.cpp-std-quality.yaml.
+#
+# The database keeps the jig's default path, compile_commands.json at the root,
+# which `just` links to the CMake build in cpp/build. lint and headers pass
+# `-p .` and read the root whatever this says, so a database anywhere else
+# would be read by three tasks and not the other two.
+#
+# The header filter is the one value only this project knows: its own headers
+# are under cpp/src, and the jig's default of `^$` would leave every one of them
+# unread by clang-tidy.
+header_filter: .*/cpp/src/.*
