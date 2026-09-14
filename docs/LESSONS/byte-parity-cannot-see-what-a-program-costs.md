@@ -19,7 +19,7 @@ Every one passed. The implementations agree on every byte either produces.
 
 ## What that missed
 
-FACT 2026-08-30, a 6.3MB transcript, `poop` and `hyperfine -N` under `taskset`:
+Checked 2026-08-30, a 6.3MB transcript, `poop` and `hyperfine -N` under `taskset`:
 
     wall time     go 2.8 ms       zig 13.2 ms      4.7x
     instructions  go 3.08 M       zig 58.0 M      19x

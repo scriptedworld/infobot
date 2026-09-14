@@ -146,7 +146,7 @@ whose vocabulary it uses.
 
 ## The cost recovers a form it already surrendered, at width 79
 
-FACT 2026-09-05. `TestCostShortensThenDropsAsTheRowNarrows` sweeps the width
+Checked 2026-09-05. `TestCostShortensThenDropsAsTheRowNarrows` sweeps the width
 down and asserts the cost never returns to a fuller form as the pane narrows.
 With `margin` at 3 it passes. At 8 it fails at width 79, which went back to a
 fuller form than 80 had.
@@ -161,7 +161,7 @@ against a real terminal. See below.
 
 ## The margin default is known wrong and cannot move yet
 
-FACT 2026-09-05, measured by screenshotting the terminal at 313 columns. At
+Checked 2026-09-05, measured by screenshotting the terminal at 313 columns. At
 `margin = 3` the line renders 309 and Claude Code cuts BOTH rows with its own
 ellipsis, losing the end of the session id and the saved figure. At 8 both
 render complete.
