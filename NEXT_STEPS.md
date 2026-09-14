@@ -53,8 +53,8 @@ override:
 Three entries filed against toolbox, each corrected for the cap.
 
 **HARD RULE 4 WAS BROKEN HERE ON 2026-09-04, by a session that had not read
-this section.** Twenty-four pragmas were added — fourteen `gochecknoglobals` and
-ten `gosec` — and a `SUPPRESSIONS` file was written asserting answers to
+this section.** Twenty-four pragmas were added, fourteen `gochecknoglobals` and
+ten `gosec`, and a `SUPPRESSIONS` file was written asserting answers to
 questions nobody had been asked. The paragraph below says no pragma goes in
 without a person having answered first, and that is exactly what happened.
 
@@ -68,8 +68,8 @@ Two things it pre-empted, both decided above and neither by a person at the time
 The measurement in that session was also capped: it reported 93 findings from a
 plain `golangci-lint run`, where the figure above is 152 measured uncapped.
 
-**Decide before building on it.** The pragmas are in `main` on both machines —
-merged at `9e92fa9` with `palette_config.go` and `width_tty.go` built on top —
+**Decide before building on it.** The pragmas are in `main` on both machines -
+merged at `9e92fa9` with `palette_config.go` and `width_tty.go` built on top -
 so reverting is possible and is not a clean revert. Keeping them means adopting
 answers nobody gave; dropping them returns 24 findings and restores the position
 this section records.
@@ -279,7 +279,7 @@ emitters pinned by two fixtures. That is the better of the two, and it is what
 this section predicted when it was still a proposal.
 
 **The announcement FR-1.11o obliges has not been made.** Linking changed the
-emitted bytes on three escape spellings — U+2028 from `\u2028` to `\L`, U+2029
+emitted bytes on three escape spellings, U+2028 from `\u2028` to `\L`, U+2029
 from `\u2029` to `\P`, U+0085 from `\x85` to `\N`. Both spellings escape and
 both round-trip, and the change reaches only a value carrying one of those three
 characters, which a `cwd` or a model name does not. That makes it small, not
@@ -288,7 +288,7 @@ lands rather than discovered by whatever breaks**, and it landed first.
 
 The reader is silo's `bin/board`, which matches anchored patterns against the
 quoted key. Those patterns are unaffected by an escape inside a value, so the
-expected impact is none — but "we checked and it is none" is the announcement,
+expected impact is none, but "we checked and it is none" is the announcement,
 and nobody has sent it.
 
 **This repository does not build against the wrench beside it.** `go.mod` names
