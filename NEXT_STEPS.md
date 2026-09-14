@@ -169,7 +169,7 @@ render complete.
 **What eats the columns is not a fixed quantity.** The Remote Control indicator
 renders to the RIGHT of the status line when it is on. Nothing in the
 environment or the payload reports whether it is, so the margin cannot be
-derived. FACT: no `CLAUDE_*` variable carries it, and the payload keys are
+derived. Measured: no `CLAUDE_*` variable carries it, and the payload keys are
 `context_window`, `display_name`, `effort`, `id`, `level`, `model`,
 `rate_limits`, `session_id`, `workspace`.
 
