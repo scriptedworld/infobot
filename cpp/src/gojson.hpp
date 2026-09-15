@@ -19,6 +19,7 @@
 
 #include <simdjson.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -96,7 +97,7 @@ class Decode {
         }
     }
 
-    // A slice field. Null resets it to nil, and an array replaces it.
+    // A slice field. Null resets it to nil, and an array sets its length.
     template <class T, class DecodeValue>
     void slice_into(simdjson::dom::element value,
                     std::optional<std::vector<T>>& out,
@@ -110,10 +111,20 @@ class Decode {
             ok_ = false;
             return;
         }
-        out.emplace();
-        for (const auto element : array) {
-            std::invoke(decode_value, *this, element, out->emplace_back());
+        if (!out) {
+            out.emplace();
         }
+        // Go decodes into an element already there rather than from zero, so a
+        // null over it leaves it, and the slice is cut to the array's length.
+        std::size_t count = 0;
+        for (const auto element : array) {
+            if (count == out->size()) {
+                out->emplace_back();
+            }
+            std::invoke(decode_value, *this, element, (*out)[count]);
+            ++count;
+        }
+        out->resize(count);
     }
 
    private:

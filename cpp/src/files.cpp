@@ -27,16 +27,16 @@ constexpr std::size_t chunk = 256UZ * 1024UZ;
 
 }  // namespace
 
+// os.ReadFile: an error, not an exception, for anything that cannot be read,
+// a directory included. A stream read of a directory throws, which took the
+// whole statusline down where Go falls back to the seed.
 std::optional<std::string> read(const std::string& path) {
-    std::ifstream stream(path, std::ios::binary);
-    if (!stream) {
+    const int fd = ::open(path.c_str(), O_RDONLY | O_CLOEXEC);
+    if (fd < 0) {
         return std::nullopt;
     }
-    std::string content{std::istreambuf_iterator<char>(stream),
-                        std::istreambuf_iterator<char>()};
-    if (stream.bad()) {
-        return std::nullopt;
-    }
+    auto content = read_all(fd);
+    ::close(fd);
     return content;
 }
 
