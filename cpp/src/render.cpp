@@ -4,13 +4,16 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <format>
 #include <initializer_list>
+#include <limits>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -23,6 +26,7 @@
 #include "payload.hpp"
 #include "pricing.hpp"
 #include "state.hpp"
+#include "status_file.hpp"
 #include "usage.hpp"
 #include "width.hpp"
 
@@ -39,7 +43,7 @@ constexpr std::string_view root_glyph = "⌂";
 
 // Powerline's thin separator. A plain bar is the fallback wherever the glyph is
 // missing, one column either way.
-constexpr std::string_view separator_glyph = "";
+constexpr std::string_view separator_glyph = "\uE0B1";
 
 constexpr std::string_view rail_top = "╭─ ";
 constexpr std::string_view rail_mid = "├─ ";
@@ -141,15 +145,22 @@ std::string session_part(const payload::Map& data) {
     return "⟨" + std::string(id.substr(0, session_shown)) + "⟩";
 }
 
-std::optional<double> elapsed_fraction(double resets_at, int span, double now) {
-    if (resets_at == 0 || span == 0) {
+// When a window resets and how long it is.
+struct Reset {
+    double at = 0;
+    int span = 0;
+};
+
+// How far through the window now is, when that is knowable at all.
+std::optional<double> elapsed_fraction(Reset reset, double now) {
+    if (reset.at == 0 || reset.span == 0) {
         return std::nullopt;
     }
-    const double remaining = resets_at - now;
+    const double remaining = reset.at - now;
     if (remaining <= 0) {
         return std::nullopt;
     }
-    return num::clamp(1 - remaining / static_cast<double>(span), 0, 1);
+    return num::clamp(1 - (remaining / static_cast<double>(reset.span)), 0, 1);
 }
 
 }  // namespace
@@ -243,9 +254,9 @@ std::string Renderer::ramp(double pct) const {
     }
     const palette::Palette& p = setup_.palette;
     if (pct <= pivot) {
-        return palette::mix(p.green, p.yellow, pct / pivot).fg();
+        return palette::fg(palette::mix(p.green, p.yellow, pct / pivot));
     }
-    return palette::mix(p.yellow, p.red, (pct - pivot) / (alarm_at - pivot)).fg();
+    return palette::fg(palette::mix(p.yellow, p.red, (pct - pivot) / (alarm_at - pivot)));
 }
 
 std::string Renderer::colour(double pct, std::string_view text) const {
@@ -275,7 +286,7 @@ std::string Renderer::pace_tint(double pct, double elapsed) const {
     // arrives late.
     double trust = std::min(1.0, elapsed / pace_confident);
     trust *= trust;
-    return palette::mix(setup_.palette.green, pace_rgb(projected), trust).fg();
+    return palette::fg(palette::mix(setup_.palette.green, pace_rgb(projected), trust));
 }
 
 std::string Renderer::bar(double pct, int cells, std::string_view tint) const {
@@ -322,9 +333,9 @@ std::vector<std::string> Renderer::rail(std::vector<std::string> rows) const {
         } else if (i == rows.size() - 1) {
             lead = rail_end;
         }
-        std::string framed = setup_.plain ? std::string(lead)
-                                          : setup_.palette.empty + std::string(lead) +
-                                                std::string(palette::reset);
+        const std::string framed = setup_.plain ? std::string(lead)
+                                                : setup_.palette.empty + std::string(lead) +
+                                                      std::string(palette::reset);
         rows[i] = framed + rows[i];
     }
     return rows;
@@ -335,9 +346,9 @@ std::string Renderer::countdown(double resets_at) const {
         return {};
     }
     const double left = resets_at - seconds();
-    // Go converts out of range to the minimum int64 on amd64, which reads as
-    // already past.
-    if (!(left > -int64_bound && left < int64_bound)) {
+    // Go converts NaN or out of range to the minimum int64 on amd64, which reads
+    // as already past.
+    if (std::isnan(left) || left <= -int64_bound || left >= int64_bound) {
         return {};
     }
     const auto remaining = static_cast<std::int64_t>(left);
@@ -385,7 +396,7 @@ std::string Renderer::limit_segment(std::string_view label,
     const double resets_at = window.count("resets_at");
     // Concern where it can be worked out, raw spend where it cannot.
     std::string tint = ramp(*pct);
-    if (const auto elapsed = elapsed_fraction(resets_at, span, seconds())) {
+    if (const auto elapsed = elapsed_fraction({.at = resets_at, .span = span}, seconds())) {
         tint = pace_tint(*pct, *elapsed);
     }
     const std::string number = tinted(std::format("@{:.0f}%", *pct), tint);
@@ -404,10 +415,10 @@ int Renderer::row_width(const std::vector<std::string>& parts) const {
 }
 
 std::string Renderer::fitted(const payload::Map& context_window,
+                             int width,
                              const std::vector<std::string>& others,
-                             std::size_t at,
-                             int width) const {
-    const std::string bare = context_segment(context_window, 0);
+                             std::size_t at) const {
+    std::string bare = context_segment(context_window, 0);
     if (width == 0) {
         // No bar when the width is unknown: any length is a guess the host
         // then truncates.
@@ -487,11 +498,11 @@ std::vector<std::vector<std::string>> Renderer::compose(const payload::Map& data
         full.push_back(bare);
         full.insert(full.end(), tail.begin(), tail.end());
         if (width != 0 && row_width(full) > width - setup_.margin) {
-            meters.insert(meters.begin(), fitted(context_window, meters, 0, width));
+            meters.insert(meters.begin(), fitted(context_window, width, meters, 0));
         } else {
             std::vector<std::string> others = identity;
             others.insert(others.end(), tail.begin(), tail.end());
-            identity.push_back(fitted(context_window, others, identity.size(), width));
+            identity.push_back(fitted(context_window, width, others, identity.size()));
         }
     }
     identity.insert(identity.end(), tail.begin(), tail.end());
@@ -505,7 +516,7 @@ std::pair<std::string, std::string> Renderer::cost_forms(
     }
     const Environment& env = *setup_.env;
     const auto figures = pricing::price(usage::sum(data.str("session_id"), "", env),
-                                        pricing::load(env.config_file("pricing.json")));
+                                        pricing::load(config_file(env, "pricing.json")));
     if (!figures) {
         return {};
     }
@@ -571,28 +582,35 @@ std::vector<std::string> Renderer::build(const payload::Map& data, int width) co
 std::vector<std::string> rows_for(std::string_view input,
                                   const Environment& env,
                                   Instant now) {
-    Setup setup{.palette = palette::load(env.config_file("palette.json")),
-                .margin = load_margin(env.config_file("layout.json")),
+    Setup setup{.palette = palette::load(config_file(env, "palette.json")),
+                .margin = load_margin(config_file(env, "layout.json")),
                 .plain = env.plain,
                 .env = &env};
     const payload::Document document(input);
     if (!document.root().present()) {
         return {};
     }
+    // Before the render, so a payload the bar cannot draw still leaves its
+    // numbers on disk.
+    status_file::write(document.root(), env, now);
     const Renderer renderer(std::move(setup), now);
-    return renderer.build(document.root(), host::terminal_width(env));
+    // A width past int's range is not a pane anybody has; it is held at the
+    // largest int rather than wrapped, which is the one place this port and
+    // Go's 64-bit int would part.
+    const std::int64_t width = std::min<std::int64_t>(host::terminal_width(env),
+                                                      std::numeric_limits<int>::max());
+    return renderer.build(document.root(), static_cast<int>(width));
 }
 
-int statusline(int input, int output, const Environment& env, Instant now) {
-    const auto raw = files::read_all(input);
+int statusline(Streams streams, const Environment& env, Instant now) {
+    const auto raw = files::read_all(streams.input);
     if (!raw) {
         return 0;
     }
-    for (const std::string& row : rows_for(*raw, env, now)) {
-        if (!files::write_all(output, row + "\n")) {
-            break;
-        }
-    }
+    // all_of stops at the first write that fails.
+    (void)std::ranges::all_of(rows_for(*raw, env, now), [&](const std::string& row) {
+        return files::write_all(streams.output, row + "\n");
+    });
     return 0;
 }
 

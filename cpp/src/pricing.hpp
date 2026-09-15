@@ -39,13 +39,13 @@ struct Table {
     gojson::Map<Rate> rates;
     std::optional<double> cache_read;
     gojson::Map<double> cache_write;
-
-    // The cache read multiplier, falling back to the seed's tenth.
-    [[nodiscard]] double read() const;
-
-    // The cache write multipliers, falling back to the seed's.
-    [[nodiscard]] const gojson::Map<double>& writes() const;
 };
+
+// The cache read multiplier, falling back to the seed's tenth.
+[[nodiscard]] double cache_read(const Table& table);
+
+// The cache write multipliers, falling back to the seed's.
+[[nodiscard]] const gojson::Map<double>& cache_writes(const Table& table);
 
 [[nodiscard]] Table seed();
 

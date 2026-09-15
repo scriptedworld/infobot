@@ -23,18 +23,21 @@ struct Environment {
     std::string tmux_pane;
     std::string herdr_pane_id;
     std::string herdr_bin_path;
-
-    [[nodiscard]] static Environment from_process();
-
-    // ~/.config/infobot/<name>, following XDG_CONFIG_HOME. Empty when neither
-    // it nor a home can be found.
-    [[nodiscard]] std::string config_file(std::string_view name) const;
-
-    // ~/.local/state/infobot, following XDG_STATE_HOME. Empty as above.
-    [[nodiscard]] std::string state_dir() const;
-
-    // ~/.claude/projects, where the transcripts are. Empty with no home.
-    [[nodiscard]] std::string projects() const;
+    // $PATH, where a host named without a slash is looked for.
+    std::string path;
 };
+
+// The environment this process was started with.
+[[nodiscard]] Environment from_process();
+
+// ~/.config/infobot/<name>, following XDG_CONFIG_HOME. Empty when neither it
+// nor a home can be found.
+[[nodiscard]] std::string config_file(const Environment& env, std::string_view name);
+
+// ~/.local/state/infobot, following XDG_STATE_HOME. Empty as above.
+[[nodiscard]] std::string state_dir(const Environment& env);
+
+// ~/.claude/projects, where the transcripts are. Empty with no home.
+[[nodiscard]] std::string projects(const Environment& env);
 
 }  // namespace infobot

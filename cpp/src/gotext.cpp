@@ -29,18 +29,26 @@ struct Accept {
     unsigned char high;
 };
 
-constexpr Accept accept_any{.low = 0x80, .high = 0xBF};
+constexpr unsigned char continuation_low = 0x80;
+constexpr unsigned char continuation_high = 0xBF;
+constexpr unsigned char surrogate_lead = 0xED;
+constexpr unsigned char after_e0_low = 0xA0;
+constexpr unsigned char after_ed_high = 0x9F;
+constexpr unsigned char after_f0_low = 0x90;
+constexpr unsigned char after_f4_high = 0x8F;
+
+constexpr Accept accept_any{.low = continuation_low, .high = continuation_high};
 
 Accept second_byte_range(unsigned char lead) {
     switch (lead) {
         case three_byte_min:
-            return {.low = 0xA0, .high = 0xBF};
-        case 0xED:
-            return {.low = 0x80, .high = 0x9F};
+            return {.low = after_e0_low, .high = continuation_high};
+        case surrogate_lead:
+            return {.low = continuation_low, .high = after_ed_high};
         case four_byte_min:
-            return {.low = 0x90, .high = 0xBF};
+            return {.low = after_f0_low, .high = continuation_high};
         case lead_max:
-            return {.low = 0x80, .high = 0x8F};
+            return {.low = continuation_low, .high = after_f4_high};
         default:
             return accept_any;
     }
@@ -141,17 +149,17 @@ bool is_space(char32_t rune) {
         case U'\f':
         case U'\r':
         case U' ':
-        case U'':
-        case U' ':
-        case U' ':
-        case U' ':
-        case U' ':
-        case U' ':
-        case U' ':
-        case U'　':
+        case U'\u0085':
+        case U'\u00A0':
+        case U'\u1680':
+        case U'\u2028':
+        case U'\u2029':
+        case U'\u202F':
+        case U'\u205F':
+        case U'\u3000':
             return true;
         default:
-            return rune >= U' ' && rune <= U' ';
+            return rune >= U'\u2000' && rune <= U'\u200A';
     }
 }
 

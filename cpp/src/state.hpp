@@ -6,7 +6,9 @@
 
 #include <optional>
 
-#include "payload.hpp"
+namespace infobot::payload {
+class Map;
+}  // namespace infobot::payload
 
 namespace infobot::state {
 

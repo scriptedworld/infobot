@@ -21,6 +21,34 @@ C++23 on g++ 14, CMake and Ninja. Three libraries, from Debian 13:
 `compile_commands.json` at the repository root links into `cpp/build/`, because
 the jig's lint and headers tasks read `-p .`.
 
+## Parity with Go
+
+Held to the Go binary's bytes, not to a description of them. The harnesses are
+in `.ephemera/cpp/`, gitignored, and each builds both binaries before comparing:
+
+    parity.py <golden-dir>    the 18-case golden corpus
+    parity-widths.sh          432 renders across nine widths and 48 loads
+    parity-cost.sh            every session under ~/.claude/projects, cold and warm
+
+`cpp/src/width_table.cpp` is generated from the Go renderer's own width rule by
+`.ephemera/cpp/widthgen`, and `TestCppWidthTableMatchesGo` in `internal/render`
+checks it against Go for every code point.
+
+## Where it can differ from Go, and why that is accepted
+
+Parity is held on the inputs this program is really handed. Go's
+`encoding/json` and simdjson disagree on inputs nothing hands it:
+
+    input                             Go                     C++
+    an integer past 64 bits           read as a float        the document is rejected
+    invalid UTF-8, a lone \ud800      replaced with U+FFFD   the document is rejected
+    a leading byte-order mark         rejected               accepted
+    -0                                a float, prints -0     the integer 0, prints 0
+    a struct key differing in case    matched                not matched
+
+Measured 2026-09-14 with `.ephemera/cpp/probe`. The real-transcript harness is
+the evidence that no input in use reaches them: 148 sessions, 0 differences.
+
 ## Coverage
 
 Per file at 80% for lines and for branches, from gcov. The library is

@@ -21,6 +21,7 @@
 checks:
     @just _verdict common-quality
     @just _verdict go-std-quality --definitions go-std-quality
+    @python3 cpp/tools/check_tables.py
     @just cpp-profile
     @just _verdict cpp-std-quality --definitions cpp-std-quality
 
@@ -31,6 +32,22 @@ cpp-profile:
     cmake --build cpp/build
     ln -sfn cpp/build/compile_commands.json compile_commands.json
     cpp/build/infobot-tests
+    @just _cpp-entrypoint
+
+# THE ENTRY POINT IS MEASURED, NOT EXCLUDED, which is hard rule 5. No test
+# process reaches main(), so the instrumented binary is run once on a payload
+# and its counts join the profile. Everything it could touch is pointed at a
+# scratch directory, so it reads no real transcript and leaves no file behind.
+_cpp-entrypoint:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    scratch=$(mktemp -d)
+    trap 'rm -rf "$scratch"' EXIT
+    printf '%s' '{"session_id":"entrypoint","model":{"display_name":"Opus 5"}}' \
+        | env HOME="$scratch" XDG_CONFIG_HOME="$scratch" XDG_STATE_HOME="$scratch" \
+            TMUX= HERDR_PANE_ID= cpp/build/statusline > /dev/null
+    printf '%s' '{"session_id":"entrypoint"}' \
+        | env XDG_STATE_HOME="$scratch" cpp/build/forget 2> /dev/null
 
 # Two binaries, and the committed shims beside them are what Claude Code
 # invokes. The shim is the committed half and the binary is not, which is

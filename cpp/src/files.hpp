@@ -6,7 +6,6 @@
 // only as far as the longest single line.
 #pragma once
 
-#include <simdjson.h>
 #include <sys/types.h>
 
 #include <cstddef>
@@ -42,8 +41,8 @@ namespace infobot::files {
 // readable bytes, so simdjson can parse it where it lies instead of copying it.
 class Lines {
    public:
-    // The file at path, from offset. good() is false when it cannot be opened
-    // or the offset cannot be reached.
+    // The file at path, from offset. A file that cannot be opened, or an offset
+    // that cannot be reached, reads as no lines.
     Lines(const std::string& path, std::size_t offset);
     ~Lines();
 
@@ -51,8 +50,6 @@ class Lines {
     Lines& operator=(const Lines&) = delete;
     Lines(Lines&&) = delete;
     Lines& operator=(Lines&&) = delete;
-
-    [[nodiscard]] bool good() const;
 
     // The next line ending in a newline, the newline included. nullopt at the
     // end of the file, at a read error, and at a last line with no newline,

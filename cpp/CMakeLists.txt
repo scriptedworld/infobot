@@ -22,6 +22,14 @@ option(INFOBOT_COVERAGE "instrument for gcov" OFF)
 
 find_package(simdjson REQUIRED)
 find_package(doctest REQUIRED)
+find_package(jsoncons REQUIRED)
+
+# The status file's schema is the Go port's, read from where it lives rather
+# than copied, and compiled in as a string so a render opens no file for it.
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../internal/state/status.schema.json" status_schema)
+configure_file(src/status_schema.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/generated/status_schema.hpp" @ONLY)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/../internal/state/status.schema.json")
 
 add_compile_options(
     -Wall
@@ -36,34 +44,48 @@ add_compile_options(
 add_library(infobot STATIC
     src/environment.cpp
     src/files.cpp
+    src/forget.cpp
     src/gojson.cpp
     src/gopath.cpp
+    src/goquote.cpp
     src/gotext.cpp
     src/host.cpp
     src/num.cpp
     src/palette.cpp
     src/payload.cpp
     src/pricing.cpp
+    src/print_table.cpp
     src/render.cpp
     src/state.cpp
+    src/status_file.cpp
     src/usage.cpp
     src/width.cpp
     src/width_table.cpp
 )
 target_include_directories(infobot PUBLIC src)
+target_include_directories(infobot PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 # Static, so the measured binary carries what it runs and pays no dynamic
 # loading for it on every render.
-target_link_libraries(infobot PUBLIC simdjson::simdjson_static)
+target_link_libraries(infobot PUBLIC simdjson::simdjson_static jsoncons)
 
-add_executable(infobot-tests
-    tests/main.cpp
-    tests/num_test.cpp
-    tests/payload_test.cpp
-)
+# Every *_test.cpp in tests/. INFOBOT_TEST_SOURCES names a subset instead, as
+# paths relative to tests/, which is how one suite is built and run while the
+# others are still being written.
+set(INFOBOT_TEST_SOURCES "" CACHE STRING "test files to build, relative to tests/; empty for all")
+if(INFOBOT_TEST_SOURCES)
+    list(TRANSFORM INFOBOT_TEST_SOURCES PREPEND "tests/" OUTPUT_VARIABLE test_sources)
+else()
+    file(GLOB test_sources CONFIGURE_DEPENDS tests/*_test.cpp)
+endif()
+add_executable(infobot-tests tests/main.cpp tests/support.cpp ${test_sources})
+target_include_directories(infobot-tests PRIVATE tests)
 target_link_libraries(infobot-tests PRIVATE infobot doctest::doctest)
 
 add_executable(statusline cmd/statusline.cpp)
 target_link_libraries(statusline PRIVATE infobot)
+
+add_executable(forget cmd/forget.cpp)
+target_link_libraries(forget PRIVATE infobot)
 
 # THE CODE UNDER TEST IS INSTRUMENTED AND THE TESTS ARE NOT, which is the
 # boundary `go test -cover` draws for the Go tree. A doctest assertion expands
@@ -76,6 +98,8 @@ target_link_libraries(statusline PRIVATE infobot)
 if(INFOBOT_COVERAGE)
     target_compile_options(infobot PRIVATE --coverage -O0)
     target_compile_options(statusline PRIVATE --coverage -O0)
+    target_compile_options(forget PRIVATE --coverage -O0)
     target_link_options(infobot-tests PRIVATE --coverage)
     target_link_options(statusline PRIVATE --coverage)
+    target_link_options(forget PRIVATE --coverage)
 endif()

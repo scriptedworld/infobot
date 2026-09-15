@@ -1,6 +1,6 @@
-// GENERATED from internal/render's runeWidth by .ephemera/cpp/widthgen, and
-// checked against it for every code point by TestCppWidthTableMatchesGo in
-// internal/render. Regenerate when golang.org/x/text moves; do not edit.
+// GENERATED from internal/render's VisibleWidth by cpp/tools/_gen/widthgen, and
+// checked against it for every code point by cpp/tools/check_tables.py.
+// Regenerate with that script's --write when golang.org/x/text moves.
 #include "width_table.hpp"
 
 #include <array>

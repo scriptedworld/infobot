@@ -107,7 +107,6 @@ Lines::~Lines() {
     }
 }
 
-bool Lines::good() const { return good_; }
 
 bool Lines::fill() {
     // Slide what is left to the front, and grow only when a single line has

@@ -97,10 +97,12 @@ void decode_wire(gojson::Decode& decode, simdjson::dom::object top, Wire& wire) 
 
 }  // namespace
 
-double Table::read() const { return cache_read.value_or(seed_cache_read); }
+double cache_read(const Table& table) {
+    return table.cache_read.value_or(seed_cache_read);
+}
 
-const gojson::Map<double>& Table::writes() const {
-    return cache_write.empty() ? seed_cache_write() : cache_write;
+const gojson::Map<double>& cache_writes(const Table& table) {
+    return table.cache_write.empty() ? seed_cache_write() : table.cache_write;
 }
 
 Table seed() {
@@ -170,7 +172,7 @@ std::optional<Priced> price(const usage::Totals& totals, const Table& table) {
         priced.spent += count(counts, "output_tokens") / per_million * rate->second.out;
 
         double tokens = 0;
-        for (const auto& [field, multiplier] : table.writes()) {
+        for (const auto& [field, multiplier] : cache_writes(table)) {
             const double written = count(counts, field);
             tokens += written;
             cached += written / per_million * in * multiplier;
@@ -178,8 +180,8 @@ std::optional<Priced> price(const usage::Totals& totals, const Table& table) {
         }
         const double reads = count(counts, "cache_read_input_tokens");
         tokens += reads;
-        cached += reads / per_million * in * table.read();
-        priced.spent += reads / per_million * in * table.read();
+        cached += reads / per_million * in * cache_read(table);
+        priced.spent += reads / per_million * in * cache_read(table);
         uncached += tokens / per_million * in;
     }
     if (priced.spent == 0) {

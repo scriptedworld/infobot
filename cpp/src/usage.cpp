@@ -3,6 +3,7 @@
 #include <simdjson.h>
 #include <sys/stat.h>
 
+#include <algorithm>
 #include <array>
 #include <charconv>
 #include <cstddef>
@@ -43,10 +44,12 @@ constexpr std::array<std::string_view, 5> counted = {
 };
 
 // The session a transcript line claims, if it parses as a record carrying one.
+// An unpadded line is copied by simdjson before it is parsed.
 std::optional<std::string> claimed(simdjson::dom::parser& parser,
-                                   std::string_view line) {
+                                   std::string_view line,
+                                   bool padded) {
     simdjson::dom::element root;
-    if (parser.parse(line.data(), line.size(), false).get(root) != simdjson::SUCCESS) {
+    if (parser.parse(line.data(), line.size(), !padded).get(root) != simdjson::SUCCESS) {
         return std::nullopt;
     }
     gojson::Decode decode;
@@ -62,42 +65,123 @@ std::optional<std::string> claimed(simdjson::dom::parser& parser,
     return session;
 }
 
+// One line for the origin search, as bufio.Scanner hands lines out: without its
+// newline or a carriage return before it, and including an unterminated last
+// line, which ReadBytes would not hand out at all.
+struct ScannedLine {
+    std::string_view text;
+    // Whether simdjson's padding follows text where it lies. The tail of the
+    // file has no newline, so nothing guarantees what follows it.
+    bool padded = false;
+    bool last = false;
+};
+
+std::optional<ScannedLine> scanner_line(files::Lines& lines) {
+    ScannedLine line;
+    if (const auto whole = lines.next()) {
+        line.text = *whole;
+        line.padded = true;
+    } else {
+        line.text = lines.tail();
+        line.last = true;
+        if (line.text.empty()) {
+            return std::nullopt;
+        }
+    }
+    if (line.text.ends_with('\n')) {
+        line.text.remove_suffix(1);
+    }
+    if (line.text.ends_with('\r')) {
+        line.text.remove_suffix(1);
+    }
+    return line;
+}
+
 // The session a transcript belongs to: its recorded origin, else its own name.
 std::string origin_of(const std::string& path) {
     files::Lines lines(path, 0);
     simdjson::dom::parser parser;
     for (int read = 0; read < claim_lines; ++read) {
-        auto line = lines.next();
-        const bool last = !line;
-        if (last) {
-            // bufio.Scanner hands out an unterminated last line where ReadBytes
-            // does not, so the tail is still one more record.
-            line = lines.tail();
-            if (line->empty()) {
-                break;
-            }
-        }
-        std::string_view record = *line;
-        if (record.size() > claim_line_max) {
+        const auto line = scanner_line(lines);
+        if (!line || line->text.size() > claim_line_max) {
             break;
         }
-        if (record.ends_with('\n')) {
-            record.remove_suffix(1);
-        }
-        if (record.ends_with('\r')) {
-            record.remove_suffix(1);
-        }
-        // The line is padded where it lies only when it ended in a newline, so
-        // an unterminated tail is copied.
-        const std::string copy = last ? std::string(record) : std::string{};
-        if (auto session = claimed(parser, last ? std::string_view(copy) : record)) {
+        if (auto session = claimed(parser, line->text, line->padded)) {
             return *session;
         }
-        if (last) {
+        if (line->last) {
             break;
         }
     }
     return gopath::stem(path);
+}
+
+// A transcript line as the Go port's record struct reads it: message.model and
+// message.usage, and whether the decode as a whole succeeded.
+//
+// usage is a map[string]any, and a repeated key decodes INTO the map the first
+// one made rather than replacing it, so each object is a layer over the ones
+// before and a key reads from the last layer holding it. Null resets the map.
+struct UsageRecord {
+    std::string model;
+    std::vector<simdjson::dom::object> usage;
+    bool ok = false;
+};
+
+void decode_message(gojson::Decode& decode, simdjson::dom::object fields, UsageRecord& out) {
+    decode.fields(fields, "model", [&](simdjson::dom::element value) {
+        decode.string_into(value, out.model);
+    });
+    // map[string]any takes any object. Null resets it, and anything else is a
+    // type error.
+    decode.fields(fields, "usage", [&](simdjson::dom::element value) {
+        simdjson::dom::object object;
+        if (value.get(object) == simdjson::SUCCESS) {
+            out.usage.push_back(object);
+        } else if (value.is_null()) {
+            out.usage.clear();
+        } else {
+            decode.as_struct(value, [](simdjson::dom::object) {});
+        }
+    });
+}
+
+UsageRecord decode_record(simdjson::dom::element root) {
+    gojson::Decode decode;
+    UsageRecord record;
+    decode.as_struct(root, [&](simdjson::dom::object top) {
+        decode.fields(top, "message", [&](simdjson::dom::element message) {
+            decode.as_struct(message, [&](simdjson::dom::object fields) {
+                decode_message(decode, fields, record);
+            });
+        });
+    });
+    record.ok = decode.ok();
+    return record;
+}
+
+// The layer a key reads from: the last one holding it, or an absent Map.
+payload::Map holding(const std::vector<simdjson::dom::object>& layers, std::string_view key) {
+    const auto found = std::ranges::find_if(layers.rbegin(), layers.rend(), [&](auto layer) {
+        return payload::Map(layer).has(key);
+    });
+    return found == layers.rend() ? payload::Map{} : payload::Map(*found);
+}
+
+// The counted fields of a usage map added into a model's totals. A field is
+// read from the top level where it is present, null included, and from the
+// nested cache_creation object where it is not.
+void add_usage(gojson::Map<double>& into, const std::vector<simdjson::dom::object>& layers) {
+    const payload::Map creation = holding(layers, "cache_creation").obj("cache_creation");
+    for (const std::string_view field : counted) {
+        const payload::Map top = holding(layers, field);
+        const payload::Map& source = top.present() ? top : creation;
+        // Only numbers are added. Anything else is ignored rather than
+        // coerced, and does not abandon the record.
+        if (const auto number = source.num(field)) {
+            into[std::string(field)] += *number;
+        }
+    }
 }
 
 // One record's usage added into found, ignoring any line that is not usage.
@@ -106,48 +190,17 @@ void take(Totals& found, simdjson::dom::parser& parser, std::string_view line) {
     if (parser.parse(line.data(), line.size(), false).get(root) != simdjson::SUCCESS) {
         return;
     }
-    gojson::Decode decode;
-    std::string model;
-    std::optional<simdjson::dom::object> usage;
-    decode.as_struct(root, [&](simdjson::dom::object record) {
-        decode.fields(record, "message", [&](simdjson::dom::element message) {
-            decode.as_struct(message, [&](simdjson::dom::object fields) {
-                decode.fields(fields, "model", [&](simdjson::dom::element value) {
-                    decode.string_into(value, model);
-                });
-                decode.fields(fields, "usage", [&](simdjson::dom::element value) {
-                    simdjson::dom::object object;
-                    if (value.get(object) == simdjson::SUCCESS) {
-                        usage = object;
-                    } else if (value.is_null()) {
-                        usage.reset();
-                    }
-                });
-            });
-        });
-    });
-    if (!decode.ok() || !usage || usage->size() == 0) {
+    const UsageRecord record = decode_record(root);
+    const bool empty = std::ranges::all_of(
+        record.usage, [](simdjson::dom::object layer) { return layer.size() == 0; });
+    if (!record.ok || empty) {
         return;
     }
-    if (model.empty()) {
-        // Counted under a placeholder no rate table answers to, so it flags the
-        // total incomplete rather than being priced at a neighbour's rate.
-        model = "?";
-    }
-    auto& into = found[model];
-    const payload::Map fields(*usage);
-    const payload::Map creation = fields.obj("cache_creation");
-    for (const std::string_view field : counted) {
-        const payload::Map& source = fields.has(field) ? fields : creation;
-        if (!source.has(field)) {
-            continue;
-        }
-        // Only numbers are added. Anything else is ignored rather than
-        // coerced, and does not abandon the record.
-        if (const auto number = source.num(field)) {
-            into[std::string(field)] += *number;
-        }
-    }
+    // A record naming no model is counted under a placeholder no rate table
+    // answers to, so it flags the total incomplete rather than being priced at
+    // a neighbour's rate. The entry exists even when nothing in it counts,
+    // which is also what flags an unpriced model.
+    add_usage(found[record.model.empty() ? std::string("?") : record.model], record.usage);
 }
 
 void merge(Totals& into, const Totals& more) {
@@ -184,38 +237,35 @@ struct FileState {
 
 using Offsets = gojson::Map<FileState>;
 
+void decode_count(gojson::Decode& d, simdjson::dom::element value, double& out) {
+    d.float_into(value, out);
+}
+
+void decode_fields(gojson::Decode& d, simdjson::dom::element value, gojson::Map<double>& out) {
+    std::optional<gojson::Map<double>> held;
+    d.map_into(value, held, decode_count);
+    out = held.value_or(gojson::Map<double>{});
+}
+
+void decode_file_state(gojson::Decode& d, simdjson::dom::element value, FileState& state) {
+    d.as_struct(value, [&](simdjson::dom::object object) {
+        d.fields(object, "size", [&](simdjson::dom::element size) {
+            d.int_into(size, state.size);
+        });
+        d.fields(object, "totals", [&](simdjson::dom::element totals) {
+            std::optional<Totals> decoded(std::move(state.totals));
+            d.map_into(totals, decoded, decode_fields);
+            state.totals = decoded.value_or(Totals{});
+        });
+    });
+}
+
 std::optional<Offsets> decode_offsets(simdjson::dom::element root) {
     gojson::Decode decode;
     std::optional<Offsets> files;
-    const auto count_into = [](gojson::Decode& d,
-                               simdjson::dom::element v,
-                               double& out) { d.float_into(v, out); };
     decode.as_struct(root, [&](simdjson::dom::object top) {
         decode.fields(top, "files", [&](simdjson::dom::element value) {
-            decode.map_into(
-                value,
-                files,
-                [&](gojson::Decode& d, simdjson::dom::element entry, FileState& state) {
-                    d.as_struct(entry, [&](simdjson::dom::object object) {
-                        d.fields(object, "size", [&](simdjson::dom::element size) {
-                            d.int_into(size, state.size);
-                        });
-                        d.fields(object, "totals", [&](simdjson::dom::element totals) {
-                            std::optional<Totals> decoded(std::move(state.totals));
-                            d.map_into(totals,
-                                       decoded,
-                                       [&](gojson::Decode& inner,
-                                           simdjson::dom::element model,
-                                           gojson::Map<double>& fields) {
-                                           std::optional<gojson::Map<double>> held;
-                                           inner.map_into(model, held, count_into);
-                                           fields =
-                                               held.value_or(gojson::Map<double>{});
-                                       });
-                            state.totals = decoded.value_or(Totals{});
-                        });
-                    });
-                });
+            decode.map_into(value, files, decode_file_state);
         });
     });
     if (!decode.ok() || !files) {
@@ -337,7 +387,7 @@ std::vector<std::string> transcripts(std::string_view session,
     if (session.empty()) {
         return {};
     }
-    const std::string base = root.empty() ? env.projects() : std::string(root);
+    const std::string base = root.empty() ? projects(env) : std::string(root);
     const std::string file = std::string(session) + ".jsonl";
     const std::vector<std::string> named =
         gopath::glob(gopath::join({base, "*", file}));
@@ -353,26 +403,24 @@ std::vector<std::string> transcripts(std::string_view session,
         pool = gopath::glob(gopath::join({base, "*", "*.jsonl"}));
     }
 
+    // The origin is read before the name is compared, as the Go port orders
+    // it, so the cost measured here is the cost of the same algorithm.
     std::vector<std::string> found;
-    for (const std::string& path : pool) {
-        if (origin_of(path) == origin || gopath::stem(path) == origin) {
-            found.push_back(path);
-        }
-    }
+    std::ranges::copy_if(pool, std::back_inserter(found), [&](const std::string& path) {
+        return origin_of(path) == origin || gopath::stem(path) == origin;
+    });
     std::vector<std::string> subagents;
     for (const std::string& path : found) {
-        const std::string pattern = gopath::join(
-            {gopath::dir(path), gopath::stem(path), "subagents", "*.jsonl"});
-        for (std::string& match : gopath::glob(pattern)) {
-            subagents.push_back(std::move(match));
-        }
+        const std::vector<std::string> matched = gopath::glob(gopath::join(
+            {gopath::dir(path), gopath::stem(path), "subagents", "*.jsonl"}));
+        subagents.insert(subagents.end(), matched.begin(), matched.end());
     }
     found.insert(found.end(), subagents.begin(), subagents.end());
     return found;
 }
 
 std::string offset_path(std::string_view session, const Environment& env) {
-    const std::string dir = env.state_dir();
+    const std::string dir = state_dir(env);
     if (dir.empty()) {
         return {};
     }
@@ -405,7 +453,7 @@ Totals sum(std::string_view session, std::string_view root, const Environment& e
             start = previous.size;
             so_far = previous.totals;
         }
-        Scanned read = scan(path, static_cast<std::uint64_t>(start));
+        const Scanned read = scan(path, static_cast<std::uint64_t>(start));
         merge(so_far, read.found);
         seen.insert_or_assign(
             path,

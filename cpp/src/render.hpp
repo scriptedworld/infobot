@@ -8,14 +8,20 @@
 #pragma once
 
 #include <chrono>
+#include <cstddef>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
-#include "environment.hpp"
 #include "palette.hpp"
-#include "payload.hpp"
+
+namespace infobot {
+struct Environment;
+namespace payload {
+class Map;
+}  // namespace payload
+}  // namespace infobot
 
 namespace infobot::render {
 
@@ -96,9 +102,9 @@ class Renderer {
     [[nodiscard]] double seconds() const;
     [[nodiscard]] int row_width(const std::vector<std::string>& parts) const;
     [[nodiscard]] std::string fitted(const payload::Map& context_window,
+                                     int width,
                                      const std::vector<std::string>& others,
-                                     std::size_t at,
-                                     int width) const;
+                                     std::size_t at) const;
     [[nodiscard]] std::vector<std::vector<std::string>> compose(
         const payload::Map& data, int width, bool compact) const;
     [[nodiscard]] std::vector<std::string> path_parts(const payload::Map& data) const;
@@ -127,6 +133,10 @@ class Renderer {
 // rows written to another, stopping at the first failed write so a torn line
 // is a missing one. Returns 0 whatever it is given, because a status line that
 // fails shows nothing at all.
-int statusline(int input, int output, const Environment& env, Instant now);
+struct Streams {
+    int input;
+    int output;
+};
+int statusline(Streams streams, const Environment& env, Instant now);
 
 }  // namespace infobot::render

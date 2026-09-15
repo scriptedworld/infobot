@@ -8,8 +8,7 @@
 #include "render.hpp"
 
 int main() {
-    return infobot::render::statusline(STDIN_FILENO,
-                                       STDOUT_FILENO,
-                                       infobot::Environment::from_process(),
+    return infobot::render::statusline({.input = STDIN_FILENO, .output = STDOUT_FILENO},
+                                       infobot::from_process(),
                                        std::chrono::system_clock::now());
 }

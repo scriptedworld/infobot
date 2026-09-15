@@ -40,48 +40,70 @@ void back_up(std::string& out, std::size_t floor) {
     }
 }
 
+// Clean's working state: the path being read, where the read is, what has been
+// written, and how far back a `..` may undo.
+struct Cleaning {
+    std::string_view path;
+    bool rooted = false;
+    std::string out;
+    std::size_t r = 0;
+    std::size_t dotdot = 0;
+};
+
+// A `..` element: undo the last name written, or keep the `..` when there is
+// nothing left to undo and the path is relative.
+void clean_parent(Cleaning& c) {
+    c.r += 2;
+    if (c.out.size() > c.dotdot) {
+        back_up(c.out, c.dotdot);
+        return;
+    }
+    if (c.rooted) {
+        return;
+    }
+    if (!c.out.empty()) {
+        c.out.push_back(separator);
+    }
+    c.out.append("..");
+    c.dotdot = c.out.size();
+}
+
+// A name element, copied through with one separator before it.
+void clean_name(Cleaning& c) {
+    const bool first = c.rooted ? c.out.size() == 1 : c.out.empty();
+    if (!first) {
+        c.out.push_back(separator);
+    }
+    for (; c.r < c.path.size() && !is_separator(c.path[c.r]); ++c.r) {
+        c.out.push_back(c.path[c.r]);
+    }
+}
+
 }  // namespace
 
 std::string clean(std::string_view path) {
     if (path.empty()) {
         return ".";
     }
-    const bool rooted = is_separator(path[0]);
-    std::string out;
-    std::size_t r = 0;
-    std::size_t dotdot = 0;
-    if (rooted) {
-        out.push_back(separator);
-        r = 1;
-        dotdot = 1;
+    Cleaning c{.path = path, .rooted = is_separator(path[0]), .out = {}, .r = 0, .dotdot = 0};
+    if (c.rooted) {
+        c.out.push_back(separator);
+        c.r = 1;
+        c.dotdot = 1;
     }
-    while (r < path.size()) {
-        if (is_separator(path[r]) || dot_at(path, r)) {
-            ++r;
-        } else if (dot_dot_at(path, r)) {
-            r += 2;
-            if (out.size() > dotdot) {
-                back_up(out, dotdot);
-            } else if (!rooted) {
-                if (!out.empty()) {
-                    out.push_back(separator);
-                }
-                out.append("..");
-                dotdot = out.size();
-            }
+    while (c.r < path.size()) {
+        if (is_separator(path[c.r]) || dot_at(path, c.r)) {
+            ++c.r;
+        } else if (dot_dot_at(path, c.r)) {
+            clean_parent(c);
         } else {
-            if ((rooted && out.size() != 1) || (!rooted && !out.empty())) {
-                out.push_back(separator);
-            }
-            for (; r < path.size() && !is_separator(path[r]); ++r) {
-                out.push_back(path[r]);
-            }
+            clean_name(c);
         }
     }
-    if (out.empty()) {
-        out.push_back('.');
+    if (c.out.empty()) {
+        c.out.push_back('.');
     }
-    return out;
+    return c.out;
 }
 
 std::string join(std::initializer_list<std::string_view> elements) {
@@ -120,7 +142,7 @@ std::string base(std::string_view path) {
         path.remove_prefix(last + 1);
     }
     if (path.empty()) {
-        return std::string(1, separator);
+        return "/";
     }
     return std::string(path);
 }
@@ -253,71 +275,110 @@ std::optional<Class> match_class(std::string_view chunk, char32_t rune) {
     return Class{.rest = chunk, .matched = matched != negated};
 }
 
-// matchChunk. After a match fails the chunk is still walked to the end, so a
-// malformed pattern is reported whatever the name was.
-std::optional<Matched> match_chunk(std::string_view chunk, std::string_view s) {
+// matchChunk's working state: the chunk still to read, the name still to match,
+// and whether the match has already failed. After a failure the chunk is still
+// walked to the end, so a malformed pattern is reported whatever the name was.
+struct Chunking {
+    std::string_view chunk;
+    std::string_view s;
     bool failed = false;
-    while (!chunk.empty()) {
-        failed = failed || s.empty();
-        if (chunk[0] == '[') {
-            char32_t rune = 0;
-            if (!failed) {
-                const gotext::Decoded decoded = gotext::decode_rune(s);
-                rune = decoded.rune;
-                s.remove_prefix(decoded.size);
-            }
-            const auto cls = match_class(chunk.substr(1), rune);
-            if (!cls) {
-                return std::nullopt;
-            }
-            chunk = cls->rest;
-            failed = failed || !cls->matched;
-            continue;
-        }
-        if (chunk[0] == '?') {
-            if (!failed) {
-                failed = is_separator(s[0]);
-                s.remove_prefix(gotext::decode_rune(s).size);
-            }
-            chunk.remove_prefix(1);
-            continue;
-        }
-        if (chunk[0] == '\\') {
-            chunk.remove_prefix(1);
-            if (chunk.empty()) {
-                return std::nullopt;
-            }
-        }
-        if (!failed) {
-            failed = chunk[0] != s[0];
-            s.remove_prefix(1);
-        }
-        chunk.remove_prefix(1);
+};
+
+// A character class. False for a bad pattern.
+bool step_class(Chunking& c) {
+    char32_t rune = 0;
+    if (!c.failed) {
+        const gotext::Decoded decoded = gotext::decode_rune(c.s);
+        rune = decoded.rune;
+        c.s.remove_prefix(decoded.size);
     }
-    if (failed) {
+    const auto cls = match_class(c.chunk.substr(1), rune);
+    if (!cls) {
+        return false;
+    }
+    c.chunk = cls->rest;
+    c.failed = c.failed || !cls->matched;
+    return true;
+}
+
+// `?`, any one rune but a separator.
+void step_any(Chunking& c) {
+    if (!c.failed) {
+        c.failed = is_separator(c.s[0]);
+        c.s.remove_prefix(gotext::decode_rune(c.s).size);
+    }
+    c.chunk.remove_prefix(1);
+}
+
+// A literal byte, possibly escaped. False for a trailing backslash.
+bool step_literal(Chunking& c) {
+    if (c.chunk[0] == '\\') {
+        c.chunk.remove_prefix(1);
+        if (c.chunk.empty()) {
+            return false;
+        }
+    }
+    if (!c.failed) {
+        c.failed = c.chunk[0] != c.s[0];
+        c.s.remove_prefix(1);
+    }
+    c.chunk.remove_prefix(1);
+    return true;
+}
+
+std::optional<Matched> match_chunk(std::string_view chunk, std::string_view s) {
+    Chunking c{.chunk = chunk, .s = s, .failed = false};
+    while (!c.chunk.empty()) {
+        c.failed = c.failed || c.s.empty();
+        bool well_formed = true;
+        if (c.chunk[0] == '[') {
+            well_formed = step_class(c);
+        } else if (c.chunk[0] == '?') {
+            step_any(c);
+        } else {
+            well_formed = step_literal(c);
+        }
+        if (!well_formed) {
+            return std::nullopt;
+        }
+    }
+    if (c.failed) {
         return Matched{.rest = std::string_view{}, .ok = false};
     }
-    return Matched{.rest = s, .ok = true};
+    return Matched{.rest = c.s, .ok = true};
 }
+
+// Where one chunk leaves the name. The outer nullopt is a bad pattern, and an
+// inner nullopt is no match.
+using Advance = std::optional<std::optional<std::string_view>>;
 
 // The star's retry: the chunk matched at each later position the star can
 // reach without crossing a separator.
-std::optional<std::optional<std::string_view>> match_after_star(std::string_view chunk,
-                                                                std::string_view name,
-                                                                bool last) {
+Advance match_after_star(std::string_view chunk, std::string_view name, bool last) {
     for (std::size_t i = 0; i < name.size() && !is_separator(name[i]); ++i) {
         const auto tried = match_chunk(chunk, name.substr(i + 1));
         if (!tried) {
             return std::nullopt;
         }
-        if (tried->ok) {
-            if (last && !tried->rest.empty()) {
-                continue;
-            }
+        if (tried->ok && (!last || tried->rest.empty())) {
             return std::optional<std::string_view>{tried->rest};
         }
     }
     return std::optional<std::string_view>{};
+}
+
+Advance advance(const Chunk& scanned, std::string_view name, bool last) {
+    const auto here = match_chunk(scanned.chunk, name);
+    if (!here) {
+        return std::nullopt;
+    }
+    if (here->ok && (here->rest.empty() || !last)) {
+        return std::optional<std::string_view>{here->rest};
+    }
+    if (!scanned.star) {
+        return std::optional<std::string_view>{};
+    }
+    return match_after_star(scanned.chunk, name, last);
 }
 
 }  // namespace
@@ -329,25 +390,14 @@ std::optional<bool> match(std::string_view pattern, std::string_view name) {
         if (scanned.star && scanned.chunk.empty()) {
             return name.find(separator) == std::string_view::npos;
         }
-        const auto here = match_chunk(scanned.chunk, name);
-        if (here && here->ok && (here->rest.empty() || !pattern.empty())) {
-            name = here->rest;
-            continue;
-        }
-        if (!here) {
+        const Advance next = advance(scanned, name, pattern.empty());
+        if (!next) {
             return std::nullopt;
         }
-        if (!scanned.star) {
+        if (!*next) {
             return false;
         }
-        const auto later = match_after_star(scanned.chunk, name, pattern.empty());
-        if (!later) {
-            return std::nullopt;
-        }
-        if (!*later) {
-            return false;
-        }
-        name = **later;
+        name = **next;
     }
     return name.empty();
 }
@@ -371,7 +421,7 @@ std::string clean_glob_path(std::string_view path) {
 }
 
 // glob: the names in one directory matching one pattern, sorted, appended.
-// Nullopt is a bad pattern; an unreadable directory adds nothing.
+// False is a bad pattern; an unreadable directory adds nothing.
 bool glob_dir(const std::string& directory,
               std::string_view pattern,
               std::vector<std::string>& matches) {
@@ -426,10 +476,11 @@ std::optional<std::vector<std::string>> glob_with_limit(std::string_view pattern
     if (!directories) {
         return std::nullopt;
     }
-    for (const std::string& each : *directories) {
-        if (!glob_dir(each, parts.file, matches)) {
-            return std::nullopt;
-        }
+    const bool well_formed = std::ranges::all_of(*directories, [&](const std::string& each) {
+        return glob_dir(each, parts.file, matches);
+    });
+    if (!well_formed) {
+        return std::nullopt;
     }
     return matches;
 }
