@@ -26,7 +26,7 @@ fsync Go and C++ both do is out of the wall time. go1.27.1, GCC 14.2, Zig
 
 C++ as committed loses warm wall time to Go because of one defect: its wait for
 the width subprocess sleeps a whole 5 ms poll step when the child's pipes close
-before its exit is visible (`cpp-port/35`). With that fixed it does less work
+before its exit is visible. With that fixed it does less work
 than Go on every path measured. Linked statically it also starts as fast as Zig
 (0.86 against 0.90 ms). More than half the C++ binary is jsoncons's schema
 validator with all five JSON Schema drafts compiled in.
@@ -59,10 +59,8 @@ Every change to the Go renderer has to be made twice and re-proven by the
 parity harnesses.
 
 Go infobot gets its YAML, JSON and schema handling from wrench's Go pack, and
-C++ infobot carries its own: about 580 of its lines. That part is proposed as
-a wrench C++ pack with this port as its first consumer, linked statically
-(`cpp-port/50`, and the entry in wrench's inbox). What would stay is the Go
-parity code.
+the C++ port carries its own: about 580 of its lines. wrench is building a C++
+pack for that (clank `tasks/wrench/library/cpp/`).
 
 Zig at 2c19f0b does the same job as Go at 2c19f0b in 14% more lines with
 twice the branching, and 115 of its 176 `catch` sites discard the error. It
@@ -77,9 +75,14 @@ jobs.
 
 ## What is decided
 
-Go stays the deployed implementation. C++ is the only candidate to replace it,
-and is not deployable until `cpp-port/25` (its gate green, the branch coverage
-question answered) and `cpp-port/35` (the wait) are complete.
+Go stays the deployed implementation.
+
+The C++ port in `cpp/` is not a candidate. It was translated from the Go code,
+reproducing Go's library behaviour by hand, and is hard to follow. C++ is
+rebuilt beside it, library-first and documented from `docs/SPEC.md`, taking
+structured files from wrench's C++ pack (clank `tasks/infobot/cpp-clean/`).
+`cpp/` is deleted once the rebuild reaches content parity with Go. The figures
+above are the rebuild's budget.
 
 Implementations are held to content identity, not byte identity: the rows a
 person sees, and structured files that decode to the same structure. That is
@@ -91,9 +94,9 @@ Zig stays deleted and Python stays retired.
 
 ## What is open
 
-Whether C++ replaces Go once it clears that bar. The case for it is a render
-at under half Go's CPU and wall time and about half its memory, paid on every
-Claude Code event. The case against it is two and a half times the code, a
-second statement of every Go library behaviour the output depends on, and a
-slower edit and build loop, for a saving that on disk measured 0.6 to 3.9 ms
-per render beside the 5.5 ms fsync both implementations keep.
+Whether the rebuilt C++ replaces Go once its gate is green and it matches Go's
+content. The case for it is a render at under half Go's CPU and wall time and
+about half its memory, paid on every Claude Code event. The case against it is
+a second implementation to keep in step and a slower edit and build loop, for a
+saving that on disk measured 0.6 to 3.9 ms per render beside the 5.5 ms fsync
+both implementations keep.
