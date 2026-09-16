@@ -47,6 +47,10 @@ bin/*.py
 
 .ruff_cache/
 
+# clangd's index, which appears beside whatever tree an editor or a checker
+# opened. `just clean` removes it.
+.cache/
+
 # The built binaries. bin/infobot and bin/forget-session are committed shims
 # that exec these; an absent binary is reported rather than rendering blank,
 # which is FR-1.13 and the reason the shims are the committed half.

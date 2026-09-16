@@ -108,7 +108,8 @@ dist:
 # rather than leaving a hole. `just clean` must not be the command that takes
 # the status line down.
 
-# remove past run directories, and leave the deployed binaries built
+# remove past run directories and tool caches, and leave the deployed binaries built
 clean:
     rm -rf .bolt-*/ .bolt*/
+    find . -name .cache -type d -prune -exec rm -rf {} +
     @just build
