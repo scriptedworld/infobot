@@ -245,6 +245,27 @@ courtesy. Adding a key is safe; changing the shape is not.
 FR-1.11p. Editing `TestCanonicalForm` to make it pass is how that pin comes
 undone, and it is the only way it can.
 
+## Three requirement rows describe an arrangement that has moved
+
+Found writing `docs/SPEC.md`, which cites every live row and could not cite
+these three as they stand. Each needs a new id, since a retired one never comes
+back.
+
+**FR-4.3 and FR-4.4 name Python functions.** `time.time`, `limit_segment`,
+`place_context` and `compose` were the pre-port arrangement. What they require
+survives and is worth keeping: the clock is a parameter and the transcript root
+and the XDG paths are too, so section 7 and section 8 are tested against a
+fixture tree with nothing patched. Restate them against that property instead of
+against a call graph.
+
+**FR-1.11p asserts the exact bytes emitted.** That was written when one emitter
+existed. A second implementation is held to content identity, the standard
+wrench holds its own packs to, so the row wants restating as: the file decodes
+to the same content whichever implementation wrote it, with the form properties
+FR-1.11g, FR-1.11o, FR-1.11q and FR-1.11r unchanged. The conformance check
+against wrench's pack stays; it is the bytes-across-implementations half that
+goes.
+
 ## The form is described in prose and gets a schema
 
 `published-form/10` is `.ready`. Raised from silo, which reads the form with
