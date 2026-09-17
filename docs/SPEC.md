@@ -178,16 +178,16 @@ text trimming by hand, and generated two Unicode tables from Go. None of that
 is repeated: the rebuild takes a maintained library per concern, and content
 parity is what proves it right.
 
-    JSON, YAML, schema   wrench's C++ pack (clank tasks/wrench/library/cpp)
-    display width        a Unicode width library, FR-3.9 and FR-3.10
-    subprocess           a library or a small wrapper with one bounded wait
+    JSON, YAML, schema   wrench's C++ pack, and no other JSON library
+    display width        utf8proc
+    host subprocess      posix_spawn and a pidfd, one bounded poll
     transcript search    std::filesystem
-    time and formatting  std::chrono and std::format
+    the written stamp    localtime_r and strftime
 
-The candidates are chosen and measured by `cpp-clean/20`, which records the
-version and the measurement in `docs/DECISIONS/`. Every dependency is reached
-through CMake FetchContent pinned to a commit and linked static, so a clone
-builds with no sibling repository present.
+`docs/DECISIONS/what-cxx-is-built-from.md` records each choice, its pinned
+version and the measurement that made it. Every dependency is reached through
+CMake FetchContent pinned to a commit and linked static, so a clone builds with
+no sibling repository present.
 
 ### The gate
 
