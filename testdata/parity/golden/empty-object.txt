@@ -1,0 +1,7 @@
+# empty-object
+
+## env
+inherited
+
+## stdin
+{}

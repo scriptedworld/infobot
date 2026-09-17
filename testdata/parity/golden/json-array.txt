@@ -1,0 +1,7 @@
+# json-array
+
+## env
+inherited
+
+## stdin
+[]

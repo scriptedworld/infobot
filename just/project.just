@@ -55,6 +55,19 @@ _cpp-entrypoint:
 # symlink that dangles both fail as a blank line nobody is told about, so the
 # thing `settings.json` names has to be present and able to look.
 
+# content parity with Go for a CMake tree's binaries, `just parity cpp` for the
+# first port
+parity tree="cxx" *flags="":
+    @just build
+    cmake -S {{tree}} -B .ephemera/parity/build-{{tree}} -G Ninja -DCMAKE_BUILD_TYPE=Release > /dev/null
+    cmake --build .ephemera/parity/build-{{tree}} --target statusline forget > /dev/null
+    python3 scripts/parity.py --other .ephemera/parity/build-{{tree}}/statusline --other-forget .ephemera/parity/build-{{tree}}/forget {{flags}}
+
+# the checker's own test: Go against itself and against two changed copies
+parity-self-test:
+    @just build
+    python3 scripts/parity.py --self-test
+
 # the two binaries, beside the shims that exec them
 build:
     go build -o bin/statusline ./cmd/statusline

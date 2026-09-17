@@ -1,0 +1,7 @@
+# not-json
+
+## env
+inherited
+
+## stdin
+not json at all

@@ -1,0 +1,9 @@
+# session-id-only
+
+## env
+inherited
+
+## stdin
+{
+  "session_id": "a5e58a4d-2a4e-4774-aa6c"
+}

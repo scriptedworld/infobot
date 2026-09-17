@@ -1,0 +1,27 @@
+# no-context-window
+
+## env
+inherited
+
+## stdin
+{
+  "model": {
+    "display_name": "Opus 5 (1M context)"
+  },
+  "effort": {
+    "level": "xhigh"
+  },
+  "workspace": {
+    "current_dir": "/home/ancient/.projects/silo/bin",
+    "project_dir": "/home/ancient/.projects/silo"
+  },
+  "session_id": "901de17c-0000-4000-8000-000000000000",
+  "rate_limits": {
+    "five_hour": {
+      "used_percentage": 31
+    },
+    "seven_day": {
+      "used_percentage": 62
+    }
+  }
+}

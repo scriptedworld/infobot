@@ -1,0 +1,14 @@
+{"session_id": "s1"}
+{"session_id": "only-offsets"}
+{"session_id": "never-existed"}
+{"session_id": "../infobot/innocent"}
+{"session_id": "a/b"}
+{"session_id": "a\\b"}
+{"session_id": ""}
+{"session_id": 123}
+{"session_id": "tab\there"}
+{"session_id": "caf\u00e9\u2028\u0085\udb40\udc01"}
+{}
+null
+[]
+not json

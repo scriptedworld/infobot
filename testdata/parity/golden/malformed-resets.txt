@@ -1,0 +1,17 @@
+# malformed-resets
+
+## env
+inherited
+
+## stdin
+{
+  "model": {
+    "display_name": "Opus 5"
+  },
+  "rate_limits": {
+    "five_hour": {
+      "used_percentage": 11,
+      "resets_at": "BAD-ISO"
+    }
+  }
+}

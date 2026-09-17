@@ -1,0 +1,14 @@
+# counts-no-percentage
+
+## env
+inherited
+
+## stdin
+{
+  "context_window": {
+    "context_window_size": 200000,
+    "current_usage": {
+      "input_tokens": 50000
+    }
+  }
+}
