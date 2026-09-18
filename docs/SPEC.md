@@ -178,7 +178,9 @@ text trimming by hand, and generated two Unicode tables from Go. None of that
 is repeated: the rebuild takes a maintained library per concern, and content
 parity is what proves it right.
 
-    JSON, YAML, schema   wrench's C++ pack, and no other JSON library
+    JSON, YAML, schema   wrench's C++ pack: the payload, the config files,
+                         herdr's reply, and the state file
+    transcript lines     simdjson, the one hot path the pack is too slow for
     display width        utf8proc
     host subprocess      posix_spawn and a pidfd, one bounded poll
     transcript search    std::filesystem

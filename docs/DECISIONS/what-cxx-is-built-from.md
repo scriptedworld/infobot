@@ -10,24 +10,30 @@ Each choice below was measured on an i7-14700KF pinned to one P-core with
 `hyperfine -N`, GCC 14.2 at -O2. The probes are in clank
 `tasks/infobot/cpp-clean/20-a-library-for-each-concern`, `evidence/`.
 
-## JSON and YAML: wrench's C++ pack, and nothing else
+## JSON and YAML: wrench's pack, and simdjson for the transcripts
 
-The payload, the rate table, the palette and layout config, the transcript
-lines and the state file all go through wrench's pack (clank
-`tasks/wrench/library/cpp/`). infobot links no JSON or YAML library of its own.
+Two parsers, deliberately. Everything that is a document goes through wrench's
+C++ pack (clank `tasks/wrench/library/cpp/`): the payload, the rate table, the
+palette and layout config, herdr's reply, and the state file both written and
+validated. The transcript lines do not.
 
-The transcript scan is the one hot path, so its cost was measured for wrench's
-library choice: 61MB of transcripts, 7,735 usage records summed by model, three
-libraries producing identical totals.
+The pack binds jsoncons, and it is built to be right rather than quick. On the
+same corpus, 33 files and 61,317,795 bytes summed to identical totals, jsoncons
+takes 259.3 ms where simdjson takes 42.5 ms (measured by wrench; infobot's own
+earlier reading of simdjson on that corpus was 33.3 ms, against glaze at 35.8
+and nlohmann/json at 140.8). A first render reads every transcript the session
+has, so that difference is paid at the start of every session, and later renders
+read only what was appended (FR-8.6).
 
-    simdjson 4.6.11 on-demand   33.3 ms
-    glaze 8.4.0                 35.8 ms
-    nlohmann/json 3.11.3       140.8 ms
+So the transcript scan reads with simdjson directly, pinned like every other
+dependency. It costs 177,872 bytes of text, 18.6% of a statically linked binary.
+FR-8.21 keeps a record whose usage field is not a number, which reading a field
+at a time does naturally.
 
-A first render pays this once per session; later renders read only what was
-appended (FR-8.6). FR-8.21 keeps a record whose usage field is not a number,
-which field-at-a-time access does naturally and decoding into fixed structs
-does not.
+**The cost of two parsers is that nobody holds them level**, which is the reason
+wrench declines to own the second one. What limits it here is where each is
+used: no file infobot writes, and no document another program reads, goes
+through simdjson.
 
 ## Display width: utf8proc
 
