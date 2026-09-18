@@ -2,13 +2,22 @@
 
 ## Queued
 
-    gate/10          the shims are read by something       .blocked
-    jig-adoption/10  adopt the Go jig                      .planning
-    one-emitter/10   link wrench's pack so there is one    .cancelled
-    published-form/10 a schema for the status file         .ready
-    session-cost/10  show what the session would have cost .complete
-    state-readers/10 say what a session is DOING           .questions
-    status-line/     05 through 20                         .complete
+    cpp-clean/rebuild/20  platform, width and the host        .ready
+    cpp-clean/rebuild/30  the meters                          .ready
+    cpp-clean/rebuild/40  the rows                            .ready
+    cpp-clean/rebuild/50  files through wrench's C++ pack     .blocked
+    cpp-clean/rebuild/60  the cost                            .ready
+    cpp-clean/rebuild/70  cut over, and cpp/ deleted          .planning
+    documentation/10      file the reasoning where it belongs .ready
+    gate/10               the shims are read by something     .blocked
+    gate/20               adopt the wording task              .ready
+    jig-adoption/10       adopt the Go jig                    .planning
+    published-form/10     a schema for the status file        .ready
+    state-readers/10      say what a session is DOING         .questions
+    zig-lint/10, zig-memory/10                                .ready
+
+The two zig tasks are about a tree deleted at 2c19f0b and want cancelling or
+rewriting as something the rebuild can use.
 
 **Ask the task tree rather than this file.** Its state is a rename and a
 document's state is prose, so where the two disagree the tree is right.
