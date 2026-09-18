@@ -83,3 +83,36 @@ avoidable: there is no fixed path a transcript lives at.
 **What would retire these.** For G204 in `width.go`, a terminal-width syscall
 rather than a subprocess. For the rest, nothing: each is the operation the code
 is for, and the mark records that somebody looked rather than that nobody did.
+
+## S-3, an allocation that fails on demand, in the C++ suite
+
+**No pragma and no exclusion. A replacement `operator new`**, in
+`cxx/tests/allocation.cpp` and `cxx/tests/allocation.hpp`, linked into the test
+binary and into neither shipped binary. Armed by a test, it fails one named
+allocation: the throwing forms throw `std::bad_alloc` and the nothrow forms
+return null. Disarmed, it allocates exactly as the default does.
+
+**What it is for.** Coverage is judged per file at 80% of lines and of branches,
+and gcov counts an exception edge at every call that can throw. Nothing a test
+can hand the program makes an allocation fail, so those edges cannot be taken
+and five files of the first port read 55% to 74% of branches where the same
+files without the exception edges read 77% to 96%.
+
+**The question, and the answer.** Excluding throw branches from gcovr was asked
+for and refused: "I don't want you to ignore branches". Replacing `operator new`
+for the tests was then asked, twice. The second answer asked why a seam needs a
+suppression, and the honest answer is that a seam does not: this is not a seam
+but a replacement of a function the standard permits a program to replace, which
+is what rule 4 calls a patch. It was approved on 2026-09-15 for infobot, and
+separately for wrench.
+
+**Why it is registered rather than treated as ordinary test code.** Rule 4 puts
+any mock or patch behind a question answered by a person, and the register is
+where the answer lives. Nothing about it reaches a shipped binary, and
+`cxx/tests/allocation_test.cpp` checks the tool itself: that an armed allocation
+throws once, that the nothrow form returns null, and that a sweep over a body
+making three allocations reports three.
+
+**What would retire it.** A coverage tool that separates an exception edge no
+test can reach from a branch a test has missed, or a program whose allocation
+failures are caught and asserted through some other seam.

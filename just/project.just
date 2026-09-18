@@ -3,51 +3,68 @@
 # What is here names this project's binaries and where they are used from, which
 # is the part neither the base nor the Go layer can know.
 
-# THIS TREE HOLDS TWO LANGUAGES, so `checks` is overridden here rather than
-# taken from the Go layer: the layer can only know its own jig. The Go half is
-# the layer's two lines unchanged.
+# This tree holds two languages, so `checks` is overridden here instead of
+# taken from the Go layer, which can only know its own jig. The Go half is the
+# layer's two lines unchanged.
 #
-# The C++ jig does not build and does not run tests, by its own contract. It
-# reads a compilation database and a gcov profile, so `cpp-profile` produces
-# both before the jig is asked about them.
+# The C++ gate reads cxx/, the rebuild. cpp/, the first port, is ungated and is
+# deleted once cxx/ reaches parity with Go.
 #
-# FROM AN EMPTY BUILD DIRECTORY, every time. gcov leaves a notes file per object
-# at compile time and a counts file per object at run time, and either one
-# surviving from an earlier configuration is read as this run's. Measured
-# 2026-09-14: after the test sources stopped being instrumented, their notes
-# files outlived the change and the jig failed both test files at 0% of lines.
+# The C++ jig neither builds nor runs tests. It reads a compilation database
+# and a gcov profile, so `cxx-profile` produces both first, from an empty build
+# directory: a gcov notes or counts file surviving an earlier configuration is
+# read as this run's.
 
 # all the quality tooling, both languages
 checks:
     @just _verdict common-quality
     @just _verdict go-std-quality --definitions go-std-quality
-    @python3 cpp/tools/check_tables.py
-    @just cpp-profile
+    @just cxx-profile
+    @just cxx-clang
     @just _verdict cpp-std-quality --definitions cpp-std-quality
 
-# the C++ suite, instrumented, leaving the database and profile the jig reads
-cpp-profile:
-    rm -rf cpp/build
-    cmake -S cpp -B cpp/build -G Ninja -DINFOBOT_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
-    cmake --build cpp/build
-    ln -sfn cpp/build/compile_commands.json compile_commands.json
-    cpp/build/infobot-tests
-    @just _cpp-entrypoint
+fetched := justfile_directory() / ".cache/fetchcontent"
 
-# THE ENTRY POINT IS MEASURED, NOT EXCLUDED, which is hard rule 5. No test
-# process reaches main(), so the instrumented binary is run once on a payload
-# and its counts join the profile. Everything it could touch is pointed at a
-# scratch directory, so it reads no real transcript and leaves no file behind.
-_cpp-entrypoint:
+# The jig lints and checks headers across every file in the database with no
+# way to exclude one, so the database the root carries holds infobot's own files
+# and not the libraries FetchContent built beside them.
+#
+# gcovr reads every gcov profile under the repository, .ephemera included, and
+# its --exclude filters the report rather than the search. A profile left by any
+# other build fails the tests task, so every one outside cxx/build is removed
+# first, with the stray .gcov files a failed gcovr run leaves at the root.
+
+# the cxx suite, instrumented, leaving the database and profile the jig reads
+cxx-profile:
+    rm -rf cpp/build cxx/build compile_commands.json
+    find . \( -name '*.gcda' -o -name '*.gcno' \) -not -path './.git/*' -delete
+    find . -maxdepth 1 -name '*.gcov' -delete
+    cmake -S cxx -B cxx/build -G Ninja -DINFOBOT_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug -DFETCHCONTENT_BASE_DIR={{fetched}}
+    cmake --build cxx/build
+    jq '[.[] | select(.file | contains("/.cache/fetchcontent/") | not)]' cxx/build/compile_commands.json > compile_commands.json
+    cxx/build/infobot-tests
+    @just _cxx-entrypoint
+
+# the cxx suite built with Clang and run, beside the GCC build the jig reads
+cxx-clang:
+    rm -rf cxx/build-clang
+    cmake -S cxx -B cxx/build-clang -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DFETCHCONTENT_BASE_DIR={{fetched}}
+    cmake --build cxx/build-clang
+    cxx/build-clang/infobot-tests
+
+# No test process reaches main(), so the instrumented binaries run once on a
+# payload and their counts join the profile, which is hard rule 5. Everything
+# they could touch points at a scratch directory.
+_cxx-entrypoint:
     #!/usr/bin/env bash
     set -euo pipefail
     scratch=$(mktemp -d)
     trap 'rm -rf "$scratch"' EXIT
     printf '%s' '{"session_id":"entrypoint","model":{"display_name":"Opus 5"}}' \
         | env HOME="$scratch" XDG_CONFIG_HOME="$scratch" XDG_STATE_HOME="$scratch" \
-            TMUX= HERDR_PANE_ID= cpp/build/statusline > /dev/null
+            TMUX= HERDR_PANE_ID= cxx/build/statusline > /dev/null
     printf '%s' '{"session_id":"entrypoint"}' \
-        | env XDG_STATE_HOME="$scratch" cpp/build/forget 2> /dev/null
+        | env XDG_STATE_HOME="$scratch" cxx/build/forget 2> /dev/null
 
 # Two binaries, and the committed shims beside them are what Claude Code
 # invokes. The shim is the committed half and the binary is not, which is
