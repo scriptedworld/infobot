@@ -45,10 +45,15 @@ cxx-profile:
     cxx/build/infobot-tests
     @just _cxx-entrypoint
 
-# the cxx suite built with Clang and run, beside the GCC build the jig reads
+# Release as well as Clang, because the two builds differ in more than the
+# compiler: at -O2 an allocation whose lifetime the compiler can see is removed
+# outright, which passed under the instrumented build and failed under an
+# optimised one.
+
+# the cxx suite built optimised with Clang and run, beside the GCC build the jig reads
 cxx-clang:
     rm -rf cxx/build-clang
-    cmake -S cxx -B cxx/build-clang -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DFETCHCONTENT_BASE_DIR={{fetched}}
+    cmake -S cxx -B cxx/build-clang -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DFETCHCONTENT_BASE_DIR={{fetched}}
     cmake --build cxx/build-clang
     cxx/build-clang/infobot-tests
 

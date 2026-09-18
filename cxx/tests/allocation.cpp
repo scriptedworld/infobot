@@ -148,6 +148,17 @@ Failure::Failure(std::size_t count) {
 
 Failure::~Failure() { countdown = -1; }
 
+void one_allocation() {
+    constexpr std::size_t size = 32;
+    void* block = ::operator new(size);
+    ::operator delete(block, size);
+}
+
+void* one_nothrow_allocation() {
+    constexpr std::size_t size = 32;
+    return ::operator new(size, std::nothrow);
+}
+
 bool Failure::fired() { return fired_here; }
 
 Sweep fail_each_allocation(const std::function<void()>& body,

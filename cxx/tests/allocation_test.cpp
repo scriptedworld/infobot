@@ -6,7 +6,6 @@
 #include <doctest/doctest.h>
 
 #include <cstddef>
-#include <memory>
 #include <new>
 
 namespace test = infobot::test;
@@ -14,35 +13,38 @@ namespace test = infobot::test;
 TEST_CASE("an armed allocation throws once and then allocates again") {
     {
         const test::Failure failure(0);
-        CHECK_THROWS_AS((void)std::make_unique<int>(1), std::bad_alloc);
+        CHECK_THROWS_AS(test::one_allocation(), std::bad_alloc);
         CHECK(test::Failure::fired());
-        CHECK_NOTHROW((void)std::make_unique<int>(2));
+        CHECK_NOTHROW(test::one_allocation());
     }
-    CHECK_NOTHROW((void)std::make_unique<int>(3));
+    CHECK_NOTHROW(test::one_allocation());
 }
 
 TEST_CASE("the armed allocation is the one counted to") {
     const test::Failure failure(1);
-    const auto first = std::make_unique<int>(1);
+    CHECK_NOTHROW(test::one_allocation());
     CHECK_FALSE(test::Failure::fired());
-    CHECK_THROWS_AS((void)std::make_unique<int>(2), std::bad_alloc);
+    CHECK_THROWS_AS(test::one_allocation(), std::bad_alloc);
     CHECK(test::Failure::fired());
 }
 
 TEST_CASE("a nothrow allocation returns null instead of throwing") {
     const test::Failure failure(0);
-    const std::unique_ptr<int> got(new (std::nothrow) int(1));
+    void* got = test::one_nothrow_allocation();
     CHECK(got == nullptr);
     CHECK(test::Failure::fired());
+    got = test::one_nothrow_allocation();
+    CHECK(got != nullptr);
+    ::operator delete(got);
 }
 
 TEST_CASE("a sweep fails each allocation of its body in turn") {
     std::size_t runs = 0;
     const test::Sweep sweep = test::fail_each_allocation(
         [] {
-            const auto a = std::make_unique<int>(1);
-            const auto b = std::make_unique<int>(2);
-            const auto c = std::make_unique<int>(3);
+            test::one_allocation();
+            test::one_allocation();
+            test::one_allocation();
         },
         [&runs](std::size_t run) {
             CHECK(run == runs);
@@ -56,7 +58,10 @@ TEST_CASE("a sweep fails each allocation of its body in turn") {
 
 TEST_CASE("a sweep counts a failure the body absorbs") {
     const test::Sweep sweep = test::fail_each_allocation(
-        [] { const std::unique_ptr<int> got(new (std::nothrow) int(1)); },
+        [] {
+            void* got = test::one_nothrow_allocation();
+            ::operator delete(got);
+        },
         [](std::size_t /*run*/) {});
     CHECK(sweep.thrown == 0);
     CHECK(sweep.absorbed == 1);

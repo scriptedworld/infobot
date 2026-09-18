@@ -45,6 +45,15 @@ struct Sweep {
     bool completed = false;
 };
 
+// One allocation, and one nothrow allocation, that the optimiser cannot elide.
+//
+// A compiler may remove an allocation whose lifetime it can see, and at -O2 it
+// removes `std::make_unique<int>`, so a test written with one passes under the
+// instrumented build and fails under an optimised one. These are defined in
+// their own translation unit, where the call is opaque.
+void one_allocation();
+[[nodiscard]] void* one_nothrow_allocation();
+
 // Runs body with its first allocation failing, then its second, and so on,
 // until a run completes without reaching the armed one. after is called with the
 // run's index once each run ends, with nothing armed, so it can assert on what
