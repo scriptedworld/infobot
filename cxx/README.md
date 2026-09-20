@@ -10,15 +10,21 @@ Go is open in
 
 ## Where it starts
 
-    cmd/statusline.cpp   main, one call: statusline::run(stdin, stdout)
-    cmd/forget.cpp       main, one call: forget::run(stdin, stderr)
+`main` is in `cmd/`, never in `src/`. Each entry point is one call and no logic:
 
-A render is one process per Claude Code event. `statusline::run` reads the
-session payload, asks whoever owns the pane how wide it is, reads what the
-session's transcripts appended since the last render, writes the state file, and
-prints the rows. The modules that do each of those arrive task by task, in
-`clank/tasks/infobot/cpp-clean/rebuild/`; today a render reads its input and
-prints nothing.
+    cmd/statusline.cpp   main -> render::statusline(stdin, stdout)   src/render.cpp
+    cmd/forget.cpp       main -> forget::run(stdin, stderr)          src/forget.cpp
+
+A render is one process per Claude Code event. Finished, `render::statusline`
+reads the session payload, asks whoever owns the pane how wide it is, reads what
+the session's transcripts appended since the last render, writes the state file,
+and prints the rows.
+
+**Today it reads the payload and prints nothing.** The modules that turn a
+payload into rows arrive task by task in
+`clank/tasks/infobot/cpp-clean/rebuild/`, starting with `20`. The reading is
+real: a writer is never left holding a pipe, and an allocation failing anywhere
+in it still exits 0, which is FR-1.2 and is what `tests/entry_test.cpp` checks.
 
 ## The tree
 
@@ -26,6 +32,14 @@ prints nothing.
     cmd/       the two entry points, one call each, no logic
     tests/     doctest, one file per module, plus the failing allocator
     build/     CMake's, gitignored
+
+A module's file is named for what it owns, and no two files in the tree share a
+name. `src/render.cpp` is the status line; `cmd/statusline.cpp` is the binary
+that calls it.
+
+    src/render.cpp     the payload to the rows
+    src/forget.cpp     the SessionEnd cleanup
+    src/platform.cpp   what the program needs from the operating system
 
 ## Build and test
 

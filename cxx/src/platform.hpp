@@ -2,10 +2,12 @@
 // so every other module is tested with nothing patched.
 #pragma once
 
+#include <string>
+
 namespace infobot::platform {
 
-// Reads a descriptor to its end and discards what it read, so whatever writes
-// to it is never left holding a pipe nobody reads.
-void drain(int descriptor) noexcept;
+// Everything a descriptor holds, read to its end. An interrupted read is not
+// the end. Throws std::bad_alloc if what arrives cannot be held.
+[[nodiscard]] std::string read_all(int descriptor);
 
 }  // namespace infobot::platform

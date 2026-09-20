@@ -41,7 +41,7 @@ target_compile_options(infobot-warnings INTERFACE
 add_library(infobot STATIC
     src/forget.cpp
     src/platform.cpp
-    src/statusline.cpp)
+    src/render.cpp)
 target_include_directories(infobot PUBLIC src)
 target_link_libraries(infobot PRIVATE infobot-warnings utf8proc)
 
