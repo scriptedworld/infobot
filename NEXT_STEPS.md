@@ -8,9 +8,12 @@
     cpp-clean/rebuild/50  files through wrench's C++ pack     .blocked
     cpp-clean/rebuild/60  the cost                            .ready
     cpp-clean/rebuild/70  cut over, and cpp/ deleted          .planning
+    documentation/05      repair the swept fragments          .ready
     documentation/10      file the reasoning where it belongs .ready
+    documentation/20      the voice pass                      .ready
     gate/10               the shims are read by something     .blocked
     gate/20               adopt the wording task              .ready
+    gate/30               a pre-commit hook calls a recipe    .blocked
     jig-adoption/10       adopt the Go jig                    .planning
     published-form/10     a schema for the status file        .ready
     state-readers/10      say what a session is DOING         .questions
@@ -125,16 +128,33 @@ for a published repository, and **not a one-line change**: FR-1.11p pins those
 bytes at both ends, so it needs wrench in the loop. Do it in the same pass as
 the link decision below.
 
-**No remote, deliberately, and it is not a blocker.** `clone = false` in the
-roster. The commit histories were scrubbed to clean up their messages, which
-removed the remotes, and they are being left off on purpose: while a repository
-is offline no copy anywhere can hold a reference to the rewritten-away history.
+**This repository has a remote, and the decision document says it should not.**
+Checked 2026-09-21:
 
-**What ends it is the documentation, not a decision about hosting.** These
-projects go up once their documentation is clean and appropriate. So a document
-reporting the missing remote as an open question or an obstacle is wrong, and
-`docs/DECISIONS/the-remotes-are-off-until-the-documentation-is-ready.md` is the
-long form.
+    git remote -v            origin  https://github.com/scriptedworld/infobot.git
+    git log -1 origin/main   de7d2de  2026-09-14
+    git rev-list --count origin/main..main    15
+
+`clone = false` still holds, at `dotfiles/repos.live.yaml:21`, so that half of
+the old claim survives and the "no remote" half does not. The two are separate:
+the roster flag governs whether the estate clones this tree, and it says nothing
+about whether a remote is configured in it.
+
+`docs/DECISIONS/the-remotes-are-off-until-the-documentation-is-ready.md` opens
+by asserting that no repository in this estate has a remote, and argues the
+absence is what keeps the scrubbed history from surviving in a clone or a cache.
+A remote holding commits through 2026-09-14 means that protection already
+lapsed here, whatever the decision intended.
+
+**This needs the user, and no session should settle it.** Either the decision is
+spent and the document gets rewritten, or the remote is there by accident and
+the question is what it already published. Both answers are about intent, which
+is not something measurement reaches. The 15 unpushed commits stay unpushed
+until it is answered.
+
+**What was going to end it is the documentation**, and that part stands on its
+own: these projects go up once their documentation is clean and appropriate,
+which is what `documentation/05`, `/10` and `/20` are for.
 
 **`PACE_CONFIDENT` at 0.6 and the squared fade** were tuned by eye against one
 evening's numbers. Expect them to move; only normal use answers whether the
