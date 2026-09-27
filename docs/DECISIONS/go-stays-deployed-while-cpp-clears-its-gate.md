@@ -1,5 +1,28 @@
 # Go stays deployed while the C++ port clears its gate
 
+**RETIRED 2026-09-25. There is no C++ port. Go is the only implementation.**
+
+wrench dropped its C++ pack: a contract-conformant one came to about 3,200
+lines, a third of them tests, and was judged not worth carrying. The rebuild
+took every structured file from that pack, so it had nothing to link, and C++
+was dropped here with it. Both trees are deleted, the first port in `cpp/` and
+the rebuild in `cxx/`, along with the C++ jig's wiring.
+
+Go was kept because nothing else was a candidate. It is the deployed
+implementation, the only one the gate reads in full, and it takes its YAML,
+JSON and schema handling from wrench's Go pack. Zig was deleted at 2c19f0b and
+Python retired before that.
+
+The last commit holding both C++ trees is `e1e99b1`:
+
+    git checkout e1e99b1 -- cpp/ cxx/
+
+The figures below stay, because they are what any later attempt at a faster
+implementation is measured against. Where they say what is decided, that is the
+record of what stood before 2026-09-25.
+
+---
+
 Four implementations of the status line have existed: the Python original
 (e51a055), Go (deployed), Zig (deleted, last at 2c19f0b) and C++ (`cpp/`). All
 four were built and measured side by side on the same payload, the same pane

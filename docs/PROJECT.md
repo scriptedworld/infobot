@@ -87,7 +87,6 @@ neither `shellcheck` nor `shfmt` is installed on this machine yet.
     bin/forget         the built cleanup. Gitignored.
     cmd/               two entry points, one delegating call each
     internal/          the program: render, state, usage, pricing, payload, num
-    cpp/               a C++ implementation, measured and not deployed
     Justfile           the two-word interface; recipes in just/
     README.md          the front door: what it is, how to build and wire it
     LICENSE, NOTICE    Apache 2.0
@@ -229,6 +228,12 @@ which is what `bolt`, `converge` and `update` do. The difference is FR-1.13. A
 symlink cannot report its own target's absence, and neither can a missing
 binary, so the thing `settings.json` names has to be something that is always
 there and can look.
+
+Decided: Go is the only implementation. Zig and two generations of C++ were
+built beside it and are gone; C++ went on 2026-09-25 with wrench's C++ pack, which
+it would have taken its structured files from.
+`docs/DECISIONS/go-stays-deployed-while-cpp-clears-its-gate.md` has the figures
+and the reasons.
 
 Decided: two rows, not three. A third for exceptional states, a stale rate table
 or a promotion in effect, was declined. A row that appears only when there is

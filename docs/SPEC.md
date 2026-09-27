@@ -5,9 +5,8 @@ it. Every claim here cites the rows it rests on, and the last section traces
 those rows back. A reader who wants the reasoning behind a row goes to
 `docs/DECISIONS/`; a reader who wants to run the thing goes to `README.md`.
 
-The second half specifies the C++ implementation being built in `cxx/`. Go, in
-`internal/` and `cmd/`, is the deployed one and is specified by the same first
-half.
+Go, in `internal/` and `cmd/`, is the implementation it describes, and the only
+one kept.
 
 ## The program
 
@@ -142,72 +141,12 @@ state files named by it (FR-1.11e). It exits 0 whatever it is given and refuses 
 session id carrying a path separator rather than joining it onto a directory it
 unlinks within (FR-1.11f).
 
-## The C++ implementation
-
-### The tree
-
-    cxx/CMakeLists.txt     one target per binary, plus the test binary
-    cxx/cmd/               two entry points, one call each, no logic
-    cxx/src/               the program, one module per concern
-    cxx/tests/             doctest, one file per module
-    cxx/README.md          what it is, where main is, how a render flows
-
-`cxx/` sits beside `cpp/`, the first port, until the content-parity check
-reports no difference; then `cpp/` is deleted.
-
-### The modules
-
-    payload     the session JSON as a tree of optionals. Knows no rendering.
-    config      the rate table, the palette, the margin, each with its seed.
-    host        the width query and its bound. Knows no rendering.
-    transcripts finding, tailing and summing usage records; owns the offsets.
-    pricing     usage records to money. Knows nothing about rows.
-    render      segments, composition and fitting. Knows no files.
-    state       the status file, through wrench's C++ pack.
-    platform    paths, the environment and the clock, as parameters (FR-4.3,
-                FR-4.4), so every module above is testable with no patching.
-
-The flow is one direction: `cmd` calls `render`, which asks `payload`, `config`,
-`host`, `transcripts` and `pricing` for what it needs, then hands `state` the
-one measurement it made. No module below `render` calls back into it.
-
-### A library for each concern, not a port of Go
-
-The first port reproduced Go's glob, JSON decoding rules, string quoting and
-text trimming by hand, and generated two Unicode tables from Go. None of that
-is repeated: the rebuild takes a maintained library per concern, and content
-parity is what proves it right.
-
-    JSON, YAML, schema   wrench's C++ pack: the payload, the config files,
-                         herdr's reply, and the state file
-    transcript lines     simdjson, the one hot path the pack is too slow for
-    display width        utf8proc
-    host subprocess      posix_spawn and a pidfd, one bounded poll
-    transcript search    std::filesystem
-    the written stamp    localtime_r and strftime
-
-`docs/DECISIONS/what-cxx-is-built-from.md` records each choice, its pinned
-version and the measurement that made it. Every dependency is reached through
-CMake FetchContent pinned to a commit and linked static, so a clone builds with
-no sibling repository present.
-
-### The gate
-
-`just checks` runs cpp-std-quality over `cxx/` with GCC and Clang. Coverage is
-judged per file at 80% for lines and branches with no exclusions; the exception
-edges gcov counts are taken by a test-only replacement `operator new` that fails
-on demand, which is registered in `SUPPRESSIONS`. Tests live in an external
-directory and carry `COVERS:` marks like the Go suite.
-
-`just parity` builds Go and `cxx/` and compares the rows they print and the
-content their state and offsets files decode to.
-
 ## What this does not specify
 
 The palette's values, the glyphs, the ramp arithmetic and the pace scale, all of
 which are stated in `REQUIREMENTS.md` sections 6 and 7. The internals of
-wrench's pack. Anything about the Go implementation beyond its being the
-reference output. The Python original and the Zig experiment, both retired.
+wrench's Go pack. The Python original, the Zig experiment and two C++ ports,
+all retired.
 
 ## Traceability
 
@@ -217,11 +156,11 @@ document does not reach:
 - FR-4.5 to FR-4.10 are open questions carrying no test, and stay open.
 - FR-4.3 and FR-4.4 name Python functions (`time.time`, `limit_segment`,
   `place_context`). What they require, a clock and roots that are parameters, is
-  in the modules above; the rows need restating without those names, and
+  what the Go packages do; the rows need restating without those names, and
   `NEXT_STEPS.md` carries that.
-- FR-1.11p asserts the exact bytes emitted. Content identity replaces it for a
-  second implementation, so the row needs restating; a retired id is never
-  reused.
+- FR-1.11p asserts the exact bytes emitted, which holds while Go is the only
+  writer. It wanted restating only for a second implementation, and none is
+  kept.
 - FR-3.2 is refresh interval, set in the harness settings file, and nothing in
   this program implements it.
-- FR-1.13 is the shims', which are committed and shared by both implementations.
+- FR-1.13 is the shims', which are committed and exec the Go binaries.

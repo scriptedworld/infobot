@@ -1,8 +1,8 @@
 # An optimised build removes the allocation a test arms
 
-The C++ suite has an allocator that fails one named allocation, so a test can
-take the exception edges gcov counts. Its own tests asked for the next
-allocation to fail and then made one:
+The C++ suite, deleted with `cxx/` and last at `e1e99b1`, had an allocator that
+failed one named allocation, so a test could take the exception edges gcov
+counts. Its own tests asked for the next allocation to fail and then made one:
 
     const test::Failure failure(0);
     CHECK_THROWS_AS((void)std::make_unique<int>(1), std::bad_alloc);
@@ -36,7 +36,7 @@ allocation itself. The call is then opaque and no optimiser can elide it:
     }
 
 **Run the suite in an optimised build as well as the instrumented one.**
-`just cxx-clang` builds Release with Clang, so the second run varies the
+The `cxx-clang` recipe built Release with Clang, so the second run varied the
 optimisation level as well as the compiler. Both of those are the sort of
 difference that decides whether a test is measuring what it says.
 
