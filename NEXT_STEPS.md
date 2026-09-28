@@ -2,8 +2,12 @@
 
 ## Queued
 
-    documentation/05      repair the swept fragments          .ready
-    documentation/10      file the reasoning where it belongs .ready
+    documentation/11      the README explains the rows        .ready
+    documentation/12      extract the decisions               .ready
+    documentation/13      extract the lessons                 .ready
+    documentation/14      start docs/PATTERNS                 .ready
+    documentation/15      cut to citations                    .blocked
+    documentation/16      one file per requirement            .ready
     documentation/20      the voice pass                      .ready
     gate/10               the shims are read by something     .blocked
     gate/20               adopt the wording task              .ready
