@@ -207,6 +207,13 @@ across every project, so a refresh there points a dozen sessions at one file and
 one web page at once, none aware of the others and none holding a lock. There is
 one coordinator, so it is the single writer.
 
+Each rate is `[input, output]` in dollars per million tokens. A model whose
+cache reads are not a tenth of input carries its own multiplier as a third
+number: Opus 5.5 at 0.05, Fable 5.1 and Mythos 5.1 at 0.025. Leave it off and
+the model reads at `cache_read`, which doubles or quadruples the largest line
+on those sessions. A model missing from the table leaves the cost segment blank
+on any session that ran only that model.
+
 The seed copy in `internal/pricing/pricing.go` is the fallback, so a fresh clone
 renders with no config file and no network.
 

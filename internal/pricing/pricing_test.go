@@ -85,7 +85,7 @@ func TestPriceReturnsNothingWhenNothingCouldBePriced(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.13 | property
+// COVERS: FR-8.25 | property
 //
 // A cache read is CHARGED, at a tenth of input. 90% off is not free.
 func TestCacheReadsAreChargedAtATenth(t *testing.T) {
@@ -113,7 +113,7 @@ func TestSavingIsTheUncachedCounterfactual(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.13 | property
+// COVERS: FR-8.25 | property
 //
 // A write costs MORE than a fresh input token, which is why the two are priced
 // apart rather than lumped together as "cache".
@@ -211,5 +211,55 @@ func TestCacheMultipliersAreConfigurable(t *testing.T) {
 	}
 	if got.Spent != 5.0 {
 		t.Errorf("Spent = %v, want 5.0 (10.00 at the configured half)", got.Spent)
+	}
+}
+
+// COVERS: FR-8.25 | property
+//
+// With no table on disk, a model with its own read multiplier in the seed is
+// charged at it, and one without is charged at a tenth.
+func TestTheSeedCarriesEachModelsOwnReadMultiplier(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	for _, c := range []struct {
+		model string
+		want  float64
+	}{
+		{"claude-opus-5-5", 0.2},   // 4.00 at 0.05
+		{"claude-fable-5-1", 0.25}, // 10.00 at 0.025
+		{"claude-opus-5", 0.5},     // 5.00 at a tenth
+	} {
+		got, ok := pricing.Price(totals(c.model, map[string]float64{"cache_read_input_tokens": 1e6}))
+		if !ok {
+			t.Fatalf("%s: Price returned nothing", c.model)
+		}
+		if got.Spent != c.want {
+			t.Errorf("%s: Spent = %v, want %v", c.model, got.Spent, c.want)
+		}
+	}
+}
+
+// COVERS: FR-8.25 | positive
+//
+// A third number on a rate in the file is that model's read multiplier, and a
+// model without one falls back to the table's cache_read.
+func TestAThirdNumberOnARateIsItsReadMultiplier(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	if err := os.MkdirAll(filepath.Join(dir, "infobot"), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	table := `{"rates":{"own":[10.0,20.0,0.05],"shared":[10.0,20.0]},"cache_read":0.5}`
+	target := filepath.Join(dir, "infobot", "pricing.json")
+	if err := os.WriteFile(target, []byte(table), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for model, want := range map[string]float64{"own": 0.5, "shared": 5.0} {
+		got, ok := pricing.Price(totals(model, map[string]float64{"cache_read_input_tokens": 1e6}))
+		if !ok {
+			t.Fatalf("%s: Price returned nothing", model)
+		}
+		if got.Spent != want {
+			t.Errorf("%s: Spent = %v, want %v", model, got.Spent, want)
+		}
 	}
 }

@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	Taken  = "2026-08-28"
+	Taken  = "2026-09-28"
 	Source = "https://platform.claude.com/docs/en/about-claude/pricing"
 )
 
@@ -47,8 +47,11 @@ type Rate struct {
 }
 
 var seedRates = map[string]Rate{ //nolint:gochecknoglobals // read-only after init
+	"claude-fable-5-1":          {10.00, 50.00},
+	"claude-mythos-5-1":         {10.00, 50.00},
 	"claude-fable-5":            {10.00, 50.00},
 	"claude-mythos-5":           {10.00, 50.00},
+	"claude-opus-5-5":           {4.00, 20.00},
 	"claude-opus-5":             {5.00, 25.00},
 	"claude-opus-4-8":           {5.00, 25.00},
 	"claude-opus-4-7":           {5.00, 25.00},
@@ -64,14 +67,29 @@ var seedRates = map[string]Rate{ //nolint:gochecknoglobals // read-only after in
 	"claude-3-5-haiku-20241022": {0.80, 4.00},
 }
 
-// Multipliers on the input rate, uniform across models: the per-model cache
-// columns at Source are these applied. A cache read is CHARGED at a tenth, 90%
-// off rather than free, and on a long session it is the largest single line. A
-// write costs more than a fresh input token, which is why the two are priced
-// apart rather than lumped together as "cache".
+// Multipliers on the input rate: the per-model cache columns at Source are these
+// applied. A cache read is CHARGED, 90% off rather than free, and on a long
+// session it is the largest single line. A write costs more than a fresh input
+// token, which is why the two are priced apart rather than lumped together as
+// "cache".
+//
+// Writes are uniform across models. Reads are a tenth except where a model has
+// its own, which is why seedReads exists: pricing Opus 5.5's reads at a tenth
+// would double the largest line on its sessions.
 
-// SeedCacheRead is the read multiplier: a tenth of the input rate.
+// SeedCacheRead is the read multiplier for a model with none of its own.
 const SeedCacheRead = 0.1
+
+// seedReads is the read multiplier for each model whose own differs from
+// SeedCacheRead. A function rather than a table, so nothing mutable sits at
+// package level.
+func seedReads() map[string]float64 {
+	return map[string]float64{
+		"claude-fable-5-1":  0.025,
+		"claude-mythos-5-1": 0.025,
+		"claude-opus-5-5":   0.05,
+	}
+}
 
 var seedCacheWrite = map[string]float64{ //nolint:gochecknoglobals // read-only after init
 	"ephemeral_5m_input_tokens": 1.25,
@@ -85,6 +103,7 @@ type Table struct {
 	Rates      map[string]Rate    `json:"rates"`
 	CacheRead  *float64           `json:"cache_read"`
 	CacheWrite map[string]float64 `json:"cache_write"`
+	Reads      map[string]float64 `json:"-"`
 }
 
 // Read returns the cache read multiplier, falling back to the seed.
@@ -93,6 +112,15 @@ func (t Table) Read() float64 {
 		return SeedCacheRead
 	}
 	return *t.CacheRead
+}
+
+// ReadFor returns the cache read multiplier for one model: its own where the
+// table gives one, and Read otherwise.
+func (t Table) ReadFor(model string) float64 {
+	if multiplier, own := t.Reads[model]; own {
+		return multiplier
+	}
+	return t.Read()
 }
 
 // Writes returns the cache write multipliers, falling back to the seed.
@@ -104,7 +132,7 @@ func (t Table) Writes() map[string]float64 {
 }
 
 func seed() Table {
-	return Table{Taken: Taken, Source: Source, Rates: seedRates, CacheWrite: seedCacheWrite}
+	return Table{Taken: Taken, Source: Source, Rates: seedRates, CacheWrite: seedCacheWrite, Reads: seedReads()}
 }
 
 // TablePath is where the rates on disk live.
@@ -134,7 +162,8 @@ func Load() Table {
 		return seed()
 	}
 	// Rates arrive as [input, output] pairs, which is the shape the seed is
-	// written in and the shape a person editing the file would copy.
+	// written in and the shape a person editing the file would copy. A third
+	// number is that model's own cache read multiplier.
 	var wire struct {
 		Taken      string               `json:"taken"`
 		Source     string               `json:"source"`
@@ -146,15 +175,19 @@ func Load() Table {
 		return seed()
 	}
 	rates := make(map[string]Rate, len(wire.Rates))
+	reads := map[string]float64{}
 	for model, pair := range wire.Rates {
 		if len(pair) >= 2 {
 			rates[model] = Rate{In: pair[0], Out: pair[1]}
+		}
+		if len(pair) >= 3 {
+			reads[model] = pair[2]
 		}
 	}
 	if len(rates) == 0 {
 		return seed()
 	}
-	return Table{wire.Taken, wire.Source, rates, wire.CacheRead, wire.CacheWrite}
+	return Table{wire.Taken, wire.Source, rates, wire.CacheRead, wire.CacheWrite, reads}
 }
 
 // Priced is the outcome of pricing a session's totals.
@@ -202,8 +235,8 @@ func Price(totals map[string]map[string]float64) (Priced, bool) {
 		}
 		reads := counts["cache_read_input_tokens"]
 		tokens += reads
-		cached += reads / 1e6 * rate.In * table.Read()
-		spent += reads / 1e6 * rate.In * table.Read()
+		cached += reads / 1e6 * rate.In * table.ReadFor(model)
+		spent += reads / 1e6 * rate.In * table.ReadFor(model)
 		uncached += tokens / 1e6 * rate.In
 	}
 	if spent == 0 {
