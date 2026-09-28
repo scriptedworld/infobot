@@ -214,8 +214,11 @@ the model reads at `cache_read`, which doubles or quadruples the largest line
 on those sessions. A model missing from the table leaves the cost segment blank
 on any session that ran only that model.
 
-The seed copy in `internal/pricing/pricing.go` is the fallback, so a fresh clone
-renders with no config file and no network.
+**The file is the only copy.** Nothing is compiled in, so a price change is an
+edit to the file and never a rebuild. A host with no file, or one missing
+`rates`, `cache_read` or `cache_write`, renders with no cost segment. That makes
+the coordinator's refresh the thing that keeps the segment alive, on every host
+the status line runs on (see "Two machines run it").
 
 ## What is decided, and what is open
 

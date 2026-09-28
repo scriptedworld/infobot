@@ -7,18 +7,19 @@ silenced check and nobody remembering why.
 
 ## S-1, package-level tables Go cannot declare immutable
 
-**Fourteen marks, one rule, six files.**
+**Twelve marks, one rule, five files.** The two on the compiled rate tables in
+`internal/pricing/pricing.go` went with the tables on 2026-09-28, when the rate
+file became the only source.
 
-    internal/pricing/pricing.go     ×2   //nolint:gochecknoglobals    the seed rate tables
-    internal/render/palette.go      ×7   //nolint:gochecknoglobals    the colours and the pace stops
+    internal/render/palette.go     ×7   //nolint:gochecknoglobals    the colours and the pace stops
     internal/render/render_test.go       //nolint:gochecknoglobals    the fixed clock
     internal/state/state.go         ×2   //nolint:gochecknoglobals    the input key list, and the compiled schema
     internal/state/state_test.go         //nolint:gochecknoglobals    the fixed timestamp
     internal/usage/usage.go              //nolint:gochecknoglobals    the counter names
 
 **The rule is "no package-level mutable state" and none of these is mutable.**
-Every one is built once at initialisation and only read afterwards: a table of
-model rates, six colours and a list of pace stops, the keys an input payload may
+Every one is built once at initialisation and only read afterwards: six colours
+and a list of pace stops, the keys an input payload may
 carry, a `sync.OnceValues` that compiles the status schema on first use, the
 names of the counters, and two fixed values that make a test deterministic.
 

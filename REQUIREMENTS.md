@@ -154,8 +154,6 @@ checked by the traceability task of `bolt common-quality`. The six rows marked
 | FR-8.11 | Each model is charged at its own rate and the session is the sum of them, not an average. | [D] |
 | FR-8.12 | A model absent from the rate table is left out and the total is flagged incomplete rather than abandoned. The flag is a trailing plus, meaning the figure is a floor. No segment appears only when nothing could be priced. | [A/D] |
 | FR-8.14 | The saving is every cached token, read or written, charged at the plain input rate instead, less what those tokens did cost. | [D] |
-| FR-8.15 | The rates come from `~/.config/infobot/pricing.json` when it is there and from the seed in the module when it is not. Both carry the date they were taken. | [D] |
-| FR-8.16 | A rate table that is missing, malformed or carrying no rates falls back to the seed rather than raising. | [D] |
 | FR-8.17 | Money is printed at the precision the number deserves rather than always two decimals. | [A/D] |
 | FR-8.18 | The saving is shown only when there is one. A negative saving drops the clause rather than printing a loss, and the total is still shown. | [D] |
 | FR-8.19 | Cache creation counts are read from the nested `cache_creation` object as well as from the top level of a usage record. | [D] |
@@ -164,8 +162,10 @@ checked by the traceability task of `bolt common-quality`. The six rows marked
 | FR-8.22 | The counted fields are input, output, cache read, and the two ephemeral cache writes. Output is counted here and not in the context percentage, per FR-2.5. | [D] |
 | FR-8.23 | The cache multipliers are configurable beside the per-model rates. | [D] |
 | FR-8.24 | Looking for the session a transcript belongs to gives up after 40 records. | [D] |
-| FR-8.25 | Cache reads and cache writes are priced apart rather than lumped together as cache. A read is charged at the model's own read multiplier where the rate table gives one, and at a tenth of input where it does not; a write costs more than a fresh input token. | [D] |
 | FR-8.26 | A model whose every count is zero is left out without flagging the total incomplete, rate or no rate: nothing is missing from the figure. Claude Code records an interrupted turn this way, under `<synthetic>`. | [D] |
+| FR-8.27 | The rates and the cache multipliers come only from `~/.config/infobot/pricing.json`, which carries the date they were taken. None are compiled in. | [D] |
+| FR-8.28 | A rate table that is missing, malformed, or lacking rates, `cache_read` or `cache_write` leaves the cost segment out, rather than raising or pricing from anything else. | [D] |
+| FR-8.29 | Cache reads and cache writes are priced apart rather than lumped together as cache. A read is charged at the model's own read multiplier where the rate table gives one, and at the table's `cache_read` where it does not; a write costs more than a fresh input token. | [D] |
 
 ## 4. Being testable, and what is still open
 
@@ -205,3 +205,6 @@ to something unrelated.
 | FR-4.1 | 2026-08-28 | Whether infobot has a suite, so the traceability gate means what it says. It does: 109 of 109 settled requirements are cited by a test that asserts them, every package clears 80% per file, and the two entry points are measured by `go build -cover` rather than excluded. The row was a question and the question is answered, so it goes rather than standing as a permanently satisfied assertion. What keeps it true is the gate, not this row. |
 | FR-4.2 | 2026-08-28 | Which language, and when. It was a question with an id rather than a line of prose so that closing it would be a change to a row. Answered and closed the same day it was acted on: Go, and the Python is gone. What the port traded is not retired with it and is FR-1.13. |
 | FR-8.13 | 2026-09-28 | Every cache read charged at a tenth of input. Opus 5.5 reads at 0.05 and Fable 5.1 and Mythos 5.1 at 0.025, so a single multiplier doubled or quadrupled the largest line on their sessions. Replaced by FR-8.25, which keeps the rest of the row and lets a model carry its own read multiplier. |
+| FR-8.15 | 2026-09-28 | The rates from the file when it is there and from a seed compiled into the module when it is not. The seed went stale unnoticed and a price change meant a rebuild. Replaced by FR-8.27: the file is the only source. |
+| FR-8.16 | 2026-09-28 | A missing or unusable rate table falling back to the compiled seed. Replaced by FR-8.28: with no usable table the cost segment is left out. |
+| FR-8.25 | 2026-09-28 | Cache reads priced at the model's own multiplier, else at a tenth of input. The tenth was compiled in. Replaced by FR-8.29, which reads the default from the table's `cache_read`. |

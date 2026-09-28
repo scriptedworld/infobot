@@ -23,10 +23,22 @@ func priced(t *testing.T, records string) payload.Map {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	config := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", config)
 	t.Setenv("NO_COLOR", "1")
 	t.Setenv("TMUX", "")
 	t.Setenv("HERDR_PANE_ID", "")
+
+	// Nothing is compiled in, so the rate table is written here with the rate
+	// and multipliers the figures below are worked from.
+	rates := `{"cache_read":0.1,"cache_write":{"ephemeral_5m_input_tokens":1.25,` +
+		`"ephemeral_1h_input_tokens":2.0},"rates":{"claude-opus-5":[5.0,25.0]}}`
+	if err := os.MkdirAll(filepath.Join(config, "infobot"), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(config, "infobot", "pricing.json"), []byte(rates), 0o600); err != nil {
+		t.Fatal(err)
+	}
 
 	dir := filepath.Join(home, ".claude", "projects", "-p")
 	if err := os.MkdirAll(dir, 0o750); err != nil {

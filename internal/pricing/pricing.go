@@ -8,7 +8,7 @@
 // event cannot make a network call to ask, so they are read from a table on
 // disk and refreshed by something else.
 //
-// ~/.config/infobot/pricing.json is that table and wins when it is there.
+// ~/.config/infobot/pricing.json is that table.
 // Config rather than state, because the offsets under ~/.local/state/infobot
 // are disposable machine bookkeeping and this is a file worth editing by hand.
 // Sonnet 5 carrying an introductory rate with an expiry is the case that wants
@@ -21,11 +21,11 @@
 // beside the table, and a scheduled refresh that had run in September without
 // one would have had no way to tell a cancelled increase from an unapplied one.
 //
-// The table below is the seed and the fallback, so a fresh clone renders with
-// no config file and no network. Both carry the date they were taken.
-//
-// A model absent from the table is priced at nothing and reported as tokens. A
-// cost computed from a guessed rate is worse than no cost.
+// NOTHING IS COMPILED IN. The rates and the cache multipliers live only in that
+// file, so a price change is an edit to it and never a rebuild. With no usable
+// table the cost segment is left out, and a model missing from it leaves the
+// total flagged as a floor. A cost computed from a guessed rate is worse than no
+// cost, and a copy kept in the code is a guess once nobody refreshes it.
 package pricing
 
 import (
@@ -35,104 +35,35 @@ import (
 	"path/filepath"
 )
 
-const (
-	Taken  = "2026-09-28"
-	Source = "https://platform.claude.com/docs/en/about-claude/pricing"
-)
-
-// Rate is input and output dollars per million tokens, read from Source.
+// Rate is input and output dollars per million tokens.
 type Rate struct {
 	In  float64
 	Out float64
 }
 
-var seedRates = map[string]Rate{ //nolint:gochecknoglobals // read-only after init
-	"claude-fable-5-1":          {10.00, 50.00},
-	"claude-mythos-5-1":         {10.00, 50.00},
-	"claude-fable-5":            {10.00, 50.00},
-	"claude-mythos-5":           {10.00, 50.00},
-	"claude-opus-5-5":           {4.00, 20.00},
-	"claude-opus-5":             {5.00, 25.00},
-	"claude-opus-4-8":           {5.00, 25.00},
-	"claude-opus-4-7":           {5.00, 25.00},
-	"claude-opus-4-6":           {5.00, 25.00},
-	"claude-opus-4-5":           {5.00, 25.00},
-	"claude-opus-4-1":           {15.00, 75.00},
-	"claude-opus-4-0":           {15.00, 75.00},
-	"claude-sonnet-5":           {2.00, 10.00},
-	"claude-sonnet-4-6":         {3.00, 15.00},
-	"claude-sonnet-4-5":         {3.00, 15.00},
-	"claude-sonnet-4-0":         {3.00, 15.00},
-	"claude-haiku-4-5":          {1.00, 5.00},
-	"claude-3-5-haiku-20241022": {0.80, 4.00},
-}
-
-// Multipliers on the input rate: the per-model cache columns at Source are these
-// applied. A cache read is CHARGED, 90% off rather than free, and on a long
-// session it is the largest single line. A write costs more than a fresh input
-// token, which is why the two are priced apart rather than lumped together as
-// "cache".
+// Table is the rate table on disk.
 //
-// Writes are uniform across models. Reads are a tenth except where a model has
-// its own, which is why seedReads exists: pricing Opus 5.5's reads at a tenth
-// would double the largest line on its sessions.
-
-// SeedCacheRead is the read multiplier for a model with none of its own.
-const SeedCacheRead = 0.1
-
-// seedReads is the read multiplier for each model whose own differs from
-// SeedCacheRead. A function rather than a table, so nothing mutable sits at
-// package level.
-func seedReads() map[string]float64 {
-	return map[string]float64{
-		"claude-fable-5-1":  0.025,
-		"claude-mythos-5-1": 0.025,
-		"claude-opus-5-5":   0.05,
-	}
-}
-
-var seedCacheWrite = map[string]float64{ //nolint:gochecknoglobals // read-only after init
-	"ephemeral_5m_input_tokens": 1.25,
-	"ephemeral_1h_input_tokens": 2.0,
-}
-
-// Table is the rate table, from disk or from the seed.
+// The cache multipliers apply to the input rate. A cache read is CHARGED, 90%
+// off rather than free, and on a long session it is the largest single line. A
+// write costs more than a fresh input token, which is why the two are priced
+// apart rather than lumped together as "cache". Writes are uniform across
+// models; a read is CacheRead unless the model has its own in Reads.
 type Table struct {
-	Taken      string             `json:"taken"`
-	Source     string             `json:"source"`
-	Rates      map[string]Rate    `json:"rates"`
-	CacheRead  *float64           `json:"cache_read"`
-	CacheWrite map[string]float64 `json:"cache_write"`
-	Reads      map[string]float64 `json:"-"`
-}
-
-// Read returns the cache read multiplier, falling back to the seed.
-func (t Table) Read() float64 {
-	if t.CacheRead == nil {
-		return SeedCacheRead
-	}
-	return *t.CacheRead
+	Taken      string
+	Source     string
+	Rates      map[string]Rate
+	CacheRead  float64
+	CacheWrite map[string]float64
+	Reads      map[string]float64
 }
 
 // ReadFor returns the cache read multiplier for one model: its own where the
-// table gives one, and Read otherwise.
+// table gives one, and CacheRead otherwise.
 func (t Table) ReadFor(model string) float64 {
 	if multiplier, own := t.Reads[model]; own {
 		return multiplier
 	}
-	return t.Read()
-}
-
-// Writes returns the cache write multipliers, falling back to the seed.
-func (t Table) Writes() map[string]float64 {
-	if len(t.CacheWrite) == 0 {
-		return seedCacheWrite
-	}
-	return t.CacheWrite
-}
-
-func seed() Table {
-	return Table{Taken: Taken, Source: Source, Rates: seedRates, CacheWrite: seedCacheWrite, Reads: seedReads()}
+	return t.CacheRead
 }
 
 // TablePath is where the rates on disk live.
@@ -148,22 +79,22 @@ func TablePath() string {
 	return filepath.Join(root, "infobot", "pricing.json")
 }
 
-// Load returns the rates on disk, or the seed when there are none to be had.
+// Load returns the table on disk and whether there is a usable one.
 //
-// Anything malformed falls back rather than failing. A status line that fails
-// shows nothing at all, and a stale rate is a smaller wrong than a blank row.
-func Load() Table {
+// Usable means rates, cache_read and cache_write are all present. Anything less
+// reports false rather than failing: a status line that fails shows nothing at
+// all, and the caller drops only the cost segment.
+func Load() (Table, bool) {
 	path := TablePath()
 	if path == "" {
-		return seed()
+		return Table{}, false
 	}
 	raw, err := os.ReadFile(path)
 	if err != nil {
-		return seed()
+		return Table{}, false
 	}
-	// Rates arrive as [input, output] pairs, which is the shape the seed is
-	// written in and the shape a person editing the file would copy. A third
-	// number is that model's own cache read multiplier.
+	// Rates arrive as [input, output] pairs, the shape a person editing the file
+	// would copy. A third number is that model's own cache read multiplier.
 	var wire struct {
 		Taken      string               `json:"taken"`
 		Source     string               `json:"source"`
@@ -171,8 +102,8 @@ func Load() Table {
 		CacheRead  *float64             `json:"cache_read"`
 		CacheWrite map[string]float64   `json:"cache_write"`
 	}
-	if json.Unmarshal(raw, &wire) != nil || len(wire.Rates) == 0 {
-		return seed()
+	if json.Unmarshal(raw, &wire) != nil || wire.CacheRead == nil || len(wire.CacheWrite) == 0 {
+		return Table{}, false
 	}
 	rates := make(map[string]Rate, len(wire.Rates))
 	reads := map[string]float64{}
@@ -185,10 +116,11 @@ func Load() Table {
 		}
 	}
 	if len(rates) == 0 {
-		return seed()
+		return Table{}, false
 	}
-	return Table{wire.Taken, wire.Source, rates, wire.CacheRead, wire.CacheWrite, reads}
+	return Table{wire.Taken, wire.Source, rates, *wire.CacheRead, wire.CacheWrite, reads}, true
 }
+
 
 // Priced is the outcome of pricing a session's totals.
 type Priced struct {
@@ -198,7 +130,8 @@ type Priced struct {
 }
 
 // Price returns dollars spent, dollars the cache took off, and whether that is
-// all of it. The second return is false when nothing at all could be priced.
+// all of it. The second return is false when nothing at all could be priced,
+// which includes there being no usable rate table.
 //
 // totals is keyed by model, each holding the token counts as the transcript
 // records them, and each is charged at its own rate: a session that ran work on
@@ -215,7 +148,10 @@ func Price(totals map[string]map[string]float64) (Priced, bool) {
 	if len(totals) == 0 {
 		return Priced{}, false
 	}
-	table := Load()
+	table, usable := Load()
+	if !usable {
+		return Priced{}, false
+	}
 	var spent, uncached, cached float64
 	complete := true
 	for model, counts := range totals {
@@ -234,7 +170,7 @@ func Price(totals map[string]map[string]float64) (Priced, bool) {
 		spent += counts["output_tokens"] / 1e6 * rate.Out
 
 		var tokens float64
-		for field, multiplier := range table.Writes() {
+		for field, multiplier := range table.CacheWrite {
 			tokens += counts[field]
 			cached += counts[field] / 1e6 * rate.In * multiplier
 			spent += counts[field] / 1e6 * rate.In * multiplier

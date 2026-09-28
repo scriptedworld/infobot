@@ -26,7 +26,7 @@ ask a host how wide the pane is (FR-1.8).
                        (FR-1.1, FR-1.3, FR-2.1)
     the environment    HOME, XDG_CONFIG_HOME, XDG_STATE_HOME, NO_COLOR,
                        TMUX, TMUX_PANE, HERDR_PANE_ID, HERDR_BIN_PATH, PATH
-    the rate table     $XDG_CONFIG_HOME/infobot/pricing.json (FR-8.15)
+    the rate table     $XDG_CONFIG_HOME/infobot/pricing.json (FR-8.27)
     the palette        $XDG_CONFIG_HOME/infobot/palette.json (FR-6.11)
     the layout         $XDG_CONFIG_HOME/infobot/layout.json, the margin (FR-3.5)
     the transcripts    ~/.claude/projects/**, found by session id (FR-8.2-8.5)
@@ -50,8 +50,9 @@ id shows as eight characters.
 
 1. Decode the payload. Absent is absent, never zero (FR-1.3).
 2. Ask the pane its width, or establish that it is unknown (FR-3.3).
-3. Load the rate table, the palette and the margin, each falling back to its
-   seed (FR-8.16, FR-6.11, FR-3.5).
+3. Load the palette and the margin, each falling back to its seed (FR-6.11,
+   FR-3.5), and the rate table, which has no seed: without a usable one the
+   cost segment is left out (FR-8.28).
 4. Read what the transcripts appended since the last render and price it
    (FR-8.6, FR-8.11).
 5. Measure the context window once. The bar and the state file come from that
