@@ -118,17 +118,84 @@ unpriced model flagging the total a floor (FR-8.11 to FR-8.24).
 ## The state file
 
 Every render leaves the session's context state where other programs can read
-it (FR-1.11). Its keys, their types and the ISO 8601 `written` stamp are
-FR-1.11g and FR-1.11h; the escaping of any string that could fold is FR-1.11r,
-and numbers carry no exponent at any magnitude (FR-1.11q).
+it (FR-1.11). This section is the form's normative statement, and
+`internal/state/status.schema.json` is its machine-checkable half.
 
-The file is written whole or not at all, through a temporary renamed into place,
-and a write that fails leaves nothing behind (FR-1.11b).
+    path     $XDG_STATE_HOME/infobot/<session>.status.yaml, mode 0644
+    written  by wrench's Go pack, whole or not at all, through a temporary
+             renamed into place; a failed write leaves nothing (FR-1.11b)
 
-The form is a published interface. Its readers match anchored patterns against
-the quoted key, so quoting, one key to a line, the single space after the colon
-and bare numbers are load-bearing, and a change to any of them is announced
-before it lands (FR-1.11o).
+A render writes, for example:
+
+    "context_percent": 14.0
+    "context_remaining": 861823
+    "context_size": 1000000
+    "context_used": 138177
+    "cwd": "/home/me/src/infobot"
+    "effort": "medium"
+    "model": "Opus 5.5 (1M context)"
+    "session": "9823d31e-4539-4855-9940-706a17967086"
+    "written": "2026-09-28T16:44:46-07:00"
+
+The keys (FR-1.11g):
+
+    session             string   always
+    written             string   always; ISO 8601, to the second, with offset
+    cwd, model, effort  string   where the payload names them
+    context_used        integer  the four together, where the window can be
+    context_size        integer  measured; remaining is derived and never
+    context_remaining   integer  negative, percent is neither floored nor
+    context_percent     float    capped (FR-1.11h)
+
+A key whose value would be empty is omitted, never written blank. So an absent
+context block and an unmeasured window read the same, which FR-4.10 leaves open.
+
+The spelling, all of it load-bearing for readers that match anchored patterns
+(FR-1.11o):
+
+- one key to a line, sorted, quoted, followed by `: ` with one space;
+- strings double-quoted, with C0, DEL, C1, U+2028 and U+2029 escaped so a value
+  comes back the bytes it went in as (FR-1.11r);
+- numbers bare and never with an exponent; a float always carries a decimal
+  point and an integer never does (FR-1.11q).
+
+Adding a key is compatible with every current reader. Changing any rule above is
+not, and is announced to the readers before it lands (FR-1.11o).
+
+## The offsets file
+
+Private to infobot and read by nothing else (FR-1.7), so its form carries no
+promise beyond this program.
+
+    path     $XDG_STATE_HOME/infobot/<session>.json, mode 0600
+    written  best effort; a write that fails costs a re-sum (FR-8.10)
+
+    {"files": {"<transcript path>": {"size": <bytes read>,
+                                      "totals": {"<model>": {"<field>": <n>}}}}}
+
+One entry per transcript, subagents' included (FR-8.9). `size` is the offset
+reached over complete lines (FR-8.7); a transcript now smaller than it is read
+from the start (FR-8.8). The fields are `input_tokens`, `output_tokens`,
+`cache_read_input_tokens`, `ephemeral_5m_input_tokens` and
+`ephemeral_1h_input_tokens`. A file that does not decode, or has no `files`, is
+treated as empty (FR-8.10).
+
+## Exits and failures
+
+    bin/infobot           exits 0. With no built binary beside it, it drains
+                          stdin and prints one row saying so (FR-1.13), plain
+                          under NO_COLOR (FR-3.8).
+    bin/statusline        exits 0 whatever it is given (FR-1.2). A failing step
+                          costs its own segment (FR-1.4), and nothing is
+                          written to stderr.
+    bin/forget-session    exits 0. With no built binary it drains stdin and
+                          says nothing: a hook has no line to occupy, and the
+                          state files left behind are the evidence.
+    bin/forget            exits 0 whatever it is given, and refuses a session
+                          id carrying a path separator (FR-1.11f).
+
+Both shims resolve their own symlinks before looking for the binary, so they run
+from any directory and any link (FR-1.9).
 
 **Implementations are held to content identity, not byte identity.** Two
 implementations of infobot must print the same rows and write state files that
