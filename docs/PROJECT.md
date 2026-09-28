@@ -106,7 +106,7 @@ told about. The shim is what turns that silence into a row saying so.
 
 ## How it is invoked
 
-the harness settings file names it by absolute path:
+Claude Code's settings file names it by absolute path:
 
     "statusLine": { "type": "command", "command": ".../infobot/bin/infobot",
                     "refreshInterval": 10 }
@@ -155,8 +155,8 @@ merges the profile. Coverage is judged per file at 80%.
 One task is red: `lint`. 152 issues, of which 130 are escalated to toolbox as
 config decisions and 22 are infobot's own, every one of them a gosec finding
 that cannot be settled by an edit. Rule 4 admits no pragma without a person
-having answered first, so they stay red.
-the task tracker.planning` carries them.
+having answered first, so they stay red. The task that adopts the Go jig
+carries them.
 
 **Measure that uncapped or it is a floor.** golangci-lint truncates its own
 output by default, at 50 per linter and 3 per repeated message, and neither the
@@ -226,8 +226,8 @@ the status line runs on (see "Two machines run it").
 ## What is decided, and what is open
 
 Done rather than decided: Go. The port landed on 2026-08-28 and the Python is
-gone. It was checked against the 18-case golden corpus in
-the golden corpus, which reads 17 of 18 identical;
+gone. It was checked against the 18-case golden corpus the Python produced,
+which reads 17 of 18 identical;
 the eighteenth is `malformed-resets`, and it differs because the Python wrapped
 the whole render in a bare `except` so one bad field blanked both rows. That was
 FR-1.4's known gap, captured deliberately so that fixing it would show up here
