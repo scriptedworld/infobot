@@ -114,6 +114,24 @@ the harness settings file names it by absolute path:
 That file stays in silo, because it is Claude Code's configuration rather than
 infobot's. infobot does not read it.
 
+## Two machines run it, and both stay on the latest commit
+
+lazlo holds this tree and oslo holds a clone of it. Every Claude Code session
+on either machine runs the status line, so a commit is not finished until both
+are on it and built. oslo counts whenever it is reachable, and a commit made
+while it is down goes over the next time it is up. A tree with no built binary
+shows "infobot is not built" in every session on that machine.
+
+The two share no remote, so a commit goes over as a bundle, fast-forward only:
+
+    git bundle create .ephemera/infobot.bundle <oslo HEAD>..main
+    scp .ephemera/infobot.bundle oslo:.projects/infobot/.ephemera/
+    ssh oslo 'cd ~/.projects/infobot &&
+              git pull --ff-only .ephemera/infobot.bundle main && just install'
+
+Then check that both agree: `git log --oneline -1` matches on the two machines,
+and `just install` on each prints that the binaries are current.
+
 ## The gate
 
     just checks
