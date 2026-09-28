@@ -254,9 +254,14 @@ or drop it.
 
 ## Two things that constrain changes to the state file
 
-**It has a reader outside this repository.** silo's coordination board pulls
-`context_percent` and `cwd` from every session's file with patterns anchored on
-the quoted key and the single space after the colon, taking the number bare.
+**It has a reader outside this repository.** silo's `bin/board` pulls
+`session`, `written` and `context_percent` from every session's file with
+patterns anchored at the line start on the quoted key and the single space after
+the colon, taking the number bare. It no longer reads `cwd`, which follows the
+tool shell rather than the repository a session holds, and joins to herdr by
+session id instead. `written` is parsed by `date -d`, so its ISO 8601 form with
+an offset is load-bearing, and a file older than 15 minutes reads as a stopped
+session.
 FR-1.11o makes announcing a change to that form a requirement rather than a
 courtesy. Adding a key is safe; changing the shape is not.
 
@@ -345,6 +350,17 @@ time either.
 The schema infobot compiles carries no `$ref`, so wrench's reference change
 cannot reach it. That is a reason to expect the upgrade to be quiet, not a reason
 to skip it.
+
+**The pin names a commit wrench's remote no longer carries.** The history
+rewrite replanted `f34be14` as `8e9d199`. Checked 2026-09-28 from inside wrench:
+both have tree `186d753`, and only `8e9d199` is on `origin/main`. A build that
+cannot be served from the module cache has nothing to fetch.
+
+Re-pin once, after wrench rewrites its commit messages
+(`clank/tasks/wrench/prose-cleanup/50`, `.planning` on 2026-09-28), since that
+changes every SHA again. The upgrade steps above apply unchanged. A tag on the
+Go pack would turn this into a version bump; that is open in wrench's
+`NEXT_STEPS.md`.
 
 **wrench's decision document is spent.**
 `docs/DECISIONS/infobots-hand-emitted-yaml-is-a-considered-duplicate.md` resolved

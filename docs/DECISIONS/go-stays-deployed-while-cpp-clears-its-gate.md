@@ -17,6 +17,13 @@ The last commit holding both C++ trees is `e1e99b1`:
 
     git checkout e1e99b1 -- cpp/ cxx/
 
+A restore brings back one known defect with it. Its coverage runs invoked gcov
+from `~/.projects` rather than from the repository, and over the toolchain as
+well as `cpp/src`, so 63 `.gcov` files landed outside every tree, 58 of them
+standard library headers. Run gcov from the repository root and restrict it to
+the project's sources. The inbox entry that reported it was closed on this
+retirement, since nothing left here can produce it.
+
 The figures below stay, because they are what any later attempt at a faster
 implementation is measured against. Where they say what is decided, that is the
 record of what stood before 2026-09-25.
