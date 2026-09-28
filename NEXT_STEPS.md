@@ -2,12 +2,12 @@
 
 ## Queued
 
-    documentation/11      the README explains the rows        .ready
-    documentation/12      extract the decisions               .ready
-    documentation/13      extract the lessons                 .ready
-    documentation/14      start docs/PATTERNS                 .ready
-    documentation/15      cut to citations                    .blocked
-    documentation/16      one file per requirement            .ready
+    documentation/filing/10  the README explains the rows     .ready
+    documentation/filing/20  extract the decisions            .ready
+    documentation/filing/30  extract the lessons              .ready
+    documentation/filing/40  start docs/PATTERNS              .ready
+    documentation/filing/50  cut to citations                 .blocked
+    documentation/filing/60  one file per requirement         .ready
     documentation/20      the voice pass                      .ready
     gate/10               the shims are read by something     .blocked
     gate/20               adopt the wording task              .ready
