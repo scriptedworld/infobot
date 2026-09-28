@@ -219,6 +219,12 @@ func Price(totals map[string]map[string]float64) (Priced, bool) {
 	var spent, uncached, cached float64
 	complete := true
 	for model, counts := range totals {
+		// Claude Code records an interrupted or failed turn under the model
+		// "<synthetic>" with every count zero. Nothing is missing from the
+		// figure, so it must not be flagged as a floor.
+		if noTokens(counts) {
+			continue
+		}
 		rate, known := table.Rates[model]
 		if !known {
 			complete = false
@@ -243,6 +249,15 @@ func Price(totals map[string]map[string]float64) (Priced, bool) {
 		return Priced{}, false
 	}
 	return Priced{Spent: spent, Saved: uncached - cached, Complete: complete}, true
+}
+
+func noTokens(counts map[string]float64) bool {
+	for _, n := range counts {
+		if n != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // Money prints dollars at the precision the number deserves rather than always

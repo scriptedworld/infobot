@@ -165,6 +165,7 @@ checked by the traceability task of `bolt common-quality`. The six rows marked
 | FR-8.23 | The cache multipliers are configurable beside the per-model rates. | [D] |
 | FR-8.24 | Looking for the session a transcript belongs to gives up after 40 records. | [D] |
 | FR-8.25 | Cache reads and cache writes are priced apart rather than lumped together as cache. A read is charged at the model's own read multiplier where the rate table gives one, and at a tenth of input where it does not; a write costs more than a fresh input token. | [D] |
+| FR-8.26 | A model whose every count is zero is left out without flagging the total incomplete, rate or no rate: nothing is missing from the figure. Claude Code records an interrupted turn this way, under `<synthetic>`. | [D] |
 
 ## 4. Being testable, and what is still open
 

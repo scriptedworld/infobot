@@ -75,6 +75,26 @@ func TestPriceFlagsAnUnknownModelWithoutAbandoningTheTotal(t *testing.T) {
 	}
 }
 
+// COVERS: FR-8.26 | regression
+//
+// Claude Code writes an interrupted turn under "<synthetic>" with every count
+// zero. Found on a Fable 5.1 session that rendered $997+ with nothing unpriced.
+func TestAModelWithNoTokensLeavesTheTotalComplete(t *testing.T) {
+	got, ok := pricing.Price(map[string]map[string]float64{
+		"claude-opus-5": {"input_tokens": 1e6},
+		"<synthetic>":   {"input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 0},
+	})
+	if !ok {
+		t.Fatal("Price returned nothing")
+	}
+	if !got.Complete {
+		t.Error("Complete = false, want true when the unpriced model carried no tokens")
+	}
+	if got.Spent != 5.0 {
+		t.Errorf("Spent = %v, want 5.0", got.Spent)
+	}
+}
+
 // COVERS: FR-8.12 | edge
 func TestPriceReturnsNothingWhenNothingCouldBePriced(t *testing.T) {
 	if _, ok := pricing.Price(nil); ok {
