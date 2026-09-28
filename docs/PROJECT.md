@@ -130,7 +130,10 @@ The two share no remote, so a commit goes over as a bundle, fast-forward only:
               git pull --ff-only .ephemera/infobot.bundle main && just install'
 
 Then check that both agree: `git log --oneline -1` matches on the two machines,
-and `just install` on each prints that the binaries are current.
+and `just install` on each prints that the binaries are current. To see the
+render itself, `scripts/render-probe.sh PAYLOAD` on each host prints the rows
+for a payload naming one of that host's sessions; the cost segment is there
+only when the host's rate table is usable.
 
 ## The gate
 
