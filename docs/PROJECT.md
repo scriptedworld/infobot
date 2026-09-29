@@ -42,14 +42,9 @@ binary:
 Any working copy of that lives in `.ephemera/perf/`, which is gitignored, so a
 fresh clone re-derives it rather than finding it.
 
-The first row is the corpus payload, which carries no cost segment, and it is
-the 30.6 to 4.5 this document used to quote on its own. The second row adds the
-two things a real render does and the corpus omits: a pane width to fit to, and
-a live session id, which sends the cost segment to find that session's
-transcript under `~/.claude/projects`. That search is about 15ms in either
-language, it was ported as it stood, and it is now roughly 60% of what a Go
-render spends. Most of what the port removed was the interpreter starting, and
-what is left is dominated by file search rather than by language.
+The first row is the corpus payload, with no cost segment; the second adds a
+pane width and a live session id. Why the gap between them is file search:
+`docs/LESSONS/the-port-removed-the-interpreter-not-the-file-search.md`.
 
 Go's RSS is polled from `/proc`, and a process this short-lived can be missed at
 its peak, so 9MB is a floor. Python's is exact because it lives long enough to
@@ -180,32 +175,13 @@ the status line runs on (see "Two machines run it").
 ## What is decided, and what is open
 
 Done rather than decided: Go. The port landed on 2026-08-28 and the Python is
-gone. It was checked against the 18-case golden corpus the Python produced,
-which reads 17 of 18 identical;
-the eighteenth is `malformed-resets`, and it differs because the Python wrapped
-the whole render in a bare `except` so one bad field blanked both rows. That was
-FR-1.4's known gap, captured deliberately so that fixing it would show up here
-as a diff. It does.
+gone. It reads 17 of 18 identical against the golden corpus the Python
+produced, and the eighteenth differs on purpose.
 
-**The corpus predates the port and was captured from the Python**, by
-`capture-golden.py` beside it, whose first line calls itself the oracle for the
-port. The Python carried no suite in this repository: no test file, no test
-target, nothing the gate ran. It was not unvalidated, and reading the absent
-suite as an absent oracle is the mistake the corpus exists to prevent. What it
-had was that corpus, a drift checker whose clean run at width 197 on 2026-08-26
-is what proved the display had stopped moving, and about 200 assertions across
-`.ephemera/check-*.py` covering transcript tailing and the pricing arithmetic.
-The harness was throwaway by design and is gone; the cases and their expected
-values came across into the Go tests, which is what capturing them was for.
-
-**Two things are absent from every corpus case by construction**, and both are
-in `capture-golden.py`'s header. No `resets_at`, because the countdown is
-computed from the wall clock and any case carrying one drifts by a minute and
-stops being golden. No cost segment, because the session id names a transcript
-whose totals grow as a session runs, so the corpus uses an id no transcript
-answers to. A case is therefore the cheapest render available and not a
-representative one. Timing the binary against it measures the render with the
-segment that reads files left out.
+The corpus was captured from the Python, which had no suite of its own:
+`docs/LESSONS/an-absent-suite-is-not-an-absent-oracle.md`. It leaves out the
+countdown and the cost by construction, so no case is a representative render:
+`docs/LESSONS/a-golden-corpus-measures-the-cheapest-render.md`.
 
 Decided: Claude Code reaches the binary through the committed shim.
 `docs/DECISIONS/claude-code-is-pointed-at-a-shim-not-a-binary.md`.
