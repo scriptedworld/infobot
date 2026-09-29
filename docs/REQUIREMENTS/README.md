@@ -34,5 +34,6 @@ not declare:
 
     python3 bin/test-traceability.py --requirements docs/REQUIREMENTS .
 
-`just checks` passes the path through `bolt.common-quality.definitions.yaml`.
+`just checks` passes the path through toolbox's
+`bolt.requirements-directory.definitions.yaml`, linked in beside the jigs.
 The `[?]` rows are reported as context and not failed.

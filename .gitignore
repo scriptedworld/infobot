@@ -32,6 +32,7 @@ __pycache__/
 # the project root, so an adopter links the shared file in at that path.
 bolt.*-quality.yaml
 bolt.secrets.yaml
+bolt.requirements-directory.definitions.yaml
 adapters/
 config/
 
