@@ -4,12 +4,42 @@ The status line Claude Code draws at the bottom of the screen. It reads the
 session JSON on stdin and writes two rows: where you are, and how much of the
 context window and the rate-limit windows you have spent.
 
-    ╭─ Opus 5 (1M context) - xhigh  ~/.projects/infobot  ⌂ ~/.projects  🧠 ▰▰▰▰▰▱▱▱▱▱ 480k/1.0M (48% consumed)  ⟨c39f9245⟩
-    ╰─ ⏳ 5hr ▰▰▰▱▱▱▱▱▱▱  📅 7d ▰▰▰▰▰▰▱▱▱▱                                             💵 $422  🎯 saved $2.4k
+    ╭─ Opus 5.5 (1M context) - xhigh  ~/src/infobot/internal  ⌂ ~/src/infobot  🧠 ▰▰▰▰▰▱▱▱▱▱ 480k/1.0M (48% consumed)  ⟨9823d31e⟩
+    ╰─ ⏳ 5hr ▰▰▰▱▱▱▱▱▱▱  @31% 2h10m  📅 7d ▰▰▰▰▰▰▱▱▱▱  @64% 3d3h                  💵 $51.49  🎯 saved $410
 
 The context bar grows to fill whatever the pane leaves after the text, so it is
-much longer than this in a real terminal and the sample is shortened to fit a
-page. Everything else is what it renders.
+much longer than this in a real terminal, and the gap before the cost widens to
+push it to the right edge. Everything else is what it renders.
+
+    Opus 5.5 (1M context)   the model, then its effort level after the dash
+    ~/src/infobot/internal  where the session is working
+    ⌂ ~/src/infobot         the project root, shown only when it differs
+    🧠 bar, 480k/1.0M       the context window: tokens held on the input side,
+                            out of its size (FR-2.5)
+    ⟨9823d31e⟩              the first eight characters of the session id
+    ⏳ 5hr, 📅 7d            the two rate-limit windows: how much is spent, then
+                            the time until the window resets (FR-7.9)
+    💵 $51.49               what the tokens so far would have cost through
+                            the API at list rates; nothing is billed (FR-8.1)
+    🎯 saved $410           what caching saved against paying the plain input
+                            rate for every cached token (FR-8.14)
+
+Colour carries the verdict, so the numbers are there for when a glance is not
+enough:
+
+- The context bar and its percentage run green to yellow to red as the window
+  fills, and invert from 90% so a nearly full window cannot be missed (FR-6.1,
+  FR-6.2).
+- A rate-limit gauge's length is how much is spent, and its colour is where the
+  window is heading: green means on course to land exactly full as it resets,
+  yellow into red means running out early, and pale into blue means spare
+  capacity. The colour fades in over the first 60% of the window, since an
+  early projection means little (FR-7.1 to FR-7.4).
+- A `+` after the cost means the session used a model the rate table has no
+  price for, so the figure is a floor (FR-8.12).
+
+When the row is narrow, the gauges give way to their percentages, and the cost
+shortens to the total alone and then drops (FR-5.6, FR-5.7).
 
 One job: turn the session payload into rows. No network. One subprocess, to ask
 whichever multiplexer owns the pane how wide it is, because every other route to
@@ -94,9 +124,9 @@ shim is working and `just build` has not been run.
 Nothing is required. Two paths are used if present.
 
 **`~/.config/infobot/pricing.json`** carries the API rates the cost segment
-prices a session with, and the date they were taken. It wins over the copy
-compiled into the binary, which exists so that a fresh clone renders with no
-config file and no network.
+prices a session with, and the date they were taken. It is the only source of
+rates: without a usable file the cost and the saving are left out and the rest
+of the line renders as normal (FR-8.27, FR-8.28).
 
 The rates go stale, so the file records when it was read. Refreshing it is a
 person's job rather than a scheduled fetch: Claude's pricing page carries
