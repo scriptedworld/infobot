@@ -1,0 +1,7 @@
+# FR-8.25, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-8.25 | 2026-09-28 | Cache reads priced at the model's own multiplier, else at a tenth of input. The tenth was compiled in. Replaced by FR-8.29, which reads the default from the table's `cache_read`. |

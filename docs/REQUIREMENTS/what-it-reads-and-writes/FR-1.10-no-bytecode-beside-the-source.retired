@@ -1,0 +1,7 @@
+# FR-1.10, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-1.10 | 2026-08-27 | It wrote no bytecode beside its source. A property of the Python runtime, retired ahead of the Go port that removes the runtime. Nothing replaces it. |

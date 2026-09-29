@@ -1,0 +1,7 @@
+# FR-1.11i, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-1.11i | 2026-08-27 | A value's type survives the round trip. Folded into FR-1.11g with the rest of the file's form. |

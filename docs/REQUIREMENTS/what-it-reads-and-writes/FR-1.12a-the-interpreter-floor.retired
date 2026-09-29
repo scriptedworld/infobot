@@ -1,0 +1,7 @@
+# FR-1.12a, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-1.12a | 2026-08-27 | The interpreter floor, 3.8, set by `Path.unlink(missing_ok=True)`. Retired with FR-1.12, which it qualified. |

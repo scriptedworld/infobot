@@ -1,0 +1,7 @@
+# FR-4.2, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-4.2 | 2026-08-28 | Which language, and when. It was a question with an id rather than a line of prose so that closing it would be a change to a row. Answered and closed the same day it was acted on: Go, and the Python is gone. What the port traded is not retired with it and is FR-1.13. |

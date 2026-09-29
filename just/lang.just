@@ -39,7 +39,7 @@
 
 # all the quality tooling
 checks:
-    @just _verdict common-quality
+    @just _verdict common-quality --definitions common-quality
     @just _verdict go-std-quality --definitions go-std-quality
 
 # Race and shuffle are the jig's, and are here too so that running the piece

@@ -1,0 +1,7 @@
+# FR-8.16, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-8.16 | 2026-09-28 | A missing or unusable rate table falling back to the compiled seed. Replaced by FR-8.28: with no usable table the cost segment is left out. |

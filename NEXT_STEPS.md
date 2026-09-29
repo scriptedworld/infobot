@@ -188,8 +188,8 @@ time, that was the string `WRENCH_ALLOW_EXTERNAL_SCHEMA_REFS` disappearing.
 
 ## Open questions
 
-Section 4 of `REQUIREMENTS.md` holds them, each with an id, so closing one is a
-change to a row. `state-readers/10` is the one with a task, in `.questions`.
+`docs/REQUIREMENTS/testable-and-open/` holds them, each with an id, so closing
+one is a change to a row. `state-readers/10` is the one with a task, in `.questions`.
 Its first question, whose a reader over every session's file would be, is
 partly answered already: silo's board is that reader and has an owner. What
 remains is where a session's intent comes from, and whose vocabulary it uses.

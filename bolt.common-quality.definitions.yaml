@@ -1,0 +1,9 @@
+# infobot's values for the placeholders in bolt.common-quality.yaml.
+#
+# A flat mapping of placeholder name to scalar value, with no `definitions:`
+# wrapper.
+#
+# One entry: the requirements are a tree of one file per requirement, and the
+# shared jig's default names the single REQUIREMENTS.md this project no longer
+# has. Without it, traceability reads a missing file.
+requirements: docs/REQUIREMENTS

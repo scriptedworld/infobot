@@ -1,0 +1,7 @@
+# FR-1.11n, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-1.11n | 2026-08-27 | The form pinned at both ends: infobot's output a fixture in wrench, and infobot asserting its own canonical form. Retired on a future state, one emitter, that took a fortnight to arrive; the guarantee returned as FR-1.11p, with FR-1.11o facing the readers. Retiring it early was the mistake: `docs/LESSONS/a-requirement-retired-on-a-future-state.md`. |

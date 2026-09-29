@@ -1,0 +1,7 @@
+# FR-1.11l, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-1.11l | 2026-08-27 | The file is readable by other programs. That is why it exists, and FR-1.11 now says so. |

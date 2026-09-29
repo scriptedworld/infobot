@@ -1,0 +1,7 @@
+# FR-1.11d, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-1.11d | 2026-08-27 | Canonical YAML emitted by hand, not by importing wrench. Retired expecting the port to link wrench's pack, which it did only at infobot `1b96c85`; until then the hand emitter this row described stayed in use. Its subject no longer exists. What it required is FR-1.11g for the form and FR-1.11q for the spelling of a number. |

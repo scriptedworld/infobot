@@ -1,6 +1,6 @@
 # infobot, the specification
 
-How the status line is built, where `REQUIREMENTS.md` says what must be true of
+How the status line is built, where `docs/REQUIREMENTS/` says what must be true of
 it. Every claim here cites the rows it rests on, and the last section traces
 those rows back. A reader who wants the reasoning behind a row goes to
 `docs/DECISIONS/`; a reader who wants to run the thing goes to `README.md`.
@@ -212,7 +212,8 @@ unlinks within (FR-1.11f).
 ## What this does not specify
 
 The palette's values, the glyphs, the ramp arithmetic and the pace scale, all of
-which are stated in `REQUIREMENTS.md` sections 6 and 7. The internals of
+which are stated in `docs/REQUIREMENTS/the-meters-and-the-palette/` and
+`the-rate-limit-windows/`. The internals of
 wrench's Go pack. The Python original, the Zig experiment and two C++ ports,
 all retired.
 

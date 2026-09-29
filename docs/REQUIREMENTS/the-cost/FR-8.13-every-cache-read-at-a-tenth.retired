@@ -1,0 +1,7 @@
+# FR-8.13, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-8.13 | 2026-09-28 | Every cache read charged at a tenth of input. Opus 5.5 reads at 0.05 and Fable 5.1 and Mythos 5.1 at 0.025, so a single multiplier doubled or quadrupled the largest line on their sessions. Replaced by FR-8.25, which keeps the rest of the row and lets a model carry its own read multiplier. |

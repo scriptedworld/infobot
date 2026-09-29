@@ -67,7 +67,7 @@ left: no checker in the gate reads the two shell shims.
     scripts/           the entry-point coverage run and the render probe
     README.md          the front door: what it is, how to build and wire it
     LICENSE, NOTICE    Apache 2.0
-    REQUIREMENTS.md    what must be true of it
+    docs/REQUIREMENTS/ what must be true of it, one file per requirement
     NEXT_STEPS.md      what is not done, and why
     docs/PROJECT.md    this file
     docs/SPEC.md       how it is built, and the published forms
@@ -184,6 +184,6 @@ Decided: two rows, not three. `docs/DECISIONS/two-rows-not-three.md`.
 Decided: the state file is written through wrench's pack.
 `docs/DECISIONS/the-state-file-is-emitted-by-wrenchs-pack.md`.
 
-Open: section 4 of `REQUIREMENTS.md`, each question a row with an id, so
+Open: `docs/REQUIREMENTS/testable-and-open/`, each question a row with an id, so
 closing one is a test or a decision against a row that exists. What is not done
 is `NEXT_STEPS.md`.

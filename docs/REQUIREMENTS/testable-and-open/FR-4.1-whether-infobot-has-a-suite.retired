@@ -1,0 +1,7 @@
+# FR-4.1, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-4.1 | 2026-08-28 | Whether infobot has a suite, so the traceability gate means what it says. It does: every settled requirement is cited by a test, every package clears 80% per file, and the entry points are measured. A question that is answered goes, and the gate keeps it true. |

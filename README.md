@@ -182,15 +182,17 @@ session.
 
 **Every test names the requirement it discharges**, in a comment directly above
 it, and the gate fails a test that cites nothing or cites a requirement
-`REQUIREMENTS.md` does not define:
+`docs/REQUIREMENTS/` does not define:
 
     // COVERS: FR-1.13 | negative
 
 ## Where things are written down
 
-    REQUIREMENTS.md    what must be true, and the retired ids with their reasons
+    docs/REQUIREMENTS/ what must be true, one file per requirement, retired
+                       ids included
     NEXT_STEPS.md      what is not done
     docs/PROJECT.md    the project detail: layout, gate, what is decided
+    docs/SPEC.md       how it is built, and the forms it publishes
     docs/DECISIONS/    why a choice was made
     docs/LESSONS/      what a mistake cost and how to avoid repeating it
     docs/PATTERNS/     techniques used here that carry to other projects

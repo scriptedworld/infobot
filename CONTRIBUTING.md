@@ -29,11 +29,11 @@ above it:
     // COVERS: FR-1.11o | regression
 
 Kinds are `positive`, `negative`, `edge`, `property`, `regression`. The gate
-fails a test citing a requirement `REQUIREMENTS.md` does not define, and fails
-a settled requirement no test cites.
+fails a test citing a requirement `docs/REQUIREMENTS/` does not define, and
+fails a settled requirement no test cites.
 
-**A requirement first, if the change adds behaviour.** `REQUIREMENTS.md` is
-what the tests are written against, and a change that alters what the status
+**A requirement first, if the change adds behaviour.** `docs/REQUIREMENTS/`,
+one file per requirement, is what the tests are written against, and a change that alters what the status
 line emits also needs `docs/PROJECT.md` to still be true afterwards.
 
 ## The one thing to know before changing the output

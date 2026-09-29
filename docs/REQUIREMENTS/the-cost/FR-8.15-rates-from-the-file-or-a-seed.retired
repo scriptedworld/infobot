@@ -1,0 +1,7 @@
+# FR-8.15, retired
+
+Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
+
+| ID | Went | Why, and what replaced it |
+|---|---|---|
+| FR-8.15 | 2026-09-28 | The rates from the file when it is there and from a seed compiled into the module when it is not. The seed went stale unnoticed and a price change meant a rebuild. Replaced by FR-8.27: the file is the only source. |
