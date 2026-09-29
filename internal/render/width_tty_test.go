@@ -43,7 +43,7 @@ func ancestorTTY(t *testing.T) string {
 	return ""
 }
 
-// COVERS: FR-3.3, FR-3.4 | positive
+// COVERS FR-3.3, FR-3.4 | positive
 //
 // The bare terminal case: no multiplexer, and Claude Code hands the status line
 // pipes rather than a terminal, so nothing among fd0, fd1, fd2, COLUMNS or
@@ -62,7 +62,7 @@ func TestBareTerminalIsFoundThroughAnAncestor(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.4 | negative
+// COVERS FR-3.4 | negative
 //
 // A host that is present but silent does not fall through to the terminal.
 //

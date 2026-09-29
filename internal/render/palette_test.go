@@ -62,7 +62,7 @@ func rampAt(t *testing.T, pct float64) [3]int {
 	}, 0))
 }
 
-// COVERS: FR-6.1 | property
+// COVERS FR-6.1 | property
 //
 // Two straight lines, green to yellow from 0 to 75 and yellow to red from 75 to
 // 90, so the colour moves fastest exactly where a glance needs to tell 80 from
@@ -89,7 +89,7 @@ func TestRampIsTwoStraightLines(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.2, FR-6.2a | property
+// COVERS FR-6.2, FR-6.2a | property
 //
 // At 90 the foreground is the red the ramp arrives at and the background is the
 // TERMINAL'S OWN, so the boundary has nothing to show. At 100 it is pale yellow
@@ -115,7 +115,7 @@ func TestAlarmFadesInRatherThanSwitchingOn(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.2a | edge
+// COVERS FR-6.2a | edge
 //
 // Nothing jumps at the boundary: the last cell below the alarm and the first
 // cell in it are the same foreground.
@@ -128,7 +128,7 @@ func TestAlarmBoundaryHasNothingToShow(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.2b | property
+// COVERS FR-6.2b | property
 //
 // The band is the top tenth of the bar, so its resolution is the cell count: 11
 // cells of 103, 5 of 40, and 1 at BAR_MIN, where it is a step rather than a
@@ -147,7 +147,7 @@ func TestAlarmResolutionIsTheCellCount(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.3 | property
+// COVERS FR-6.3 | property
 //
 // Each filled cell is coloured for the percentage IT stands for, not for the
 // bar's total, so the fade is a fixed property of the bar and only its length
@@ -165,7 +165,7 @@ func TestEachCellIsColouredForItsOwnPercentage(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.5, FR-6.6 | property
+// COVERS FR-6.5, FR-6.6 | property
 //
 // One escape per RUN of cells sharing a style, and every run opens with a reset
 // BEFORE the style: the alarm carries bold and a background, so a bare colour
@@ -197,7 +197,7 @@ func TestRunsShareOneEscapeAndOpenWithAReset(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.10, FR-6.12 | property
+// COVERS FR-6.10, FR-6.12 | property
 //
 // The empty cells carry an outline glyph and NO background, and the rail is
 // drawn in that same colour rather than one of its own.
@@ -225,7 +225,7 @@ func TestEmptyCellsAndRailShareOneColourAndNoBackground(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.11 | property
+// COVERS FR-6.11 | property
 func TestPathCarriesTheDesktopAccent(t *testing.T) {
 	colourful(t)
 	isolate(t)
@@ -237,7 +237,7 @@ func TestPathCarriesTheDesktopAccent(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.13 | property
+// COVERS FR-6.13 | property
 //
 // A word present to be scanned past is dimmed; the figures beside it are not.
 func TestOnlyConnectiveWordsAreDimmed(t *testing.T) {
@@ -250,7 +250,7 @@ func TestOnlyConnectiveWordsAreDimmed(t *testing.T) {
 	}
 }
 
-// COVERS: FR-7.1, FR-7.2, FR-7.3 | property
+// COVERS FR-7.1, FR-7.2, FR-7.3 | property
 //
 // The gauge's LENGTH is the spend and its COLOUR is the verdict, and the verdict
 // is where the window is projected to LAND. Landing exactly full is green,
@@ -283,7 +283,7 @@ func TestPaceColoursTheGaugeByWhereItLands(t *testing.T) {
 	}
 }
 
-// COVERS: FR-7.4, FR-7.5, FR-7.6 | property
+// COVERS FR-7.4, FR-7.5, FR-7.6 | property
 //
 // The verdict fades in against GREEN rather than switching on, and the fade is
 // a fraction of the window, so the seven day window matures at the same point
@@ -320,7 +320,7 @@ func TestVerdictFadesInAgainstGreen(t *testing.T) {
 	}
 }
 
-// COVERS: FR-7.7 | edge
+// COVERS FR-7.7 | edge
 //
 // Beyond the ends the colour clamps: once it will not last, by how much stops
 // changing what to do about it.
@@ -339,7 +339,7 @@ func TestPaceClampsBeyondTheEndsOfTheScale(t *testing.T) {
 	}
 }
 
-// COVERS: FR-7.8 | negative
+// COVERS FR-7.8 | negative
 //
 // With no reset time there is no window position, so the gauge falls back to
 // meaning what the context meter's colour means.
@@ -354,7 +354,7 @@ func TestWindowWithNoResetFallsBackToTheConsumptionRamp(t *testing.T) {
 	}
 }
 
-// COVERS: FR-7.11 | edge
+// COVERS FR-7.11 | edge
 //
 // The pace arithmetic cannot divide by nothing and cannot run backwards. A
 // reset further out than the window is long reads as the start, and a
@@ -385,7 +385,7 @@ func TestPaceArithmeticSurvivesItsEdges(t *testing.T) {
 	}
 }
 
-// COVERS: FR-7.10 | property
+// COVERS FR-7.10 | property
 func TestWindowLengthsComeFromTheFieldNames(t *testing.T) {
 	colourful(t)
 	isolate(t)

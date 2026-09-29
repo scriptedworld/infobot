@@ -9,7 +9,7 @@ import (
 	"github.com/scriptedworld/infobot/internal/render"
 )
 
-// COVERS: FR-2.1 | property
+// COVERS FR-2.1 | property
 //
 // resets_at is a NUMERIC EPOCH rather than a timestamp string, which is what
 // the running Claude Code sends. A string is not a timestamp in another
@@ -36,7 +36,7 @@ func TestResetsAtIsANumericEpoch(t *testing.T) {
 	}
 }
 
-// COVERS: FR-2.3 | property
+// COVERS FR-2.3 | property
 //
 // A percentage the status line prints is computed by the SAME formula as the
 // percentage the payload supplies, so the two halves of a segment agree. Where
@@ -58,7 +58,7 @@ func TestPrintedPercentageIsThePayloadsOwn(t *testing.T) {
 	}
 }
 
-// COVERS: FR-2.8 | property
+// COVERS FR-2.8 | property
 func TestModelIsDisplayNameThenIdWithEffortAppended(t *testing.T) {
 	for _, c := range []struct {
 		name string
@@ -91,7 +91,7 @@ func TestModelIsDisplayNameThenIdWithEffortAppended(t *testing.T) {
 	}
 }
 
-// COVERS: FR-2.12 | property
+// COVERS FR-2.12 | property
 //
 // The project root is MARKED as a root rather than left to read as a second
 // path, and the marker sits OUTSIDE the colour the path carries, so what is
@@ -112,7 +112,7 @@ func TestProjectRootMarkerSitsOutsideTheColour(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.1 | property
+// COVERS FR-3.1 | property
 //
 // Colour is 24-bit. Every escape carries three channels rather than a palette
 // index, so the ramp is continuous instead of stepped.
@@ -136,7 +136,7 @@ func TestEveryColourIsTwentyFourBit(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.2 | property
+// COVERS FR-3.2 | property
 //
 // Refresh is time-based as well as event-based, which is Claude Code's
 // `refreshInterval` and lives in silo's settings.json. INFOBOT'S HALF of that
@@ -162,7 +162,7 @@ func TestRepeatedRendersAreStable(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.10 | property
+// COVERS FR-3.10 | property
 //
 // Ambiguous-width characters are counted as ONE column, which is what kitty
 // draws them as. A terminal treating ambiguous as wide would draw every bar at

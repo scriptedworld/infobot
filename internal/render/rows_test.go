@@ -37,7 +37,7 @@ func rows(t *testing.T, data payload.Map, width int) []string {
 	return render.Build(data, "/home/me", width, clock)
 }
 
-// COVERS: FR-1.1 | positive
+// COVERS FR-1.1 | positive
 //
 // Reads the session JSON on standard input and writes COMPLETE rows to standard
 // output. Complete is the requirement; the count is a rendering decision.
@@ -65,7 +65,7 @@ func TestMainWritesCompleteRows(t *testing.T) {
 	}
 }
 
-// COVERS: FR-5.4, FR-5.13 | property
+// COVERS FR-5.4, FR-5.13 | property
 //
 // The session id CLOSES the identity row, which puts the bar between two fixed
 // things. Each segment opens with a fixed marker, so which meter is which is
@@ -84,7 +84,7 @@ func TestRowShapeIsMarkersAndAClosingSessionId(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11a | property
+// COVERS FR-1.11a | property
 //
 // The bar and the file come through ONE measurement. Two formulas would let a
 // bar reading 56% sit beside a file saying something else, and a reader has no
@@ -161,7 +161,7 @@ func percentInRow(row string) string {
 	return row[start:cut]
 }
 
-// COVERS: FR-5.2 | property
+// COVERS FR-5.2 | property
 //
 // The context segment rides the identity row when that row can hold it with no
 // bar at all, and moves to the meter row when it cannot. Truncation eats the
@@ -185,7 +185,7 @@ func TestContextRelocatesRatherThanOverflowing(t *testing.T) {
 	}
 }
 
-// COVERS: FR-5.3 | property
+// COVERS FR-5.3 | property
 //
 // The context bar takes every column the identity row has left once everything
 // else is placed, so a wider pane spends all of it on the bar.
@@ -211,7 +211,7 @@ func TestBarTakesWhatTheRowHasLeft(t *testing.T) {
 	}
 }
 
-// COVERS: FR-5.5 | property
+// COVERS FR-5.5 | property
 //
 // The rate limit gauges are a FIXED ten cells rather than a share of the slack,
 // so the row below does not move under them as the bar above grows.
@@ -230,7 +230,7 @@ func TestGaugesAreFixedAtTenCells(t *testing.T) {
 	}
 }
 
-// COVERS: FR-5.10 | property
+// COVERS FR-5.10 | property
 //
 // Parts within a row are divided by a separator costing exactly one column,
 // whatever glyph the font provides, so a font without it shifts nothing.
@@ -255,7 +255,7 @@ func TestSeparatorCostsExactlyOneColumn(t *testing.T) {
 	}
 }
 
-// COVERS: FR-5.11 | property
+// COVERS FR-5.11 | property
 //
 // The rail is part of what a row costs. A bar sized against the parts alone
 // overflows by exactly the rail, which is three columns.

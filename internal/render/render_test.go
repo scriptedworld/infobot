@@ -36,7 +36,7 @@ func window(pct float64) map[string]any {
 	return map[string]any{"context_window_size": 200000.0, "used_percentage": pct}
 }
 
-// COVERS: FR-6.9 | property
+// COVERS FR-6.9 | property
 func TestTokensAreCompact(t *testing.T) {
 	for _, c := range []struct {
 		in   float64
@@ -57,7 +57,7 @@ func TestTokensAreCompact(t *testing.T) {
 	}
 }
 
-// COVERS: FR-7.9 | property
+// COVERS FR-7.9 | property
 func TestCountdownIsTheLargestTwoNonZeroUnits(t *testing.T) {
 	for _, c := range []struct {
 		in   int64
@@ -76,7 +76,7 @@ func TestCountdownIsTheLargestTwoNonZeroUnits(t *testing.T) {
 	}
 }
 
-// COVERS: FR-2.4 | negative
+// COVERS FR-2.4 | negative
 //
 // A countdown reading "0m" suggests a reset is imminent when it has already
 // happened and the number is simply stale.
@@ -88,7 +88,7 @@ func TestCountdownIsEmptyWhenMissingOrPast(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.9 | property
+// COVERS FR-3.9 | property
 //
 // Escapes cost nothing and east-asian wide glyphs cost two. len() is wrong in
 // both directions and both errors run toward a row too wide for the line.
@@ -113,7 +113,7 @@ func TestVisibleWidthMeasuresWhatTheTerminalDraws(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.7, FR-6.8 | property
+// COVERS FR-6.7, FR-6.8 | property
 func TestBarIsFilledAndEmptyParallelogramsOnly(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	for _, c := range []struct {
@@ -133,7 +133,7 @@ func TestBarIsFilledAndEmptyParallelogramsOnly(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.8 | edge
+// COVERS FR-6.8 | edge
 func TestBarOfNoCellsRendersNothing(t *testing.T) {
 	for _, cells := range []int{0, -1} {
 		if got := render.Bar(50, cells, ""); got != "" {
@@ -142,7 +142,7 @@ func TestBarOfNoCellsRendersNothing(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.8 | property
+// COVERS FR-3.8 | property
 //
 // NO_COLOR strips EVERY escape, the separator and the rail included, so the
 // output is either coloured or clean and never half of each.
@@ -165,7 +165,7 @@ func TestNoColorLeavesNoEscapeAnywhere(t *testing.T) {
 	}
 }
 
-// COVERS: FR-5.1 | property
+// COVERS FR-5.1 | property
 //
 // An opening corner with no closing corner under it reads as a block that
 // failed to finish, so a lone row gets the stub instead.
@@ -199,7 +199,7 @@ func TestRailCornersMatchTheRowCount(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.5 | negative
+// COVERS FR-1.5 | negative
 //
 // A row with no parts in it is omitted rather than printed blank. Early in a
 // session the context and rate-limit fields are all absent.
@@ -212,7 +212,7 @@ func TestEmptyRowIsOmitted(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.3 | negative
+// COVERS FR-1.3 | negative
 //
 // A segment whose data is absent is DROPPED, never rendered as zero, because
 // zero is a claim and absence is not.
@@ -231,7 +231,7 @@ func TestAbsentDataIsDroppedNotZeroed(t *testing.T) {
 	}
 }
 
-// COVERS: FR-2.13 | property
+// COVERS FR-2.13 | property
 func TestUnknownPayloadFieldsChangeNothing(t *testing.T) {
 	isolate(t)
 	t.Setenv("NO_COLOR", "1")
@@ -250,7 +250,7 @@ func TestUnknownPayloadFieldsChangeNothing(t *testing.T) {
 	}
 }
 
-// COVERS: FR-2.9, FR-2.10, FR-2.11 | property
+// COVERS FR-2.9, FR-2.10, FR-2.11 | property
 func TestIdentityRowShowsPathsAndSession(t *testing.T) {
 	isolate(t)
 	t.Setenv("NO_COLOR", "1")
@@ -279,7 +279,7 @@ func TestIdentityRowShowsPathsAndSession(t *testing.T) {
 	}
 }
 
-// COVERS: FR-2.9 | negative
+// COVERS FR-2.9 | negative
 //
 // Repeating the root is noise on the common case, a session started where the
 // work is.
@@ -298,7 +298,7 @@ func TestProjectRootHiddenWhenItMatchesTheWorkingDirectory(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.5, FR-3.6 | property
+// COVERS FR-3.5, FR-3.6 | property
 //
 // The width a row is fitted to is the pane less the three columns Claude Code
 // keeps, and what exceeds it is cut rather than wrapped.
@@ -330,7 +330,7 @@ func TestRowsFitInsideTheBudget(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.6, FR-5.12 | edge
+// COVERS FR-3.6, FR-5.12 | edge
 //
 // The bar is DROPPED rather than clamped when the row has no room for it, and
 // the counts stay either way.
@@ -354,7 +354,7 @@ func TestBarIsDroppedNotClampedWhenThereIsNoRoom(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.6 | property
+// COVERS FR-3.6 | property
 //
 // The bar shrinks with the pane and is dropped whole below BAR_MIN rather than
 // clamped to it. Clamping overflows, which costs the whole row to save a bar
@@ -385,7 +385,7 @@ func TestBarShrinksWithThePaneThenGoesWhole(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.3, FR-5.12 | edge
+// COVERS FR-3.3, FR-5.12 | edge
 //
 // With the width unknown there is no bar at all. A bar is a claim about how
 // much room there is, and with nothing to fit against, any length is a guess
@@ -405,7 +405,7 @@ func TestUnknownWidthDrawsNoBar(t *testing.T) {
 	}
 }
 
-// COVERS: FR-2.2 | property
+// COVERS FR-2.2 | property
 //
 // rate_limits carries a percentage and a reset time and NOTHING ELSE, so no
 // token counts appear there.
@@ -422,7 +422,7 @@ func TestLimitSegmentShowsNoTokenCounts(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.3 | negative
+// COVERS FR-1.3 | negative
 func TestLimitSegmentDroppedWithoutAPercentage(t *testing.T) {
 	for _, w := range []payload.Map{nil, {}, {"resets_at": at(3600)}} {
 		if got := render.LimitSegment("⏳ 5hr", w, 5*3600, false, true, clock); got != "" {
@@ -431,7 +431,7 @@ func TestLimitSegmentDroppedWithoutAPercentage(t *testing.T) {
 	}
 }
 
-// COVERS: FR-5.6 | property
+// COVERS FR-5.6 | property
 //
 // A meter row over budget gives up its gauges for the percentages they were
 // drawing before anything is cut.
@@ -450,7 +450,7 @@ func TestCompactGaugesReplaceBarsWhenTheRowIsTight(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.4 | regression
+// COVERS FR-1.4 | regression
 //
 // A failure confined to one segment costs only that segment. The Python this
 // replaced wrapped the whole render in a bare except, so a malformed resets_at
@@ -481,7 +481,7 @@ func TestOneBadFieldCostsOnlyItsSegment(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.2 | negative
+// COVERS FR-1.2 | negative
 func TestMainExitsZeroWhateverItIsGiven(t *testing.T) {
 	isolate(t)
 	for _, in := range []string{"", "not json at all", "[]", "null", "{}", `{"session_id":123}`} {
@@ -495,7 +495,7 @@ func TestMainExitsZeroWhateverItIsGiven(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.4 | property
+// COVERS FR-6.4 | property
 //
 // The last filled cell carries the same colour as the number printed beside it,
 // because they mean the same thing.

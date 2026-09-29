@@ -35,7 +35,7 @@ func scratch(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 }
 
-// COVERS: FR-8.2 | property
+// COVERS FR-8.2 | property
 //
 // Found by globbing for the session id, not by rebuilding the directory slug
 // from the working directory: a session may have been started elsewhere.
@@ -50,7 +50,7 @@ func TestTranscriptsFindTheSessionByName(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.3 | property
+// COVERS FR-8.3 | property
 //
 // The subagents are not optional. On one measured session they were 51% of
 // output tokens and 33% of cache reads.
@@ -65,7 +65,7 @@ func TestTranscriptsIncludeSubagents(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.4 | property
+// COVERS FR-8.4 | property
 //
 // /clear opens a new transcript under a NEW id, and the two ids point opposite
 // ways, so transcripts are grouped by ROOT: a recorded origin where there is
@@ -88,7 +88,7 @@ func TestTranscriptsFollowBothSidesOfAClear(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.5 | property
+// COVERS FR-8.5 | property
 //
 // The search stays inside the project directory the session belongs to, so its
 // cost is proportional to one project's sessions.
@@ -105,7 +105,7 @@ func TestSearchStaysInsideTheProject(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.19, FR-8.22 | property
+// COVERS FR-8.19, FR-8.22 | property
 //
 // Cache creation counts live in a nested object as well as at the top level,
 // and reading only the top level counts the writes as nothing.
@@ -124,7 +124,7 @@ func TestNestedCacheCreationIsCounted(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.21 | negative
+// COVERS FR-8.21 | negative
 //
 // Only numeric values are added. A field carrying anything else is ignored
 // rather than coerced, and does not abandon the record it appeared in.
@@ -142,7 +142,7 @@ func TestNonNumericFieldsAreIgnoredNotCoerced(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.20 | negative
+// COVERS FR-8.20 | negative
 func TestRecordWithNoModelGoesUnderAPlaceholder(t *testing.T) {
 	scratch(t)
 	root := tree(t, map[string]string{
@@ -154,7 +154,7 @@ func TestRecordWithNoModelGoesUnderAPlaceholder(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.7 | edge
+// COVERS FR-8.7 | edge
 //
 // A transcript is appended to by the session that is rendering and can be read
 // mid-line, so the offset advances only over lines that arrived complete.
@@ -170,7 +170,7 @@ func TestHalfWrittenLineIsNotCounted(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.6 | property
+// COVERS FR-8.6 | property
 //
 // Only the bytes appended since the last render are parsed, and the total is
 // the running one rather than a re-sum.
@@ -203,7 +203,7 @@ func TestOnlyAppendedBytesAreParsed(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.8 | edge
+// COVERS FR-8.8 | edge
 //
 // A file that shrank was rotated or replaced, so its offset means nothing
 // against the new one and it is read from the start.
@@ -232,7 +232,7 @@ func TestShrunkTranscriptIsReadFromTheStart(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.9 | property
+// COVERS FR-8.9 | property
 //
 // State is per file rather than one running sum, because subagent transcripts
 // appear part way through a session.
@@ -266,7 +266,7 @@ func TestSubagentAppearingLaterIsCountedOnce(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.10 | negative
+// COVERS FR-8.10 | negative
 func TestUnknowableSessionYieldsNoTotals(t *testing.T) {
 	scratch(t)
 	root := tree(t, map[string]string{"-p/other.jsonl": record(`"input_tokens":1`)})
@@ -275,7 +275,7 @@ func TestUnknowableSessionYieldsNoTotals(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.24 | edge
+// COVERS FR-8.24 | edge
 //
 // Looking for the session a transcript belongs to gives up after a bounded
 // number of records. The field first appeared on record 18 of a transcript
@@ -307,7 +307,7 @@ func TestOriginSearchGivesUpAfterFortyRecords(t *testing.T) {
 	}
 }
 
-// COVERS: FR-4.4 | property
+// COVERS FR-4.4 | property
 //
 // The transcript root is a PARAMETER and the offsets follow XDG_STATE_HOME, so
 // section 8 is tested against a fixture tree with nothing patched. A test giving
@@ -337,7 +337,7 @@ func TestRootAndStateAreBothSeams(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11e | positive
+// COVERS FR-1.11e | positive
 func TestForgetRemovesTheOffsets(t *testing.T) {
 	scratch(t)
 	root := tree(t, map[string]string{"-p/s.jsonl": record(`"input_tokens":1`)})

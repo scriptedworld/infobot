@@ -44,7 +44,7 @@ func sources(t *testing.T, visit func(path string, imports []string)) {
 	}
 }
 
-// COVERS: FR-1.6 | property
+// COVERS FR-1.6 | property
 //
 // NO PATH MAKES A NETWORK CALL. The rates come off disk and the width comes
 // from a host already running, because a status line rendering on every event
@@ -65,7 +65,7 @@ func TestNothingImportsTheNetwork(t *testing.T) {
 	})
 }
 
-// COVERS: FR-1.7 | property
+// COVERS FR-1.7 | property
 //
 // The only files opened are the rate table, the session's own transcripts, the
 // offsets, and the status file. Everything else printed comes from the payload.
@@ -129,7 +129,7 @@ func calls(t *testing.T, log string) int {
 	return strings.Count(string(raw), "call\n")
 }
 
-// COVERS: FR-1.8 | property
+// COVERS FR-1.8 | property
 //
 // One subprocess per render at most, and only to ask a host how wide the pane
 // is. The route that answers runs and the others do not.
@@ -159,7 +159,7 @@ func TestAtMostOneSubprocessAndOnlyForTheWidth(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.11 | edge
+// COVERS FR-3.11 | edge
 //
 // A host that does not answer costs a BOUNDED wait and then counts as unknown.
 // A hung multiplexer must not hang a line that renders on every event.
@@ -186,7 +186,7 @@ func TestAHungHostIsBoundedAndCountsAsUnknown(t *testing.T) {
 	}
 }
 
-// COVERS: FR-4.3 | property
+// COVERS FR-4.3 | property
 //
 // The clock is a PARAMETER, so a countdown is asserted against a fixed instant
 // rather than against a shape. Nothing but a test passes anything but the

@@ -26,7 +26,7 @@ test` and `just build` do not need it.
 A test names the requirement it discharges, as a comment directly
 above it:
 
-    // COVERS: FR-1.11o | regression
+    // COVERS FR-1.11o | regression
 
 Kinds are `positive`, `negative`, `edge`, `property`, `regression`. The gate
 fails a test citing a requirement `docs/REQUIREMENTS/` does not define, and

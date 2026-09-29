@@ -62,7 +62,7 @@ func usageLine(fields string) string {
 	return `{"message":{"model":"claude-opus-5","usage":{` + fields + `}}}` + "\n"
 }
 
-// COVERS: FR-8.1 | property
+// COVERS FR-8.1 | property
 //
 // The figure is a COUNTERFACTUAL and not a bill: what the same tokens would
 // have cost through the API at list rates. 10M input tokens at Opus 5's $5 per
@@ -75,7 +75,7 @@ func TestCostIsTheListRateCounterfactual(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.18 | negative
+// COVERS FR-8.18 | negative
 //
 // The saving is shown only when there IS one. A session that wrote cache blocks
 // and never read them back spent MORE than it would have with no caching, so
@@ -100,7 +100,7 @@ func TestSavingIsDroppedWhenItIsNegative(t *testing.T) {
 	}
 }
 
-// COVERS: FR-5.8 | property
+// COVERS FR-5.8 | property
 //
 // The cost goes on the METER row rather than the identity row, because the
 // identity row has already given its slack to the context bar. With no meter
@@ -130,7 +130,7 @@ func TestCostRidesTheMeterRowAndIsDroppedWithoutOne(t *testing.T) {
 	}
 }
 
-// COVERS: FR-5.7 | property
+// COVERS FR-5.7 | property
 //
 // Pushed to the RIGHT with at least three columns of clear space, shortened to
 // the total alone when the full form will not fit, and dropped when neither
@@ -157,7 +157,7 @@ func costForm(t *testing.T, data payload.Map, width int) form {
 	}
 }
 
-// COVERS: FR-5.7 | property
+// COVERS FR-5.7 | property
 //
 // It gives up DETAIL before it gives up the row, in order: the full form, then
 // the total alone, then nothing. The assertion is the ordering across every
@@ -199,7 +199,7 @@ func TestCostShortensThenDropsAsTheRowNarrows(t *testing.T) {
 	}
 }
 
-// COVERS: FR-5.7 | edge
+// COVERS FR-5.7 | edge
 func TestCostKeepsThreeColumnsOfClearSpace(t *testing.T) {
 	data := priced(t, usageLine(`"input_tokens":10000000`))
 	for width := 120; width <= 240; width += 4 {
@@ -216,7 +216,7 @@ func TestCostKeepsThreeColumnsOfClearSpace(t *testing.T) {
 	}
 }
 
-// COVERS: FR-5.9 | property
+// COVERS FR-5.9 | property
 //
 // Both cost forms come from ONE reading of the transcripts. Deciding which of
 // two strings fits must not double the only expensive thing on the row, and the

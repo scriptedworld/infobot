@@ -7,7 +7,7 @@ import (
 	"github.com/scriptedworld/infobot/internal/num"
 )
 
-// COVERS: FR-6.3 | property
+// COVERS FR-6.3 | property
 //
 // Ties break to EVEN, which is what Python's round() did and what the bar's
 // filled-cell count depends on. Breaking away from zero instead moves a bar by
@@ -34,7 +34,7 @@ func TestRoundBreaksTiesToEven(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11h | property
+// COVERS FR-1.11h | property
 func TestRoundToPlaces(t *testing.T) {
 	for _, c := range []struct {
 		in     float64
@@ -53,7 +53,7 @@ func TestRoundToPlaces(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.3 | property
+// COVERS FR-6.3 | property
 func TestRoundIntCarriesTheSameTieRule(t *testing.T) {
 	for _, c := range []struct {
 		in   float64
@@ -67,7 +67,7 @@ func TestRoundIntCarriesTheSameTieRule(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11h | edge
+// COVERS FR-1.11h | edge
 //
 // A percentage is neither floored nor capped, so a division that has gone wrong
 // reaches here rather than being caught upstream. It comes back unchanged
@@ -84,7 +84,7 @@ func TestRoundToPassesNaNAndInfinityThrough(t *testing.T) {
 	}
 }
 
-// COVERS: FR-6.8 | edge
+// COVERS FR-6.8 | edge
 func TestClampHoldsBetweenBounds(t *testing.T) {
 	for _, c := range []struct{ in, lo, hi, want float64 }{
 		{-5, 0, 100, 0},

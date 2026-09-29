@@ -9,7 +9,7 @@ import (
 	"github.com/scriptedworld/infobot/internal/forget"
 )
 
-// COVERS: FR-1.11f | negative
+// COVERS FR-1.11f | negative
 //
 // A session id names one file each. Anything else, including a path separator
 // smuggled through the payload, is refused rather than joined onto a directory
@@ -39,7 +39,7 @@ func TestSessionIdCarryingAPathIsRefused(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11e | positive
+// COVERS FR-1.11e | positive
 func TestRemoveTakesBothFilesAndSaysWhich(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_STATE_HOME", dir)
@@ -66,7 +66,7 @@ func TestRemoveTakesBothFilesAndSaysWhich(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11f | edge
+// COVERS FR-1.11f | edge
 //
 // A cleanup that exits 0 having removed nothing is the same shape as a gate
 // that passes having checked nothing, so it says which it was.
@@ -82,7 +82,7 @@ func TestNothingToRemoveIsSaidRatherThanImplied(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11f | negative
+// COVERS FR-1.11f | negative
 func TestMainExitsZeroWhateverItIsGiven(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	for _, in := range []string{
@@ -97,7 +97,7 @@ func TestMainExitsZeroWhateverItIsGiven(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11f | negative
+// COVERS FR-1.11f | negative
 func TestRefusedIdIsReportedAndRemovesNothing(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_STATE_HOME", dir)

@@ -42,7 +42,7 @@ func totals(model string, fields map[string]float64) map[string]map[string]float
 	return map[string]map[string]float64{model: fields}
 }
 
-// COVERS: FR-8.17 | property
+// COVERS FR-8.17 | property
 func TestMoneyPrintsThePrecisionTheNumberDeserves(t *testing.T) {
 	for _, c := range []struct {
 		in   float64
@@ -66,7 +66,7 @@ func TestMoneyPrintsThePrecisionTheNumberDeserves(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.11 | positive
+// COVERS FR-8.11 | positive
 func TestPriceChargesEachModelAtItsOwnRate(t *testing.T) {
 	withTable(t, standard)
 	both := map[string]map[string]float64{
@@ -86,7 +86,7 @@ func TestPriceChargesEachModelAtItsOwnRate(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.12 | negative
+// COVERS FR-8.12 | negative
 //
 // One unknown model costs the exactness of the figure and not the figure.
 func TestPriceFlagsAnUnknownModelWithoutAbandoningTheTotal(t *testing.T) {
@@ -107,7 +107,7 @@ func TestPriceFlagsAnUnknownModelWithoutAbandoningTheTotal(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.26 | regression
+// COVERS FR-8.26 | regression
 //
 // Claude Code writes an interrupted turn under "<synthetic>" with every count
 // zero. Found on a Fable 5.1 session that rendered $997+ with nothing unpriced.
@@ -128,7 +128,7 @@ func TestAModelWithNoTokensLeavesTheTotalComplete(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.12 | edge
+// COVERS FR-8.12 | edge
 func TestPriceReturnsNothingWhenNothingCouldBePriced(t *testing.T) {
 	withTable(t, standard)
 	if _, ok := pricing.Price(nil); ok {
@@ -139,7 +139,7 @@ func TestPriceReturnsNothingWhenNothingCouldBePriced(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.29 | property
+// COVERS FR-8.29 | property
 //
 // A cache read is CHARGED, at the table's cache_read for a model with no
 // multiplier of its own. 90% off is not free.
@@ -156,7 +156,7 @@ func TestCacheReadsAreChargedAtTheTablesMultiplier(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.14 | property
+// COVERS FR-8.14 | property
 //
 // The saving is those tokens charged at the plain input rate instead, less what
 // they did cost: 5.00 uncached against 0.50 charged.
@@ -170,7 +170,7 @@ func TestSavingIsTheUncachedCounterfactual(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.29 | property
+// COVERS FR-8.29 | property
 //
 // A write costs MORE than a fresh input token, which is why the two are priced
 // apart rather than lumped together as "cache".
@@ -192,7 +192,7 @@ func TestCacheWritesCostMoreThanFreshInput(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.27 | positive
+// COVERS FR-8.27 | positive
 func TestLoadReadsTheTableOnDisk(t *testing.T) {
 	withTable(t, standard)
 	got, ok := pricing.Load()
@@ -207,7 +207,7 @@ func TestLoadReadsTheTableOnDisk(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.28 | negative
+// COVERS FR-8.28 | negative
 //
 // Every way the table can fail to be usable leaves no figure, rather than a
 // figure priced from anything else.
@@ -241,7 +241,7 @@ func TestNoUsableTableLeavesNoFigure(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.23 | property
+// COVERS FR-8.23 | property
 func TestCacheMultipliersAreConfigurable(t *testing.T) {
 	// A cache read priced at half rather than at a tenth, with no code change.
 	withTable(t, `{"rates":{"m":[10.0,20.0]},"cache_read":0.5,
@@ -255,7 +255,7 @@ func TestCacheMultipliersAreConfigurable(t *testing.T) {
 	}
 }
 
-// COVERS: FR-8.29 | positive
+// COVERS FR-8.29 | positive
 //
 // A third number on a rate is that model's read multiplier, and a model without
 // one reads at the table's cache_read.

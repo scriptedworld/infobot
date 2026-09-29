@@ -46,7 +46,7 @@ func full() payload.Map {
 	}
 }
 
-// COVERS: FR-1.11g, FR-1.11o, FR-1.11p | property
+// COVERS FR-1.11g, FR-1.11o, FR-1.11p | property
 //
 // The exact bytes, because the form is a published interface: silo's board
 // matches anchored patterns on the quoted key and the single space after the
@@ -78,7 +78,7 @@ func TestCanonicalForm(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11g | property
+// COVERS FR-1.11g | property
 //
 // A key whose value is empty is omitted rather than written blank, so a reader
 // tells "not said" from "said to be nothing".
@@ -97,7 +97,7 @@ func TestEmptyValuesAreOmitted(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11b | property
+// COVERS FR-1.11b | property
 func TestFileIsReadableByOtherPrograms(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	state.Write(full(), stamp)
@@ -110,7 +110,7 @@ func TestFileIsReadableByOtherPrograms(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11b | property
+// COVERS FR-1.11b | property
 //
 // Written whole or not at all, and the temporary is gone either way, so a
 // directory of state files never accumulates half-written ones beside the real.
@@ -131,7 +131,7 @@ func TestNoTemporaryIsLeftBehind(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11 | negative
+// COVERS FR-1.11 | negative
 func TestNoSessionIdWritesNothing(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_STATE_HOME", dir)
@@ -144,7 +144,7 @@ func TestNoSessionIdWritesNothing(t *testing.T) {
 	}
 }
 
-// COVERS: FR-2.5, FR-2.6 | property
+// COVERS FR-2.5, FR-2.6 | property
 //
 // current_usage is the authority and total_input_tokens the fallback, and the
 // counts are the INPUT side only: output is never in the context percentage.
@@ -167,7 +167,7 @@ func TestFiguresCountsTheInputSideOnly(t *testing.T) {
 	}
 }
 
-// COVERS: FR-2.6 | positive
+// COVERS FR-2.6 | positive
 func TestFiguresFallsBackToTotalInputTokens(t *testing.T) {
 	got, ok := state.Figures(payload.Map{
 		"context_window_size": 200000.0,
@@ -178,7 +178,7 @@ func TestFiguresFallsBackToTotalInputTokens(t *testing.T) {
 	}
 }
 
-// COVERS: FR-2.7 | property
+// COVERS FR-2.7 | property
 //
 // A percentage without counts derives the counts, and counts without a
 // percentage derive the percentage. Printing the literal zero gave
@@ -200,7 +200,7 @@ func TestFiguresDerivesWhicheverHalfIsMissing(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.3 | negative
+// COVERS FR-1.3 | negative
 func TestFiguresRefusesAWindowWithNoSize(t *testing.T) {
 	for _, cw := range []payload.Map{
 		nil,
@@ -214,7 +214,7 @@ func TestFiguresRefusesAWindowWithNoSize(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11h | edge
+// COVERS FR-1.11h | edge
 //
 // context_remaining is never negative, and context_percent is neither floored
 // nor capped, so a reader sees an over-full window as over-full.
@@ -235,7 +235,7 @@ func TestOverFullWindowClampsRemainingButNotPercent(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11q | property
+// COVERS FR-1.11q | property
 //
 // A number is spelled without an exponent, ever. `1e+06` is a legal spelling of
 // a million and silo's board matches `[0-9.]+` against the value, so it would
@@ -270,7 +270,7 @@ func TestNumbersAreNeverSpelledWithAnExponent(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11q | property
+// COVERS FR-1.11q | property
 //
 // A float keeps its decimal point so a reader gets a float back, and an integer
 // does not have one. Both must survive without reaching for an exponent.
@@ -292,7 +292,7 @@ func TestFloatKeepsItsPointAndIntegerDoesNot(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11e | positive
+// COVERS FR-1.11e | positive
 func TestForgetRemovesTheStateFile(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	state.Write(full(), stamp)
@@ -327,7 +327,7 @@ func controlRanges() (escaped, untouched []rune) {
 	return escaped, []rune{0x00a0, 0x200b, 0xfeff}
 }
 
-// COVERS: FR-1.11r | property
+// COVERS FR-1.11r | property
 //
 // The whole range rather than a sample. A first pass at this defect tested six
 // characters and reported three failures against an actual 61, and wrench made
@@ -372,7 +372,7 @@ func cwdLine(t *testing.T, text string) string {
 	return ""
 }
 
-// COVERS: FR-1.11r | negative
+// COVERS FR-1.11r | negative
 //
 // The three a parser accepts raw and then changes. They are the dangerous
 // members: the other 61 make a file no parser will read, which is loud, and
@@ -404,7 +404,7 @@ func TestTheLineBreakSetIsEscaped(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11r | edge
+// COVERS FR-1.11r | edge
 //
 // Two hex digits, because `\x9` is a truncated escape rather than a tab.
 func TestShortEscapesAreZeroPadded(t *testing.T) {
@@ -413,7 +413,7 @@ func TestShortEscapesAreZeroPadded(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11r | positive
+// COVERS FR-1.11r | positive
 //
 // Nothing outside the ranges changes, which is what makes this a fix rather
 // than a change to what the form emits for every value it has ever held.

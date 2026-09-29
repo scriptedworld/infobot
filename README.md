@@ -185,7 +185,7 @@ session.
 it, and the gate fails a test that cites nothing or cites a requirement
 `docs/REQUIREMENTS/` does not define:
 
-    // COVERS: FR-1.13 | negative
+    // COVERS FR-1.13 | negative
 
 ## Where things are written down
 

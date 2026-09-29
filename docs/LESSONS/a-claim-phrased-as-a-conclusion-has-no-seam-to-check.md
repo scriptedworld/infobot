@@ -9,7 +9,7 @@ were wrong in the same way, and so was the correction I first offered for one.
 "The shims are gated by nothing." It was half true: no checker reads their
 text, because all three the gate runs select by Go extension. But
 `cmd/statusline/shim_test.go` copies the committed shim into a scratch directory
-and executes it, five cases carrying `COVERS:` marks for FR-1.13 both ways,
+and executes it, five cases carrying `COVERS` marks for FR-1.13 both ways,
 FR-3.8, FR-1.9 and FR-1.11f. Unread is not untested, and I had not looked before
 saying so.
 

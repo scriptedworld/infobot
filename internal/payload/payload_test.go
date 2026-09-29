@@ -7,7 +7,7 @@ import (
 	"github.com/scriptedworld/infobot/internal/payload"
 )
 
-// COVERS: FR-1.3 | property
+// COVERS FR-1.3 | property
 //
 // A nil Map answers like an empty one, so a caller never has to check before
 // reaching through it. Every field of the payload is optional.
@@ -34,7 +34,7 @@ func TestNilMapAnswersLikeAnEmptyOne(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.3 | property
+// COVERS FR-1.3 | property
 //
 // Absence and zero stay distinguishable: Num says whether one was there, Count
 // says what to add.
@@ -61,7 +61,7 @@ func TestNumDistinguishesAbsentFromZero(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.3 | negative
+// COVERS FR-1.3 | negative
 func TestWrongTypesReadAsAbsent(t *testing.T) {
 	var data payload.Map
 	const mistyped = `{"obj":"not an object","str":42,"num":"not a number"}`

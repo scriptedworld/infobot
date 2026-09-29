@@ -47,7 +47,7 @@ func noHosts(t *testing.T) {
 	t.Setenv("HERDR_BIN_PATH", "")
 }
 
-// COVERS: FR-3.3, FR-3.4 | negative
+// COVERS FR-3.3, FR-3.4 | negative
 //
 // With no multiplexer, the answer is the TERMINAL or unknown, and never the
 // fabricated 80 a library would hand back. Believing that 80 would truncate a
@@ -72,7 +72,7 @@ func TestNoHostMeansTheTerminalOrUnknownButNeverEighty(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.7 | regression
+// COVERS FR-3.7 | regression
 //
 // An untargeted `display-message` answers for the active pane of the current
 // client, not the pane that asked: from pane %5 at 257 columns with a 60-column
@@ -100,7 +100,7 @@ func TestTmuxIsAskedAboutTheCallingPaneNotTheActiveOne(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.3 | edge
+// COVERS FR-3.3 | edge
 //
 // Without TMUX_PANE there is no better question than the old one, so the
 // untargeted form stays as the fallback rather than the route going unknown.
@@ -123,7 +123,7 @@ func TestTmuxWithoutAPaneIdStillAsks(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.7 | property
+// COVERS FR-3.7 | property
 //
 // A zoomed pane's rectangle is the unzoomed one. The tab's area is the width to
 // use, and the zoomed pane is the focused one.
@@ -141,7 +141,7 @@ func TestZoomedPaneIsFittedToTheTabArea(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.7 | edge
+// COVERS FR-3.7 | edge
 //
 // Zooming the NEIGHBOUR moves focused_pane_id to it and leaves this pane
 // hidden, which is the case where the unzoomed rectangle is right because it is
@@ -160,7 +160,7 @@ func TestUnfocusedPaneUnderZoomKeepsItsOwnRectangle(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.3 | edge
+// COVERS FR-3.3 | edge
 //
 // A tab holding exactly one pane answers whatever id that pane carries. It
 // covers an id in the environment that no longer names the pane the process
@@ -178,7 +178,7 @@ func TestLonePaneAnswersEvenWhenTheIdDoesNotMatch(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.3 | negative
+// COVERS FR-3.3 | negative
 //
 // Every other mismatch is reported unknown rather than guessed at.
 func TestMismatchedIdAmongSeveralPanesIsUnknown(t *testing.T) {
@@ -195,7 +195,7 @@ func TestMismatchedIdAmongSeveralPanesIsUnknown(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.3 | negative
+// COVERS FR-3.3 | negative
 func TestUnreadableHostReplyIsUnknown(t *testing.T) {
 	for _, reply := range []string{"", "not json", "{}", `{"result":{}}`} {
 		t.Run(reply, func(t *testing.T) {
@@ -209,7 +209,7 @@ func TestUnreadableHostReplyIsUnknown(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.3 | positive
+// COVERS FR-3.3 | positive
 //
 // tmux answers whenever it is there, because tmux inside a herdr pane is the
 // one this line is drawn in and it is the narrower of the two.

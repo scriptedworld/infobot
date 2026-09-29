@@ -52,7 +52,7 @@ func shimIn(t *testing.T, name string, withBinary bool) (string, int) {
 	return string(out), code
 }
 
-// COVERS: FR-1.13 | negative
+// COVERS FR-1.13 | negative
 //
 // A build that has not run and a symlink that dangles fail identically, as a
 // blank line nobody is told about, and a status line has no other tell: it is
@@ -71,7 +71,7 @@ func TestAbsentBinaryIsReportedRatherThanBlank(t *testing.T) {
 	}
 }
 
-// COVERS: FR-3.8 | negative
+// COVERS FR-3.8 | negative
 //
 // NO_COLOR reaches the shim too. A hardcoded escape surviving the stripping of
 // everything around it is what FR-3.8 exists to prevent, and this row is
@@ -87,7 +87,7 @@ func TestAbsentBinaryHonoursNoColor(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.9 | regression
+// COVERS FR-1.9 | regression
 //
 // REACHED THROUGH A SYMLINK, the shim must resolve to where the REAL file is
 // and find the binary there.
@@ -165,7 +165,7 @@ func TestShimReachedThroughASymlinkDoesNotExecItself(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.13 | positive
+// COVERS FR-1.13 | positive
 func TestPresentBinaryIsExecuted(t *testing.T) {
 	out, code := shimIn(t, "infobot", true)
 	if code != 0 {
@@ -176,7 +176,7 @@ func TestPresentBinaryIsExecuted(t *testing.T) {
 	}
 }
 
-// COVERS: FR-1.11f | negative
+// COVERS FR-1.11f | negative
 //
 // The cleanup hook says nothing to the terminal when its binary is absent:
 // there is no line to occupy and nobody is looking, because a hook runs as a
