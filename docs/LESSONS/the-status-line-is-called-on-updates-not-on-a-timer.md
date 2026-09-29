@@ -10,9 +10,9 @@ need to know how old a number is.
 
 ## What was measured
 
-**Measured 2026-08-26.** Sampled the mtime of
-`~/.local/state/infobot/<session>.status.yaml` every 0.5s for 76 seconds, across
-a deliberate idle window, then paired each write against the session transcript.
+The mtime of `~/.local/state/infobot/<session>.status.yaml`, sampled every 0.5s
+for 76 seconds across a deliberate idle window, with each write paired against
+the session transcript.
 
 Seven renders. Each one trails a transcript entry:
 
@@ -52,8 +52,8 @@ timer ticks. It carried none.
 
 Either the key is not honoured in this build, or the timer does not run while
 the session is idle, which would make it additional to activity rather than
-additional to events. Not resolved. What is measured is that **an idle session
-renders nothing regardless of what the key says**, so nothing should be built on
+additional to events. Not resolved. What is measured is that an idle session
+renders nothing regardless of what the key says, so nothing should be built on
 the timer firing.
 
 A guess that it meant milliseconds, and a change to `10000`, was made and
@@ -80,9 +80,9 @@ until the turn resumes and the model produces an entry.
     11:49:06.785  assistant  turn resumes
     11:49:07.133  render
 
-Six seconds where the file said the session was where it had been. Correct, and
-worth knowing before treating the file as a liveness signal. It reports context,
-not activity.
+Six seconds where the file said the session was where it had been. That is
+correct, and it matters to anyone treating the file as a liveness signal: it
+reports context, not activity.
 
 ## Reproducing it
 

@@ -16,7 +16,7 @@ available, not the worst: nothing ran out and nothing went unused.
 
 ## Why the scale diverges
 
-Green sits in the middle rather than at an end, because both directions away
+Green sits in the middle, not at an end, because both directions away
 from landing exactly full are wrong in opposite ways. Above it the window
 empties before it resets and dead time follows, so it runs yellow into red.
 Below it the allowance goes unspent, which is not a fault but is worth seeing,
@@ -42,7 +42,7 @@ Green is the right thing to fade toward because on this scale it is both "on
 rate" and "nothing to say", which are the same instruction to the reader.
 
 `PACE_CONFIDENT = 0.6` is where the verdict reaches full strength: three hours
-into a five hour window. A fraction rather than a duration, so the seven day
+into a five hour window. A fraction, not a duration, so the seven day
 window matures at the same point in its own life instead of after an afternoon.
 
 ## What was tried and rejected

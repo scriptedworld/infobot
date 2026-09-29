@@ -1,8 +1,8 @@
 # The port goes first, and the suite waits for it
 
-Decided 2026-08-26. It reverses a deferral that was recorded, reasoned and
-correct when it was made, so what follows is why the ground moved rather than
-why the earlier call was wrong.
+This reverses a deferral that was recorded, reasoned and correct when it was
+made, so what follows is why the ground moved, not why the earlier call was
+wrong.
 
 ## What was decided before
 
@@ -14,11 +14,10 @@ changing shape most days. Porting a moving target means porting twice.
 
 ## What changed
 
-**The reason for deferring expired, and it is measurable.** Measured 2026-08-26:
-the display last changed shape on 23 August. Six commits that evening brought the
-gauges, the pace colour, the fade and the cost segment. Since then there is
-documentation on the 24th and two commits on the 26th that changed behaviour
-BEHIND the display. The proof is that the golden corpus renders byte-identical
+**The reason for deferring expired, and it is measurable.** The display last
+changed shape on 23 August. Six commits that evening brought the gauges, the
+pace colour, the fade and the cost segment. Since then there is documentation on
+the 24th and two commits on the 26th that changed behaviour behind the display. The proof is that the golden corpus renders byte-identical
 at the width it was captured at:
 
     python3 .ephemera/check-golden-drift.py 197
@@ -45,23 +44,23 @@ the three interpreter-only requirements that first prompted the re-examination.
 Being Python costs requirements, not only milliseconds. FR-1.12 and FR-1.12a
 exist for no reason other than the runtime: standard library only so it runs
 under whatever `python3` resolves to, and a 3.8 floor set by one keyword. A
-compiled binary deletes both rather than satisfying them.
+compiled binary deletes both instead of satisfying them.
 
 It reaches further. FR-1.11d hand-emits canonical YAML and justifies the
 duplication by not gambling on whether three third-party modules resolve; wrench
 ships a Go pack, so a Go infobot links a library and the duplication dissolves,
 which also retires FR-1.11n's two-repository contract.
 
-## What the port does NOT fix, and why FR-1.13 exists
+## What the port does not fix, and why FR-1.13 exists
 
-Go relocates the hazard rather than retiring it. An import that may not resolve
+Go relocates the hazard; it does not retire it. An import that may not resolve
 becomes a build that may not have run or a symlink that may dangle, and both
 fail identically: a blank line nobody is told about. The answer is
 `docs/PATTERNS/a-shim-reports-its-own-binarys-absence.md`.
 
-Measured 2026-08-26, `~/bin/bolt` dangles on this machine, which is why infobot's own
-gate is run by invoking its checkers directly rather than through `bolt`. The
-failure mode is not hypothetical and it is in arm's reach.
+When this was decided, `~/bin/bolt` dangled on this machine, and infobot's own
+gate ran its checkers directly for that reason. The failure mode was within
+arm's reach.
 
 FR-1.13 is the requirement that trade creates, and task 05 builds the answer to
 it before any behaviour is ported.
@@ -77,4 +76,4 @@ the last task swaps the symlink.
 
 The display starting to move again. That was the whole reason for the deferral,
 it is the one input that has actually changed, and if it changes back the old
-reasoning returns intact rather than needing to be rebuilt.
+reasoning returns intact.

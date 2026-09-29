@@ -30,6 +30,6 @@ show nothing rather than a guess: infobot now leaves the cost segment out with
 no usable rate file (FR-8.27, FR-8.28, at `0f62594`), and the coordinator's
 refresh writes the file on every host.
 
-A fallback is worth keeping for data that does not expire, such as the palette
+A fallback still suits data that does not expire, such as the palette
 and the margin, which overlay compiled seeds and stay correct as long as the
 code does.

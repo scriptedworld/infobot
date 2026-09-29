@@ -23,8 +23,8 @@ one not, 400 runs each, interleaved:
     bare      4.70 MB   11.387 ms/run
 
 Repeatable, and the gap held while the absolute figures moved by a third as the
-machine got busier. Every property I ask of a measurement, and **two
-explanations fit it exactly**:
+machine got busier. Every property I ask of a measurement, and two
+explanations fit it exactly:
 
     the binary is 2.34MB larger, so the process pages in more before main
     the library does work in its package init, whichever binary carries it
@@ -48,7 +48,7 @@ library adds, referenced so the linker keeps it.
     bare      4.70 MB   11.387 ms/run   library linked, never called
     checked   4.71 MB   11.795 ms/run   linked, compiled and validated
 
-`padded` costs what `nodep` costs. **The size is not the cost**, 0.034ms of it,
+`padded` costs what `nodep` costs. The size is not the cost, 0.034ms of it,
 and the 6.21ms is the library initialising. A fourth binary then separates being
 linked from being used: calling it adds 0.408ms on top.
 
@@ -64,7 +64,7 @@ More runs of `nodep` against `bare` would have tightened a figure that was
 already tight. Precision is not the axis the error was on.
 
 The decision that followed turns entirely on which explanation was true. It came
-out as **process lifetime**: a component running once per event enforces its
+out as process lifetime: a component running once per event enforces its
 schema in its suite, and a long-lived one validates on write because it pays the
 linkage once. That sentence is unavailable from the two-binary version. Had the
 answer been size, the amendment would have been about hot paths, which is what

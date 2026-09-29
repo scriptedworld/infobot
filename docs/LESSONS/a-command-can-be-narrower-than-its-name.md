@@ -22,7 +22,7 @@ Two sessions measured it. Three probes between them. Every one was flawed.
     probe 3  mine       credential committed, jig's command exactly
                         result: exit 0, baseline grows 1 -> 2
 
-`detect-secrets scan` **scans what git tracks**. The jig passes no path. So an
+`detect-secrets scan` scans what git tracks. The jig passes no path. So an
 untracked fixture is not scanned at all, and passing a path by hand is a
 different command from the one under test.
 
@@ -49,8 +49,8 @@ said it absorbed everything. Both conclusions matched; only the mechanism
 differed, and chasing that difference is what exposed that neither run had
 scanned anything.
 
-**A disagreement in a detail nobody's argument depends on is worth more than
-agreement on the conclusion.** It is the only signal available when both parties
+A disagreement in a detail nobody's argument depends on tells more than
+agreement on the conclusion. It is the only signal available when both parties
 are wrong in the same direction.
 
 ## What to do

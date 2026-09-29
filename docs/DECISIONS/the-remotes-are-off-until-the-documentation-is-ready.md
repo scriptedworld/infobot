@@ -9,8 +9,8 @@ The commit histories were scrubbed, to clean up the commit messages. Rewriting a
 history changes every SHA in it, and the rewrite removed the remotes along the
 way.
 
-They have been left off since, on purpose. **While a repository is offline, no
-copy anywhere can hold a reference to the history that was rewritten away.** A
+They have been left off since, on purpose. While a repository is offline, no
+copy anywhere can hold a reference to the history that was rewritten away. A
 remote that still exists is a place old refs can survive, in a clone, a fork, a
 cache or a CI checkout, and any of those can put the scrubbed messages back in
 front of somebody.
@@ -28,12 +28,12 @@ something a session unblocks by asking.
 
 ## Why this is written down
 
-**It had been explained repeatedly and recorded nowhere**, so every session that
+It had been explained repeatedly and recorded nowhere, so every session that
 met a repository with no remote reported it as an open question, and it was
 explained again. A fact that has to be re-given on request is a fact that is not
 written down.
 
-The failure is worth naming because it is not about remotes. A state with a
+The failure is not about remotes. A state with a
 reason and an end condition read, to every reader who found only the state, as a
 gap. `NEXT_STEPS.md` here said "no remote, a history rewrite stripped them",
 which is the mechanism and carries neither the intent nor the condition that

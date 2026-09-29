@@ -43,20 +43,21 @@ shortens to the total alone and then drops (FR-5.6, FR-5.7).
 
 One job: turn the session payload into rows. No network. One subprocess, to ask
 whichever multiplexer owns the pane how wide it is, because every other route to
-the width fails under Claude Code. The only files it opens are the rate table
-and the session's own transcripts, both for the cost segment.
+the width fails under Claude Code. It reads its own configuration, the rate
+table and the session's own transcripts, and writes two small state files
+(`docs/SPEC.md` lists them).
 
 It runs on every Claude Code event, so its startup cost is paid constantly, and
-that cost is why it is Go rather than the Python it replaced.
+that cost is why it is Go and not the Python it replaced.
 
-**Measure it yourself rather than taking a figure from here.** A render costs
+**Measure it yourself; do not take a figure from here.** A render costs
 what your transcript makes it cost, and a number with no payload beside it says
 nothing:
 
     python3 bench/bench.py go 10 <a-transcript.jsonl> ./bin/infobot
 
 It reports wall time per render and peak RSS, and its docstring says why it
-measures fork to exit rather than the render alone. `docs/PROJECT.md` carries
+measures fork to exit and not the render alone. `docs/PROJECT.md` carries
 the figures this project was built against, with the conditions they were taken
 under.
 
@@ -142,9 +143,9 @@ render and removed by the `SessionEnd` hook.
 **The `.status.yaml` form is a published interface.** It has readers outside
 this repository that match anchored patterns against the quoted key, so the
 quoting, one key to a line, the single space after the colon, and numbers being
-bare are all load-bearing rather than tidy. Adding a key is safe. Changing the
-shape is announced before it lands, which is FR-1.11o, and pinned by a test at
-each end, which is FR-1.11p.
+bare are all load-bearing. Adding a key is safe. Changing the shape is
+announced before it lands (FR-1.11o), and the exact bytes are asserted by a
+test here (FR-1.11p). `docs/SPEC.md`, "The state file", states the form.
 
 ## Develop
 
@@ -167,8 +168,8 @@ a Rust one means typing the same words:
 **`just checks` is the whole gate and contains the others.** It runs two bolt
 jigs: `common-quality` for complexity, traceability, suppressions and secrets;
 and `go-std-quality` for build, format, lint, tests, tidy, vet and
-vulnerabilities. The secrets jig is composed into the first rather than listed
-again, so `leak-scan` is for running that piece by itself.
+vulnerabilities. The secrets jig is composed into the first, not listed again,
+so `leak-scan` is for running that piece by itself.
 
 Those jigs and their adapters are symlinks into a sibling repository and are
 gitignored, so a clone without that sibling cannot run `just checks`. `just
@@ -202,15 +203,14 @@ carried as the directory's suffix.
 
 ## Known gaps
 
-`just checks` is red on one task, `lint`. The Go jig runs `golangci-lint` with
-42 analysers and it reports 152 findings, none of which may be settled with a
-suppression pragma, so each is a decision rather than an edit. Most are one of
-three rules asking for a house style this project does not keep. The 22 that are
-its own are all `gosec`, and each is inherent rather than accidental: a file
+`just checks` is red. In `common-quality`, `suppressions` fails on pragmas that
+were added without the decision they need, and `wording` on prose still being
+brought to the writing standard. Behind them, `lint` in the Go jig reports 152
+findings, none of which may be settled with a suppression pragma, so each is a
+decision. Most are three rules asking for a house style this project does not
+keep; the 22 that are its own are all `gosec`, and each is inherent: a file
 opened by computed path, a test fixture that must land executable, or the one
-subprocess that asks the terminal how wide it is. Every other task passes:
-build, format, tests at 92.7% with the entry points measured, tidy, vet,
-vulnerabilities, complexity, traceability, suppressions and secrets.
+subprocess that asks the pane how wide it is. `NEXT_STEPS.md` has the detail.
 
 The two shell shims are read by no checker, because every checker selects by
 file extension and the shims have none. Their behaviour is tested five ways;

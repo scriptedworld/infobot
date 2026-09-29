@@ -10,7 +10,7 @@ infobot escapes control characters in its state file so a value survives the
 round trip. The range was C0, DEL and C1. wrench pointed out that U+2028 and
 U+2029 sit outside it and that Go escapes both.
 
-I checked rather than adopting, which was right, and I checked the wrong thing.
+I checked instead of adopting, which was right, and I checked the wrong thing.
 Three parsers, three implementations, no shared code:
 
     PyYAML       U+2028 round trips raw
@@ -81,4 +81,4 @@ answer lives.
 Nothing shipped wrong: the reversal landed an hour after the first decision and
 before anything depended on it. What it cost was a decision defended in writing
 to a peer and then withdrawn, which is cheap, and is the reason to write the
-reasoning down rather than only the conclusion.
+reasoning down, not only the conclusion.

@@ -46,7 +46,7 @@ Every measurement was sound. The scratch repository, the three probes, the
 isolation of the mechanism: all of it holds up and none of it was the problem.
 
 The conclusion had two premises. The first was about `detect-secrets`, measured
-three ways. The second was **that the estate's recipe name is `secrets`**, and
+three ways. The second was that the estate's recipe name is `secrets`, and
 that was inherited from this repository's own file, which is the one artifact in
 the world that could not disconfirm it.
 

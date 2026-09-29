@@ -3,7 +3,7 @@
 **RETIRED 2026-09-25. There is no C++ port. Go is the only implementation.**
 
 wrench dropped its C++ pack: a contract-conformant one came to about 3,200
-lines, a third of them tests, and was judged not worth carrying. The rebuild
+lines, a third of them tests, and was judged too much to carry. The rebuild
 took every structured file from that pack, so it had nothing to link, and C++
 was dropped here with it. Both trees are deleted, the first port in `cpp/` and
 the rebuild in `cxx/`, along with the C++ jig's wiring.

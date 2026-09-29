@@ -4,8 +4,8 @@ Reading a session's token usage looks like reading one file named after the
 session id. It is not, and the two ways it is not each cost about half the
 figure.
 
-Everything below was measured on 2026-08-23, against one silo session and one
-bolt session.
+Everything below comes from one silo session and one bolt session, read
+side by side.
 
 ## Subagents bill in their own transcripts
 

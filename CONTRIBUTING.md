@@ -23,7 +23,7 @@ test` and `just build` do not need it.
 
 ## What a change has to carry
 
-**A test that names the requirement it discharges**, as a comment directly
+A test names the requirement it discharges, as a comment directly
 above it:
 
     // COVERS: FR-1.11o | regression

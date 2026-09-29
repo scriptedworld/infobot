@@ -9,7 +9,7 @@ the estate reported 25-minute-old numbers as current.
 The `clean` recipe carried `rm -f bin/statusline bin/forget`, inherited from the
 Makefile it replaced, where it had been correct. It is not correct here: Claude
 Code executes `bin/infobot` on every event in every live session, so those
-binaries are **deployed**, not build output.
+binaries are deployed, not build output.
 
 Run while testing Justfile recipes, it stopped all 15 state files at 20:31:11.
 
@@ -24,7 +24,7 @@ program can be, in the one place a person looks.
 
 Nobody noticed, because the instruments that matter do not read panes. `bin/board`,
 the clear-list and the quiet-check all read `~/.local/state/infobot/*.status.yaml`,
-and **a writer that stops leaves its last file intact.** Each one kept answering,
+and a writer that stops leaves its last file intact. Each one kept answering,
 confidently, with numbers from before the outage.
 
 It was found by a coordinator noticing that every session in the estate had gone
@@ -33,12 +33,12 @@ checked for.
 
 ## The gap, which is in the form rather than in the scripts
 
-The state file carries `written`. Staleness is therefore **derivable**, and not
+The state file carries `written`. Staleness is therefore derivable, and not
 one of the three readers reads that key. Nothing in the form makes going blind
 loud, and nothing required it to: no requirement says a reader must be able to
 tell a current file from a stale one, so nothing made the instruments check.
 
-That is the ordering worth keeping. The scripts are not at fault for a check
+That is the ordering to keep. The scripts are not at fault for a check
 nothing asked them to make.
 
 ## What to do

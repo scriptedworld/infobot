@@ -12,9 +12,9 @@ machine:
     /usr/bin/python3 -c "import wrench"
     → ModuleNotFoundError: No module named 'jsonschema'
 
-That was offered as the reason infobot hand-emits canonical YAML rather than
-using the library. Rather than take it on trust it was re-run here, and it
-reproduced exactly. It then went into FR-1.11d as: *it is not imported because
+That was offered as the reason infobot hand-emits canonical YAML instead of
+using the library. It was re-run here, not taken on trust, and it reproduced
+exactly. It then went into FR-1.11d as: *it is not imported because
 it cannot be.*
 
 **infobot did not run on `/usr/bin/python3`.** Both entry points said
@@ -35,7 +35,7 @@ nothing about how the mistake was reached.
 
 ## Why verifying did not catch it
 
-The measurement was checked for TRUTH and never for SUBJECT. Re-running someone
+The measurement was checked for truth and never for subject. Re-running someone
 else's command confirms the command does what they said; it says nothing about
 whether the thing measured is the thing the argument needs. `head -1 bin/infobot`
 was the missing step and it is one line.
@@ -54,14 +54,14 @@ a timing claim, warm or cold, and on which host.
 ## The better reason, which does not depend on a package being absent
 
 FR-1.12 replaced it: infobot imported the standard library and nothing else, so
-it ran under whatever `python3` resolved to rather than under one particular
+it ran under whatever `python3` resolved to, not under one particular
 interpreter. A dependency that resolves or not depending on which interpreter
 wins a PATH race is what FR-1.9 already calls something that can be half
 present, and for a status line it fails as a blank line rather than as an error
 anyone sees.
 
 FR-1.12 is itself retired, on 2026-08-27, ahead of the port that removed the
-runtime it was about. The Retired table records that what it guarded against did
+runtime it was about. Its retired file records that what it guarded against did
 not retire with it: a compiled binary trades an import that might not resolve
 for a build that might not have run, and both fail as the same blank line.
 FR-1.13 carries that now, and it is why `bin/infobot` is a shim that can report
@@ -69,8 +69,8 @@ its own binary's absence, not a symlink that cannot
 (`docs/PATTERNS/a-shim-reports-its-own-binarys-absence.md`).
 
 That reason holds whether or not `jsonschema` is installed anywhere, which the
-original did not. Measured from wrench, 2026-08-26: `python3-yaml` is an
-apt package nothing manually installed, held on a dependency edge and an
+original did not. wrench found `python3-yaml` to be an apt package nothing
+manually installed, held on a dependency edge and an
 autoremove candidate. The package state that made the first measurement true was
 itself in motion.
 
