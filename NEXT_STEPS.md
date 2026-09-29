@@ -8,9 +8,8 @@
     documentation/filing/40  start docs/PATTERNS              .ready
     documentation/filing/50  cut to citations                 .blocked
     documentation/filing/60  one file per requirement         .ready
-    documentation/20      the voice pass                      .ready
+    documentation/30      the voice pass in the prose         .blocked
     gate/10               the shims are read by something     .blocked
-    gate/20               adopt the wording task              .ready
     gate/30               a pre-commit hook calls a recipe    .blocked
     jig-adoption/10       adopt the Go jig                    .planning
     published-form/10     a schema for the status file        .ready
@@ -285,6 +284,14 @@ survives and is worth keeping: the clock is a parameter and the transcript root
 and the XDG paths are too, so section 7 and section 8 are tested against a
 fixture tree with nothing patched. Restate them against that property instead of
 against a call graph.
+
+**FR-5.12 says the opposite of the code.** It reads "with the width unknown the
+bar is a fixed fifty cells", and `docs/SPEC.md`, "The width", repeats it. The
+code draws no bar at all (`fitted` in `internal/render/segments.go`), and
+`TestUnknownWidthDrawsNoBar` asserts that while citing FR-5.12. The comments give
+the reason: a bar is a claim about room, and with no width any length is a guess
+the host truncates. Which of the two is intended needs a person; if it is the
+code, FR-5.12 is retired for a new row and the test and SPEC follow.
 
 ## The form is described in prose and gets a schema
 
