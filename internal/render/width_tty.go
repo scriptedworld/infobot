@@ -21,9 +21,9 @@ const (
 	statFieldsAfterName = 2
 )
 
-// ttyWidth is the columns of the terminal an ANCESTOR holds, or 0.
+// ttyWidth is the columns of the terminal an ancestor holds, or 0.
 //
-// THIS IS THE BARE TERMINAL CASE, and it is the common one. tmux and herdr
+// This is the bare terminal case, and it is the common one. tmux and herdr
 // answer when they are there; without either, every route the rest of this
 // file tries is dead, because Claude Code hands the status line pipes:
 //
@@ -31,11 +31,11 @@ const (
 //	COLUMNS unset, /dev/tty opens but has no size
 //
 // The terminal has not gone anywhere though. Claude Code itself still holds
-// it, so walking up the process tree finds it two hops away. Measured in a
-// bare kitty on 2026-09-05: this process had no pts, `claude` had /dev/pts/0
-// at 313 columns, and the line was being rendered at width 0 the whole time.
+// it, so walking up the process tree finds it two hops away. In a bare kitty
+// this process has no pts while `claude` holds /dev/pts/0 at the terminal's
+// full width.
 //
-// TRIED LAST, after tmux and herdr, and the order is the point. Inside a
+// It is tried last, after tmux and herdr, and the order is the point. Inside a
 // multiplexer the pane is what the line is drawn into and the terminal behind
 // it is wider, so answering with the terminal would overflow every pane. This
 // route is what is left when nothing owns the pane but the terminal itself.
@@ -75,8 +75,8 @@ func ttyOf(pid int) string {
 
 // parentOf reads the parent pid out of /proc/<pid>/stat, or 0.
 //
-// PARSED FROM THE LAST ')', NOT BY SPLITTING. Field two is the executable name
-// in parentheses and it can contain both spaces and parentheses, so a process
+// It is parsed from the last ')', not by splitting. Field two is the executable
+// name in parentheses and it can contain both spaces and parentheses, so a process
 // named `foo bar) baz` shifts every field for anything that splits on space.
 // The kernel guarantees the final ')' closes that field, so everything after
 // it is positional and safe.

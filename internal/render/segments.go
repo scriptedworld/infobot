@@ -10,19 +10,18 @@ import (
 	"github.com/scriptedworld/infobot/internal/state"
 )
 
-// margin is what Claude Code keeps for itself, so the pane width is NOT the
+// margin is what Claude Code keeps for itself, so the pane width is not the
 // budget.
 //
-// 3 IS THE DEFAULT AND IS KNOWN TO BE TOO SMALL HERE. It assumes the host
-// indents two columns and keeps one at the right. Measured 2026-09-05 by
-// screenshotting the terminal: at a real 313 columns the line rendered 309 and
-// Claude Code cut BOTH rows with its own ellipsis, losing the end of the
-// session id and the saved figure. 8 renders complete.
+// 3 is the default and is too small on this machine. It assumes the host
+// indents two columns and keeps one at the right. At a real 313 columns the
+// line rendered 309 and Claude Code cut both rows with its own ellipsis, losing
+// the end of the session id and the saved figure. 8 renders complete.
 //
-// The default stays 3 rather than moving to 8, and that is deliberate. Raising
-// it breaks TestCostShortensThenDropsAsTheRowNarrows at width 79, which asserts
-// the cost never recovers a form it has already surrendered as the pane
-// narrows. That is a REAL non-monotonicity in the layout, latent at 3 and
+// The default stays 3, deliberately. Raising it breaks
+// TestCostShortensThenDropsAsTheRowNarrows at width 79, which asserts the cost
+// never recovers a form it has already surrendered as the pane narrows. That
+// is a real non-monotonicity in the layout, latent at 3 and
 // exposed at 8, and papering over it by editing the test would hide a bug the
 // test exists to catch. Filed rather than fixed; this machine sets 8 in
 // layout.json, which is what configuration is for.
@@ -314,7 +313,7 @@ func rowWidth(parts []string) int {
 // does: one more cell is one more column and nothing else moves.
 func fitted(cw payload.Map, others []string, at, width int) string {
 	if width == 0 {
-		// NO BAR WHEN THE WIDTH IS UNKNOWN. A bar is a claim about how much
+		// No bar when the width is unknown. A bar is a claim about how much
 		// room there is, and with nothing to fit against, any length is a
 		// guess that the host then truncates. The numbers say the same thing
 		// and cost a known handful of columns, so the row stays short and

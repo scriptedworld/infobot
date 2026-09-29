@@ -7,7 +7,7 @@
 #
 #     jq -c '.rate_limits' ~/.local/state/infobot/payloads.jsonl | tail -5
 #
-# THE RENDER MUST NOT DEPEND ON THE CAPTURE. The payload is read once into a
+# The render does not depend on the capture. The payload is read once into a
 # variable, the log write is allowed to fail silently, and the real binary is
 # fed from the variable rather than from a pipe that the tee could break. A
 # status line that stops drawing because its debugging broke is worse than no

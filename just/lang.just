@@ -1,39 +1,39 @@
 # The Go layer. Everything true of a Go CLI and nothing true of one project.
 #
-# A LANGUAGE TEMPLATE OWNS THIS FILE and writes nothing else. It is here because
+# A language template owns this file and writes nothing else. It is here because
 # no template exists yet, and it is written to be lifted into one.
 #
-# WHAT IS AND IS NOT GENERIC. `./...` and `./cmd/...` are Go's own spellings and
+# What is and is not generic: `./...` and `./cmd/...` are Go's own spellings and
 # hold for any module, so build, test, format and format-check need no project
 # values. `install` and `dist` do: they name binaries, and a project's binaries
 # and where they are used from are its own, so those two are left to the base
 # form here and a project overrides them in `just/project.just`.
 #
-# THE JIG IS RUN THROUGH BOLT rather than by listing its tools here, so a change
-# to the shared standard reaches this project without editing this file.
+# The jig is run through bolt instead of listing its tools here, so a change to
+# the shared standard reaches this project without editing this file.
 #
-# `--definitions` IS NOT OPTIONAL AND NOT IMPLIED BY THE FILE EXISTING. Without
-# it the shared jig's default stands, `entrypoint: 'true'`, and the coverage
+# `--definitions` is not optional, and the file existing does not imply it.
+# Without it the shared jig's default stands, `entrypoint: 'true'`, and the coverage
 # task measures a no-op where the project's script belongs. It fails rather than
 # passing, since the entry points then read 0.0%, but the message names coverage
 # rather than the invocation.
 
 # Cheapest first, so a failure surfaces before the slow checks run.
 #
-# TWO JIGS AND NOT THREE. common-quality composes the secrets jig as a task of
+# Two jigs, not three. common-quality composes the secrets jig as a task of
 # its own, so `checks` reaches it by construction. Listing the secrets jig here
 # as well would run detect-secrets and gitleaks over the whole history twice for
 # one verdict. The `leak-scan` recipe stays for running that piece alone.
 #
-# THROUGH `_verdict`, WHICH IS BASE'S AND READS THE ARTIFACT. bolt exits 0
-# whenever a run completed, whatever the tools concluded, so a status is
+# Each runs through `_verdict`, which is base's and reads the artifact. bolt
+# exits 0 whenever a run completed, whatever the tools concluded, so a status is
 # evidence the run happened and never evidence it passed.
 # `--result-to-exitcode` asks bolt to translate, and `_verdict` reads `success`
 # out of the result file bolt names instead, so a run that writes no result at
 # all is refused rather than read as a pass. That is hard rule 6, and it is
 # structure here rather than a habit to remember.
 #
-# `--definitions` IS PASSED THROUGH, which is what makes `_verdict` variadic: a
+# `--definitions` is passed through, which is what makes `_verdict` variadic: a
 # recipe cannot add an argument to another recipe's command line, so an adopter
 # filling a placeholder has to be able to hand its flags over.
 

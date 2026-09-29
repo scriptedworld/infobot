@@ -131,7 +131,7 @@ func calls(t *testing.T, log string) int {
 
 // COVERS: FR-1.8 | property
 //
-// ONE SUBPROCESS PER RENDER AT MOST, and only to ask a host how wide the pane
+// One subprocess per render at most, and only to ask a host how wide the pane
 // is. The route that answers runs and the others do not.
 func TestAtMostOneSubprocessAndOnlyForTheWidth(t *testing.T) {
 	t.Setenv("TMUX", "")

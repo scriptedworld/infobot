@@ -2,18 +2,15 @@
 # The status line's entry point. Claude Code names a path to this file in
 # settings.json, so this file is committed and the binary beside it is not.
 #
-# RESOLVE SYMLINKS BEFORE LOOKING FOR THE BINARY. Claude Code reaches this
-# through a symlink in some other directory. `dirname "$0"` on the symlink's
-# own path gives that directory, so the binary this looked for was the symlink
-# itself, which is this script. It exec'd itself, forever.
+# Symlinks are resolved before looking for the binary. Claude Code can reach
+# this through a symlink in some other directory, and `dirname "$0"` on the
+# symlink's own path gives that directory, so the binary found there is the
+# symlink itself, which is this script. It execs itself forever, and every
+# session loses its state file silently: the loop never reaches the render, so
+# there is no output, and a status line that prints nothing looks like a quiet
+# one.
 #
-# That ran for 35 minutes across ten sessions on 2026-08-28 and cost every
-# session its state file, silently: the loop never reaches the render, so there
-# is no output, and a status line that prints nothing looks like a quiet one.
-# The Python this replaced called Path(__file__).resolve(), which follows
-# symlinks, and the port dropped that without noticing it was load-bearing.
-#
-# THIS EXISTS TO SATISFY FR-1.13, and it is the trade the Go port makes. An
+# This exists to satisfy FR-1.13, and it is the trade the Go port makes. An
 # import that might not resolve became a build that might not have run, and both
 # fail the same way, as a blank line nobody is told about. A status line has no
 # other tell: it is drawn or it is not, and a blank one is indistinguishable

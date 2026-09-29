@@ -52,7 +52,7 @@ func TestTranscriptsFindTheSessionByName(t *testing.T) {
 
 // COVERS: FR-8.3 | property
 //
-// THE SUBAGENTS ARE NOT OPTIONAL. On one measured session they were 51% of
+// The subagents are not optional. On one measured session they were 51% of
 // output tokens and 33% of cache reads.
 func TestTranscriptsIncludeSubagents(t *testing.T) {
 	root := tree(t, map[string]string{

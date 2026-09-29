@@ -1,6 +1,6 @@
 // Package payload reads the session JSON Claude Code puts on stdin.
 //
-// EVERY FIELD IS OPTIONAL and is treated as optional. rate_limits appears only
+// Every field is optional and is treated as optional. rate_limits appears only
 // for subscribers and only after the first API response; either window can be
 // absent on its own; used_percentage can be null early in a session. So the
 // payload is held as a tree of any rather than as a struct: a struct with

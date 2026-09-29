@@ -17,17 +17,15 @@ __pycache__/
 # into toolbox; in a built image the same files arrive from the anvil layer
 # beneath, so a committed copy would be a third statement of one thing.
 #
-# MATCHED BY SHAPE. The objection recorded here was to `bolt.*.yaml`, which does
-# swallow `bolt.go-std-quality.definitions.yaml` — this project's own values for
-# the shared jig's placeholders, which has to be committed. `bolt.*-quality.yaml`
-# is the narrower form and cannot match a `*.definitions.yaml`, so the objection
-# was to the wrong glob rather than to globbing at all. skid has used this form
-# throughout; bolt and qwark carry it as of 2026-09-04.
+# Matched by shape. `bolt.*.yaml` would swallow
+# `bolt.go-std-quality.definitions.yaml`, this project's own values for the
+# shared jig's placeholders, which has to be committed. `bolt.*-quality.yaml` is
+# the narrower form and cannot match a `*.definitions.yaml`. skid, bolt and
+# qwark use the same form.
 #
-# A pattern covers a set that grows and a list does not. bolt adopted toolbox's
-# `rust` set on 2026-09-03 and left two links untracked, because adopting a set
-# and editing five .gitignore files are different acts and only the first is
-# forced.
+# A pattern covers a set that grows and a list does not: adopting a new set of
+# links from toolbox is one act, and editing every .gitignore to match is a
+# second one that nothing forces.
 #
 # `config/` holds one link and none of this project's own settings. The Go jig
 # names `{config_dir}/config/go-std-quality.golangci.yml`, and `config_dir` is

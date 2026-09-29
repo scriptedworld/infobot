@@ -1,10 +1,10 @@
 // Package num carries the rounding the port has to preserve exactly.
 //
-// THIS IS NOT PEDANTRY. Python's round() breaks a tie to the EVEN neighbour and
-// Go's math.Round breaks it away from zero, so round(2.5) is 2 in one and 3 in
-// the other. Both appear where a tie is reachable: the bar's filled-cell count
-// is round(pct/100*cells), which ties whenever a percentage lands mid-cell, and
-// every colour channel is round()ed out of an interpolation. A bar one cell
+// The difference is visible. Python's round() breaks a tie to the even
+// neighbour and Go's math.Round breaks it away from zero, so round(2.5) is 2 in
+// one and 3 in the other. Both appear where a tie is reachable: the bar's
+// filled-cell count is round(pct/100*cells), which ties whenever a percentage
+// lands mid-cell, and every colour channel is round()ed out of an interpolation. A bar one cell
 // long in the wrong direction is a visible difference against the golden
 // corpus and would read as a rendering bug rather than as a rounding mode.
 package num

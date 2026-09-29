@@ -1,14 +1,14 @@
 # The two-word interface. Ten recipes, the same words in every tree here.
 #
-# THIS FILE DEFINES NO RECIPE EXCEPT `default`, AND THAT IS LOAD-BEARING.
+# This file defines no recipe except `default`, and that is load-bearing.
 # just 1.58.0 lets an importing file beat what it imports, so any recipe
 # written here would permanently shadow the language layer's real one. Among
-# imports the FIRST listed wins, which is why the order below runs most
+# imports the first listed wins, which is why the order below runs most
 # specific to least.
 #
-# AND WITHOUT `allow-duplicate-recipes` THERE IS NO OVERRIDE AT ALL. Measured
-# against just 1.58.0: a base and a language layer both defining `test` is a
-# HARD ERROR that kills every recipe in the tree, not a shadowed definition.
+# Without `allow-duplicate-recipes` there is no override at all. Under just
+# 1.58.0, a base and a language layer both defining `test` is a hard error that
+# kills every recipe in the tree, not a shadowed definition.
 #
 #     $ just --list
 #     error: recipe `test` first defined on line 3 is redefined on line 15

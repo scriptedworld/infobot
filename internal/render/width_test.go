@@ -74,9 +74,9 @@ func TestNoHostMeansTheTerminalOrUnknownButNeverEighty(t *testing.T) {
 
 // COVERS: FR-3.7 | regression
 //
-// An untargeted `display-message` answers for the ACTIVE pane of the current
-// client, not the pane that asked. Measured 2026-09-01 from pane %5 at 257
-// columns with a 60-column %6 focused: the untargeted form said 60.
+// An untargeted `display-message` answers for the active pane of the current
+// client, not the pane that asked: from pane %5 at 257 columns with a 60-column
+// %6 focused, the untargeted form says 60.
 //
 // Focusing a wider pane is the damaging direction, because the row is then
 // built past the edge and the host cuts its tail. The assertion is on the
@@ -125,7 +125,7 @@ func TestTmuxWithoutAPaneIdStillAsks(t *testing.T) {
 
 // COVERS: FR-3.7 | property
 //
-// A ZOOMED PANE'S RECTANGLE IS THE UNZOOMED ONE. The tab's area is the width to
+// A zoomed pane's rectangle is the unzoomed one. The tab's area is the width to
 // use, and the zoomed pane is the focused one.
 func TestZoomedPaneIsFittedToTheTabArea(t *testing.T) {
 	noHosts(t)

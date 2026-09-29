@@ -61,17 +61,17 @@ func runeWidth(r rune) int {
 // address"; and any library terminal-size call therefore returns its fabricated
 // 80x24 fallback.
 //
-// THAT FALLBACK IS THE TRAP. Believing it would truncate a 223-column pane to
+// That fallback is the trap. Believing it would truncate a 223-column pane to
 // 80, worse than not adapting at all. So it is never used: whatever owns the
 // pane is asked directly, and a host that cannot be asked returns 0, meaning
 // "render the full form and let the caller fit it".
 //
-// The hosts are tried INNERMOST FIRST. tmux running inside a herdr pane draws
+// The hosts are tried innermost first. tmux running inside a herdr pane draws
 // this line in the tmux pane, which is the narrower of the two, so tmux answers
 // whenever it is there and herdr answers when it is not. Each route costs one
 // subprocess of a few milliseconds and only the winning one runs.
 //
-// ttyWidth is LAST and is the terminal itself, reached by walking the process
+// ttyWidth is last and is the terminal itself, reached by walking the process
 // tree to an ancestor that still holds it. It is outermost by definition, so
 // it must not answer while a multiplexer owns the pane: the terminal behind a
 // pane is wider than the pane, and answering with it overflows every render.
@@ -84,9 +84,9 @@ func TerminalWidth() int {
 	if w := herdrWidth(); w != 0 {
 		return w
 	}
-	// A HOST THAT IS PRESENT BUT DID NOT ANSWER MUST STAY UNKNOWN. Falling
+	// A host that is present but did not answer stays unknown. Falling
 	// through to the terminal here is the one genuinely damaging answer: the
-	// terminal behind a pane is WIDER than the pane, so a hung tmux or a herdr
+	// terminal behind a pane is wider than the pane, so a hung tmux or a herdr
 	// pane whose id no longer matches would each produce a row built past the
 	// edge and truncated on every render.
 	//
@@ -103,10 +103,10 @@ func TerminalWidth() int {
 // answer means the host could not be asked, which is a rendering decision
 // rather than an error.
 //
-// WaitDelay IS THE HALF THAT ACTUALLY BOUNDS IT. The context kills the process
+// WaitDelay is the half that actually bounds it. The context kills the process
 // it started, and that is not enough: a host is a script, and killing the shell
 // leaves any child it spawned holding the inherited stdout pipe. Output() then
-// blocks reading that pipe until the GRANDCHILD exits, so a two second timeout
+// blocks reading that pipe until the grandchild exits, so a two second timeout
 // waited thirty against a host that ran `sleep 30`. WaitDelay closes the pipes
 // a beat after the kill and returns.
 //
@@ -127,17 +127,17 @@ func ask(argv ...string) string {
 // tmuxWidth is the pane columns from tmux, measured at 3.2ms and affordable
 // once per render.
 //
-// TARGET THE CALLING PANE. An untargeted `display-message` resolves against the
-// ACTIVE pane of the current client, not the pane whose process is asking. In a
-// split those are different panes, so the line was fitted to whichever pane
-// happened to be focused when the render fired. Measured 2026-09-01: called
-// from pane %5 at 257 columns with a 60-column %6 focused, the untargeted form
-// answered 60 and `-t %5` answered 257.
+// It targets the calling pane. An untargeted `display-message` resolves against
+// the active pane of the current client, not the pane whose process is asking.
+// In a split those are different panes, so the line would be fitted to whichever
+// pane happened to be focused when the render fired: called from pane %5 at 257
+// columns with a 60-column %6 focused, the untargeted form answers 60 and
+// `-t %5` answers 257.
 //
-// Focusing a WIDER pane is the damaging direction. The row is then built past
+// Focusing a wider pane is the damaging direction. The row is then built past
 // the edge and the host cuts its tail, which is the end of the meter row, and
 // the line re-renders on a ten second interval so no interaction is needed for
-// it to happen. This is FR-3.7 for tmux: the width is the one the pane is DRAWN
+// it to happen. This is FR-3.7 for tmux: the width is the one the pane is drawn
 // at, not whatever a rectangle elsewhere reports.
 //
 // TMUX_PANE is set in every pane's environment and Claude Code passes it
@@ -174,7 +174,7 @@ type herdrLayout struct {
 // herdrWidth is the pane columns from herdr, measured at 2-4ms, the same order
 // as tmux.
 //
-// It answers for the CALLING PANE'S WHOLE TAB, so the pane has to be picked out
+// It answers for the calling pane's whole tab, so the pane has to be picked out
 // of the list it returns, and HERDR_PANE_ID is what names it.
 //
 // A tab holding exactly one pane answers whatever id that pane carries. It is
@@ -183,7 +183,7 @@ type herdrLayout struct {
 // longer names the pane the process now sits in. Every other mismatch is
 // reported unknown rather than guessed at.
 //
-// A ZOOMED PANE'S RECTANGLE IS THE UNZOOMED ONE. `zoomed` goes true and every
+// A zoomed pane's rectangle is the unzoomed one. `zoomed` goes true and every
 // rect in the reply stays exactly where it was, so a pane zoomed out of a
 // two-way split reports half the columns it is drawn in. The tab's area is the
 // width to use, and the zoomed pane is the focused one: zooming the neighbour
@@ -235,7 +235,7 @@ func herdrWidth() int {
 // line gets: the reported number overshoots by enough to push a full-width row
 // past the edge, and the host then cuts the tail with an ellipsis.
 //
-// THE TWO ERRORS ARE NOT EQUALLY BAD, which is why this leans one way. A width
+// The two errors are not equally bad, which is why this leans one way. A width
 // read too small wastes a few columns and nobody ever notices. One read too
 // large truncates, visibly, on every render. So the trim is deliberate rather
 // than a fudge, and it is applied here rather than to every host because it is

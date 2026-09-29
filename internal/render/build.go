@@ -253,7 +253,7 @@ func Main(stdin io.Reader, stdout io.Writer) int {
 	if err != nil {
 		home = ""
 	}
-	// STOP AT THE FIRST FAILED WRITE rather than discarding the error. There is
+	// Stop at the first failed write instead of discarding the error. There is
 	// nowhere to report it, since stdout is the thing that failed and the exit
 	// code is 0 by contract, but a second row written after the first failed is
 	// a torn status line rather than a missing one, and torn is harder to read

@@ -387,7 +387,7 @@ func TestBarShrinksWithThePaneThenGoesWhole(t *testing.T) {
 
 // COVERS: FR-3.3, FR-5.12 | edge
 //
-// With the width unknown there is NO BAR AT ALL. A bar is a claim about how
+// With the width unknown there is no bar at all. A bar is a claim about how
 // much room there is, and with nothing to fit against, any length is a guess
 // the host then truncates. The numbers say the same thing at a known cost, so
 // the row stays short and left-aligned.

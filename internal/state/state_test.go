@@ -386,7 +386,7 @@ func TestTheLineBreakSetIsEscaped(t *testing.T) {
 		// not, so which of them fold is the reader's version rather than the
 		// character.
 		//
-		// THE SPELLING CHANGED WHEN THE EMITTER DID, and the requirement did
+		// The spelling changed when the emitter did, and the requirement did
 		// not. FR-1.11r is that these three are escaped rather than emitted
 		// raw, because a parser accepts them raw and hands back a space. The
 		// hand emitter spelled them `\u2028`, `\u2029` and `\x85`; wrench

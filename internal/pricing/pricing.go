@@ -4,24 +4,16 @@
 // what the same tokens would have come to had they gone through the API, which
 // is what makes the cache worth anything visible.
 //
-// THE RATES ARE A CACHED COPY AND THEY DRIFT. A status line that runs on every
+// The rates are a cached copy and they drift. A status line that runs on every
 // event cannot make a network call to ask, so they are read from a table on
 // disk and refreshed by something else.
 //
-// ~/.config/infobot/pricing.json is that table.
-// Config rather than state, because the offsets under ~/.local/state/infobot
-// are disposable machine bookkeeping and this is a file worth editing by hand.
-// Sonnet 5 carrying an introductory rate with an expiry is the case that wants
-// a person, not a fetch.
+// ~/.config/infobot/pricing.json is that table. It is config, not state,
+// because the offsets under ~/.local/state/infobot are disposable machine
+// bookkeeping and this is a file edited by hand. Why a person refreshes it and
+// not a fetch is in docs/PROJECT.md, "Perishable: the pricing table".
 //
-// That case has since resolved, and how it resolved is the argument. The
-// introductory $2/$10 became the standard price and the $3/$15 rise booked for
-// September was cancelled. A fetch reading only the table would have carried
-// the right numbers by luck; what said the rise was cancelled was a sentence
-// beside the table, and a scheduled refresh that had run in September without
-// one would have had no way to tell a cancelled increase from an unapplied one.
-//
-// NOTHING IS COMPILED IN. The rates and the cache multipliers live only in that
+// Nothing is compiled in. The rates and the cache multipliers live only in that
 // file, so a price change is an edit to it and never a rebuild. With no usable
 // table the cost segment is left out, and a model missing from it leaves the
 // total flagged as a floor. A cost computed from a guessed rate is worse than no
@@ -120,7 +112,6 @@ func Load() (Table, bool) {
 	}
 	return Table{wire.Taken, wire.Source, rates, *wire.CacheRead, wire.CacheWrite, reads}, true
 }
-
 
 // Priced is the outcome of pricing a session's totals.
 type Priced struct {

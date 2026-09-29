@@ -50,9 +50,8 @@ func ancestorTTY(t *testing.T) string {
 // /dev/tty carries a size. The terminal is still there, held by an ancestor,
 // and walking to it is what makes a width available at all.
 //
-// Measured 2026-09-05 in a bare kitty: this process had no pts, `claude` two
-// hops up held /dev/pts/0 at 313 columns, and the line had been rendering at
-// width 0.
+// In a bare kitty this process has no pts and `claude`, two hops up, holds
+// /dev/pts/0; without the walk the line renders at width 0.
 func TestBareTerminalIsFoundThroughAnAncestor(t *testing.T) {
 	if ancestorTTY(t) == "" {
 		t.Skip("no terminal in this process tree; nothing to find")
@@ -65,10 +64,10 @@ func TestBareTerminalIsFoundThroughAnAncestor(t *testing.T) {
 
 // COVERS: FR-3.4 | negative
 //
-// A HOST THAT IS PRESENT BUT SILENT MUST NOT FALL THROUGH TO THE TERMINAL.
+// A host that is present but silent does not fall through to the terminal.
 //
-// This is the damaging direction and the reason the terminal route is guarded
-// rather than merely last. The terminal behind a pane is WIDER than the pane,
+// This is the damaging direction and the reason the terminal route is guarded,
+// not merely last. The terminal behind a pane is wider than the pane,
 // so answering with it builds a row past the edge and the host cuts the tail,
 // on every render, ten seconds apart, with no interaction needed.
 //

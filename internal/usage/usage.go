@@ -5,7 +5,7 @@
 // a usage record per assistant message into the session transcript, and the
 // payload carries the session id that names it.
 //
-// THIS IS THE ONE PLACE INFOBOT READS A FILE IT WAS NOT HANDED, and it is
+// This is the one place infobot reads a file it was not handed, and it is
 // bounded: a stat on every render, a parse only of what has been appended since
 // the last one. A full re-sum of a 2.7MB transcript measured 21ms to 29ms
 // against a render budget of 33ms, and it grows for the life of the session.
@@ -74,13 +74,13 @@ func Projects() string {
 // than where it now is, so the id is globbed for instead of the slug being
 // reconstructed from workspace.current_dir.
 //
-// THE SUBAGENTS ARE NOT OPTIONAL. Each runs in its own transcript under
+// The subagents are not optional. Each runs in its own transcript under
 // <session>/subagents/, and on one measured session they were 51% of output
 // tokens and 33% of cache reads.
 //
-// NEITHER ARE THE TRANSCRIPTS A CLEAR LEFT BEHIND. /clear opens a new
-// transcript under a NEW sessionId, so a name match alone follows one side of
-// it. The two ids point opposite ways, so transcripts are grouped by ROOT: a
+// Neither are the transcripts a clear left behind. /clear opens a new
+// transcript under a new sessionId, so a name match alone follows one side of
+// it. The two ids point opposite ways, so transcripts are grouped by root: a
 // transcript's recorded origin where it has one, its own name where it does
 // not. Every transcript sharing a root is one session's spending, whichever id
 // the payload handed over.

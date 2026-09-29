@@ -4,7 +4,7 @@
 // cleanup that fails is litter; a cleanup that raises is a hook failure
 // reported to somebody who was closing their terminal.
 //
-// It SAYS WHAT IT REMOVED, on stderr, while still exiting 0. A cleanup that
+// It says what it removed, on stderr, while still exiting 0. A cleanup that
 // exits 0 having removed nothing is the same shape as a gate that passes having
 // checked nothing, and the difference has to be visible in a log rather than
 // invisible by design.
@@ -32,7 +32,7 @@ func Main(stdin io.Reader, log io.Writer) int {
 	if json.Unmarshal(raw, &data) != nil || data == nil {
 		return 0
 	}
-	// THE THREE WRITES BELOW DISCARD THEIR ERROR DELIBERATELY. The log is
+	// The three writes below discard their error deliberately. The log is
 	// stderr, so a failed write has nowhere to be reported, and the exit code
 	// is 0 by contract because a hook that raises interrupts somebody closing
 	// their terminal. `_ =` says that was decided rather than overlooked, which

@@ -15,15 +15,16 @@ import (
 // Two straight lines rather than one. Green to yellow across the long stretch
 // where nothing is happening, then yellow to red compressed into 75-90, so the
 // colour moves fastest exactly where a glance needs to tell 80 from 88.
-// EVERY COLOUR BELOW IS A SEED, NOT THE SETTING. palette_config.go overlays
+//
+// Every colour below is a seed, not the setting. palette_config.go overlays
 // ~/.config/infobot/palette.json over these at startup, so the palette is
 // configuration and a re-cut reaches the status line without a rebuild. On this
 // estate that file is a symlink into g0bl1n.theme.
 //
 // The seed is D1C3 Goblin, so a machine with no palette.json still matches the
-// terminal behind it. It replaced a MIXTURE on 2026-09-05: the backdrop was
-// Tokyo Night while the path and empty colours were still ENCOM's teal, so the
-// status line matched neither the terminal nor itself.
+// terminal behind it. It replaced a mixture: the backdrop was Tokyo Night
+// while the path and empty colours were still ENCOM's teal, so the status line
+// matched neither the terminal nor itself.
 var (
 	green  = rgb{43, 255, 158} //nolint:gochecknoglobals // #2BFF9E, built once
 	yellow = rgb{255, 212, 38} //nolint:gochecknoglobals // #FFD426
@@ -37,17 +38,17 @@ const (
 	reset    = "\033[0m"
 )
 
-// The alarm FADES IN across 90 to 100 rather than switching on at 90.
+// The alarm fades in across 90 to 100 instead of switching on at 90.
 //
 // Its foreground starts at red, which is exactly where the ramp below it
 // arrives, so nothing jumps at the boundary: the last yellow-to-red cell and
 // the first alarm cell are the same colour. It then runs to a pale yellow.
 //
-// Its background starts at the TERMINAL'S OWN and fills to a deep red, so the
+// Its background starts at the terminal's own and fills to a deep red, so the
 // first frame of the fade paints nothing a reader can see and the inversion
 // arrives instead of slamming on.
 //
-// BLACK IS NOT INVISIBLE, which is the trap this walked into first. The palette
+// Black is not invisible. The palette
 // here is D1C3 Goblin, #0D0A20 at full opacity in kitty and inherited by herdr,
 // so a pure black background is a dark notch against it: a seam exactly where
 // the fade exists to have none. Matching the backdrop is what makes it vanish.
@@ -68,27 +69,24 @@ var (
 )
 
 // The accent, the same value the window frames and the active tag use, so the
-// status line reads as part of the desktop instead of beside it. This was
-// ENCOM's teal (#00a595) until 2026-09-05, long after ENCOM stopped being the
-// palette anywhere else.
-// var rather than const: palette.json overwrites these at startup. See
+// status line reads as part of the desktop instead of beside it.
+// var, not const: palette.json overwrites these at startup. See
 // palette_config.go.
 var pathColour = "\033[38;2;255;43;214m" //nolint:gochecknoglobals // #FF2BD6 accent
 
-// The unused cells are an outline glyph and NO background. The glyph carries
+// The unused cells are an outline glyph and no background. The glyph carries
 // its own shape, and a background behind it would fill the gaps between the
 // parallelograms and turn the tail of the bar into a solid slab.
 //
-// A DIM CYAN, derived: #1FE0FF at 40%, because the palette carries no colour
+// A dim cyan, derived: #1FE0FF at 40%, because the palette carries no colour
 // both dim enough to read as unused and cool enough to keep the pace scale
-// ordered. It is the faithful translation of what this was, ENCOM's dim cyan.
+// ordered.
 //
-// THE RED CHANNEL IS LOAD-BEARING, which is not obvious. The pace scale is
+// The red channel is load-bearing, which is not obvious. The pace scale is
 // checked by asserting that red decreases from hot through on-rate to cold,
-// and `firstFG` on a barely-used bar picks up THIS colour rather than a pace
-// colour. Muted (#6E5A9E, red 110) sits above green (#2BFF9E, red 43) and
-// inverts that order; this (red 12) sits below it. Tried muted first and the
-// pace test caught it.
+// and `firstFG` on a barely-used bar picks up this colour, not a pace colour.
+// Muted (#6E5A9E, red 110) sits above green (#2BFF9E, red 43) and inverts that
+// order, which the pace test catches; this (red 12) sits below it.
 var emptyColour = "\033[38;2;12;90;102m" //nolint:gochecknoglobals // #0C5A66, dim cyan
 
 var (

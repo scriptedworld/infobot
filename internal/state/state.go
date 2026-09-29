@@ -5,11 +5,10 @@
 // it. Both come through Figures so the two cannot disagree: a bar saying 56%
 // beside a file saying something else is worse than either alone.
 //
-// WHY THE FILE EXISTS. An agent has no way to measure its own context. The
+// The file exists because an agent has no way to measure its own context. The
 // payload Claude Code hands the status line carries the numbers, and nothing
-// else in the session sees them. Reconstructing them means tailing the
-// transcript and summing usage records by hand, which is what the absence of
-// this file cost once already.
+// else in the session sees them. Without the file, a reader has to tail the
+// transcript and sum usage records by hand.
 //
 // It sits beside the usage offsets, in usage.StateDir(): generated state, keyed
 // by session, outside every repository. One predictable path, so a reader that
@@ -17,10 +16,11 @@
 //
 // Written in canonical YAML through wrench, which validates it against the
 // schema beside this file on the way out: block style, one key to a line, keys
-// sorted, a string quoted and a number bare. THE FORM IS A PUBLISHED INTERFACE
-// (FR-1.11o): silo's coordination board reads these files with patterns
-// anchored on the quoted key and the single space after the colon, and takes
-// the number bare. Changing the shape breaks it, and adding a key does not.
+// sorted, a string quoted and a number bare. The form is a published interface
+// (FR-1.11o), stated in docs/SPEC.md: silo's coordination board reads these
+// files with patterns anchored on the quoted key and the single space after the
+// colon, and takes the number bare. Changing the shape breaks it, and adding a
+// key does not.
 //
 // It emitted that form by hand until the Go port could link wrench's pack. Two
 // emitters of one published form was a considered duplicate rather than an
@@ -203,12 +203,10 @@ func fields(data payload.Map, session string, now time.Time) map[string]any {
 // tokens converts a payload's count to an integer, saturating rather than
 // overflowing.
 //
-// CONVERTING AN OUT-OF-RANGE FLOAT TO int64 IS UNDEFINED IN GO, and on amd64 it
+// Converting an out-of-range float to int64 is undefined in Go, and on amd64 it
 // lands on the minimum int64. A payload reporting `used_percentage: 1e21`
-// against a window of 100 therefore wrote `"context_used": -9223372036854775808`
-// and the board drew it, because a hand emitter formats whatever it is handed.
-// The schema refused it the first time this file was written through wrench,
-// which is validation on the way out doing the job it is there for.
+// against a window of 100 would write `"context_used": -9223372036854775808`,
+// which the schema refuses on the way out.
 //
 // Saturating rather than refusing: the four context keys are all-or-nothing, so
 // dropping them over one nonsense figure would take the other three with it.

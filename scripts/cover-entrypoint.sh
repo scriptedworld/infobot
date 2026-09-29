@@ -11,10 +11,10 @@
 # and nothing else. The task has already written cover-entry.out holding a bare
 # mode line; this overwrites it.
 #
-# TWO BINARIES, ONE PROFILE. Both write into the same GOCOVERDIR and a single
+# Two binaries, one profile. Both write into the same GOCOVERDIR and a single
 # conversion covers them, because covdata merges whatever runs it finds there.
 #
-# XDG_STATE_HOME IS MOVED FOR BOTH. The status line writes a state file named
+# XDG_STATE_HOME is moved for both. The status line writes a state file named
 # for the session id on every render, and the cleanup removes one. Left alone,
 # this run would drop a file into the real state directory naming a session that
 # never existed, which no SessionEnd will ever be handed.

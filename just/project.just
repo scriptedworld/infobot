@@ -22,16 +22,16 @@ build:
     go build -o bin/statusline ./cmd/statusline
     go build -o bin/forget ./cmd/forget-session
 
-# COMMITTED IS NOT DEPLOYED. Every other check reads the source: the tree is
+# Committed is not deployed. Every other check reads the source: the tree is
 # clean because the source is committed, the tests pass because they compile the
 # source, and the gate is green for the same reason. The built artefact is
 # downstream of all of them and inside none.
 #
-# Not hypothetical. `bin/statusline` ran two commits behind a clean tree for 38
-# minutes on 2026-08-28, and the status line has no failure output, so a stale
-# binary and a broken one look identical: like a quiet session.
+# `bin/statusline` has run two commits behind a clean tree for 38 minutes, and
+# the status line has no failure output, so a stale binary and a broken one look
+# identical: like a quiet session.
 #
-# BYTES RATHER THAN MTIMES, because a build sets a fresh mtime whatever it
+# Bytes, not mtimes, because a build sets a fresh mtime whatever it
 # produced, so a timestamp answers "was this written" and never "is this
 # current".
 
@@ -55,16 +55,13 @@ install: build
 dist:
     @echo "infobot is used from its own tree through bin/infobot"
 
-# THE BINARIES ARE NOT BUILD OUTPUT, THEY ARE DEPLOYED. Claude Code runs
+# The binaries are not build output: they are deployed. Claude Code runs
 # `bin/infobot` on every event in every live session, so removing them stops the
 # status line across the whole machine and every session's state file stops
-# being written with it.
-#
-# Measured 2026-08-29: `just clean` during Justfile work removed them, and all
-# 15 state files stopped at 20:31:11. FR-1.13 worked exactly as designed, the
-# shim rendering "infobot is not built" in every pane, but the instruments that
-# read the state files went quiet rather than loud and reported the estate as
-# idle for 25 minutes.
+# being written with it. The shim says so in every pane (FR-1.13), but the
+# instruments reading the state files go quiet, not loud;
+# `docs/LESSONS/an-instrument-that-goes-blind-quietly.md` has the time it
+# happened.
 #
 # So clean removes run directories, which are genuinely disposable, and rebuilds
 # rather than leaving a hole. `just clean` must not be the command that takes
