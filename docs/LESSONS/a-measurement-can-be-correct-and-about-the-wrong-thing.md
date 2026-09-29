@@ -65,7 +65,8 @@ runtime it was about. The Retired table records that what it guarded against did
 not retire with it: a compiled binary trades an import that might not resolve
 for a build that might not have run, and both fail as the same blank line.
 FR-1.13 carries that now, and it is why `bin/infobot` is a shim that can report
-its own binary's absence rather than a symlink that cannot.
+its own binary's absence, not a symlink that cannot
+(`docs/PATTERNS/a-shim-reports-its-own-binarys-absence.md`).
 
 That reason holds whether or not `jsonschema` is installed anywhere, which the
 original did not. Measured from wrench, 2026-08-26: `python3-yaml` is an

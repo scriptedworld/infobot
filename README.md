@@ -127,10 +127,8 @@ rates: without a usable file the cost and the saving are left out and the rest
 of the line renders as normal (FR-8.27, FR-8.28).
 
 The rates go stale, so the file records when it was read. Refreshing it is a
-person's job rather than a scheduled fetch: Claude's pricing page carries
-promotional rates and announcements beside the table, and a fetch that reads
-only the table cannot tell a cancelled increase from an unapplied one. That has
-already happened once, to Sonnet 5.
+person's job, not a scheduled fetch:
+`docs/DECISIONS/the-rate-table-is-refreshed-by-a-person.md` says why.
 
 **`~/.local/state/infobot/`** holds two files per session, written on every
 render and removed by the `SessionEnd` hook.

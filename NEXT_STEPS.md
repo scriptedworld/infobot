@@ -1,360 +1,199 @@
 # What is not done
 
-## Queued
+The task tree in clank is the queue, and a directory's suffix is its state.
+This file holds what the tasks do not: open problems, and why each is open.
 
-    documentation/filing/10  the README explains the rows     .ready
-    documentation/filing/20  extract the decisions            .ready
-    documentation/filing/30  extract the lessons              .ready
-    documentation/filing/40  start docs/PATTERNS              .ready
-    documentation/filing/50  cut to citations                 .blocked
-    documentation/filing/60  one file per requirement         .ready
-    documentation/30      the voice pass in the prose         .blocked
-    gate/10               the shims are read by something     .blocked
-    gate/30               a pre-commit hook calls a recipe    .blocked
-    jig-adoption/10       adopt the Go jig                    .planning
-    published-form/10     a schema for the status file        .ready
-    state-readers/10      say what a session is DOING         .questions
+    ( setopt null_glob; print -l <task-tree>/**/*.ready )
 
-**Ask the task tree rather than this file.** Its state is a rename and a
-document's state is prose, so where the two disagree the tree is right.
+## The gate is red
 
-    ( setopt null_glob; print -l <task-tree>/**/*.blocked )
+`just checks` stops at `common-quality`, so `go-std-quality` is not reached:
 
-## The gate is red on one task, lint
+- **suppressions**: four pragmas in `internal/render` disagree with
+  `SUPPRESSIONS`, below.
+- **wording**: `bin/voice-tells.py` finds the prose findings that
+  `documentation/30` owns, which waits on `documentation/filing/`.
 
-The Go jig is adopted and `just checks` runs it. Six of its seven tasks pass,
-along with all four of common-quality. Coverage is 92.8%, per file at the 80%
-bar, with both entry points measured by building with `go build -cover` and
-running them.
-
-**Lint is the only red task and it is reached**, which took two fixes on
-2026-08-30 and neither was about the findings. `config/go-std-quality.golangci.yml`
-was never linked, so the task exited 3 on a missing file for as long as the jig
-had been adopted and the count below came from running the tool by hand. And
-`common-quality` failed ahead of it on a recipe name, so nothing after it ran at
-all.
-
-**The 124 this file used to quote was a capped number.** golangci-lint
-truncates its own output by default, `max-issues-per-linter` at 50 and
-`max-same-issues` at 3, and neither the shared config nor the jig turns it off.
-Uncapped, the same tree reported 187. Filed as
-filed against toolbox, with both runs as
-evidence, because it reaches every adopter and the fix is one flag pair on the
-jig's command line.
-
-Measure it uncapped or the figure is a floor:
+Behind them, `lint` in the Go jig is red on 152 findings when measured
+uncapped. golangci-lint caps its own output at 50 per linter and 3 per repeated
+message, and neither the shared config nor the jig turns that off, so measure
+it this way or the count is a floor that shifts as the tree changes:
 
     golangci-lint run --config config/go-std-quality.golangci.yml \
         --max-issues-per-linter 0 --max-same-issues 0
 
-**152 now**, after the pass of 2026-08-30 cleared everything that needed no
-decision. 130 are escalated to toolbox, whose shared config has no per-project
-override:
+130 of them are questions for toolbox's shared config, which has no
+per-project override, and are filed there:
 
-    paralleltest      89   tests were never meant to run in parallel
-    mnd               28   none is truly magic; four were never printed
+    paralleltest      89   the tests were never meant to run in parallel
+    mnd               28   none is truly magic
     gochecknoglobals  13   all are types Go's const cannot hold, none mutated
 
-Three entries filed against toolbox, each corrected for the cap.
-
-**HARD RULE 4 WAS BROKEN HERE ON 2026-09-04, by a session that had not read
-this section.** Twenty-four pragmas were added, fourteen `gochecknoglobals` and
-ten `gosec`, and a `SUPPRESSIONS` file was written asserting answers to
-questions nobody had been asked. The paragraph below says no pragma goes in
-without a person having answered first, and that is exactly what happened.
-
-Two things it pre-empted, both decided above and neither by a person at the time:
-
-- The 130 escalated findings are a question for toolbox's shared config, not a
-  case for 130 local pragmas. Fourteen of them now carry one.
-- The state file's mode is recorded below as **a question, not a finding**. It
-  now carries `//nolint:gosec` and a written justification.
-
-The measurement in that session was also capped: it reported 93 findings from a
-plain `golangci-lint run`, where the figure above is 152 measured uncapped.
-
-**Decide before building on it.** The pragmas are in `main` on both machines -
-merged at `9e92fa9` with `palette_config.go` and `width_tty.go` built on top -
-so reverting is possible and is not a clean revert. Keeping them means adopting
-answers nobody gave; dropping them returns 24 findings and restores the position
-this section records.
-
-**The remaining 22 are infobot's own and NOT ONE IS AN EDIT.** All gosec, and
-rule 4 admits no pragma without a person having answered first:
+22 are infobot's own, all gosec, and none is settled by an edit:
 
     G304  10   a file opened by computed path: the transcripts, the rate
                table, and temporary paths a test has just built
-    G306   7   a WriteFile that must land executable. 0600 is not a mode a
-               script runs from, so the rule and the fixture cannot both be
-               satisfied. Any project whose tests write a script meets this
+    G306   7   a WriteFile that must land executable; 0600 is not a mode a
+               script runs from, so rule and fixture cannot both hold
     G204   3   a subprocess with a variable: the width query the design
                requires, and two tests invoking the shim
-    G301   1   and G302 1, both the state file. See below
+    G301   1   and G302 1, both the state file's mode, below
 
-**The state file's mode is a question, not a finding.** gosec wants 0600 where
-it is written 0644, and `TestFileIsReadableByOtherPrograms` pins 0644 while
-citing FR-1.11b, which is about writing whole or not at all and says nothing
-about a mode. The test asserts something no requirement states, and its name
-says "other programs" where the assertion only bites for other users. silo's
-board reads these files as the same user, so 0600 would not break the consumer
-we know about. Tightening it would drop an intent recorded nowhere else.
+`jig-adoption/10` carries them.
 
-## The secrets jig gates, since toolbox fixed it
+## Twenty-four pragmas were added without anyone being asked
 
-Fixed upstream at toolbox `adc8d00`. `detect-secrets scan --baseline` is a
-builder rather than a checker, so it absorbed a newly committed credential and
-exited 0; the task now runs `detect-secrets-hook` over the tracked file list,
-which gates. `common-quality` composes it, so `just checks` reaches it.
+Merged at `9e92fa9`: fourteen `gochecknoglobals` and ten `gosec`, with a
+`SUPPRESSIONS` file asserting answers to questions nobody had been asked. Hard
+rule 4 admits no pragma until a person has answered why. `palette_config.go`
+and `width_tty.go` were built on top, so reverting is possible and not a clean
+revert.
 
-It then flagged this repository's own `secrets:` recipe, because
-`detect-secrets` reads the name as an assignment. **silo had already renamed the
-recipe to `leak-scan` at `12a5d4e`**, forty-eight minutes before this repository
-filed the collision as somebody else's problem, and the copy here was the only
-pre-rename one left. Taken at `d33e0c1`, and the pack brought `_verdict` with
-it.
+It needs a decision, not an edit. Keeping them adopts answers nobody gave.
+Dropping them returns 24 findings and the position above. The four
+`internal/render` files `suppressions` fails on are part of the same set.
 
-## Smaller things
+## The state file's mode is a question, not a finding
+
+gosec wants 0600 where the file is written 0644.
+`TestFileIsReadableByOtherPrograms` pins 0644 while citing FR-1.11b, which is
+about writing whole or not at all and says nothing of a mode, so the test
+asserts what no requirement states. silo's board reads the files as the same
+user, so 0600 would not break the one known reader. Tightening it drops an
+intent recorded nowhere else.
+
+## This repository has a remote the decision says it should not
+
+`origin` is `git@github.com:scriptedworld/infobot.git`, and the last commit
+known to be there is `de7d2de`. `docs/DECISIONS/the-remotes-are-off-until-the-documentation-is-ready.md`
+opens by saying no repository here has a remote, because the absence is what
+keeps the scrubbed history from surviving in a clone or a cache. Here that
+protection has already lapsed.
+
+`clone = false` in `dotfiles/repos.live.yaml` still holds; it governs whether
+the estate clones this tree, not whether a remote is configured in it.
+
+This needs a person: either the decision is spent and gets rewritten, or the
+remote is there by accident and the question is what it already published.
+Nothing is pushed until it is answered.
+
+## Requirement rows that disagree with the code
+
+**FR-5.12** reads "with the width unknown the bar is a fixed fifty cells", and
+`docs/SPEC.md`, "The width", repeats it. The code draws no bar at all (`fitted`
+in `internal/render/segments.go`), and `TestUnknownWidthDrawsNoBar` asserts that
+while citing FR-5.12. The comment beside the code says why: a bar is a claim
+about room, and with no width any length is a guess the host truncates. Which
+is intended needs a person. If it is the code, FR-5.12 is retired for a new row
+and the test and SPEC follow.
+
+**FR-4.3 and FR-4.4** name Python functions (`time.time`, `limit_segment`,
+`place_context`, `compose`). What they require survives in Go: the clock, the
+transcript root and the XDG paths are parameters, so sections 7 and 8 are
+tested against a fixture tree with nothing patched. Each needs restating under a
+new id against that property.
+
+## The layout is not monotonic as the pane narrows
+
+`Build` composes both rows, measures the meter row, and when it is over budget
+recomposes both rows compacted. Row one then has more slack than it had, so the
+cost can take back a form it gave up at a wider width, which FR-5.7 forbids.
+Compaction is a decision about row two and should not hand row one a budget.
+
+It holds today by where two thresholds sit, not by construction:
+`TestCostShortensThenDropsAsTheRowNarrows` passes with ten gauge cells and a
+margin of 3, and fails at eleven, twelve or thirteen cells, or at a margin of 8
+(at width 79). The gauge's percentage reading is declined below `readingMin`
+columns for the same reason.
+
+The obvious repair, keeping row one from the first composition and row two from
+the second, is unsafe: `placeContext` can move the context segment between the
+rows, so one row from each composition can duplicate or drop it.
+
+**It blocks raising the default margin.** At 3 the line renders 309 columns in
+a 313-column terminal and Claude Code cuts both rows with its own ellipsis; at
+8 both render complete. What eats the columns varies: the Remote Control
+indicator sits to the right of the status line when it is on, and neither the
+environment nor the payload says whether it is, so the margin cannot be
+derived. This machine sets 8 in `~/.config/infobot/layout.json`, and the
+default moves once the layout is monotonic.
+
+## The rows want describing in configuration
+
+Not scheduled. The palette and the margin already live in
+`~/.config/infobot/palette.json` and `layout.json`, each overlaying a compiled
+seed and falling back on anything malformed. They are separate on purpose: the
+palette follows the theme, and the margin is a fact about the terminal. The
+shape of each row would be next, a file naming the segments and their order.
+
+Every segment is already a function from the payload to a string, and
+`compose` only picks and orders them, so a template could drive that loop. What
+does not fall out is the fitting: the context bar takes what the row leaves, and
+the meter row compacts as a unit. A template has to say which segment absorbs
+the slack, which may be dropped and in what order, and that vocabulary does not
+exist. It follows the monotonicity fix above, or it encodes the defect in a file
+format.
+
+## The state file
+
+Its form is stated in `docs/SPEC.md`, "The state file". Two things constrain
+changing it.
+
+It has a reader outside this repository. silo's `bin/board` matches `session`,
+`written` and `context_percent` with patterns anchored at the line start,
+parses `written` with `date -d`, and treats a file older than 15 minutes as a
+stopped session. It joins to herdr by session id, since `cwd` follows the tool
+shell. FR-1.11o makes announcing a change to the form a requirement: adding a
+key is safe, and changing the shape is not.
+
+Its exact bytes are asserted here (FR-1.11p) by `TestCanonicalForm`, against the
+pack that emits them. Editing that test to make it pass is the only way the
+check comes undone.
+
+**A schema covers the other half.** `published-form/10` is `.questions`: the
+render already validates against the schema through wrench's pack and pays 1.8
+to 3.2 ms of the validator's package init per event, against the shape silo
+`c4ef97a` settled. The schema cannot replace the byte check: `1e+06` and
+`1000000` decode to the same number, so no schema reaches FR-1.11q's rule about
+the spelling.
 
 **A fixture carries this machine's username.** `internal/state/state_test.go`
-asserts an absolute home path as `cwd` twice. Not a secret, untidy
-for a published repository, and **not a one-line change**: FR-1.11p pins those
-bytes at both ends, so it needs wrench in the loop. Do it in the same pass as
-the link decision below.
+asserts an absolute home path as `cwd` twice. Not a secret, and untidy for a
+published repository. wrench keeps a fixture of these bytes too, so change both
+together.
 
-**This repository has a remote, and the decision document says it should not.**
-Checked 2026-09-21:
+## The wrench pack
 
-    git remote -v            origin  https://github.com/scriptedworld/infobot.git
-    git log -1 origin/main   de7d2de  2026-09-14
-    git rev-list --count origin/main..main    15
+Why the state file goes through it:
+`docs/DECISIONS/the-state-file-is-emitted-by-wrenchs-pack.md`.
 
-`clone = false` still holds, at `dotfiles/repos.live.yaml:21`, so that half of
-the old claim survives and the "no remote" half does not. The two are separate:
-the roster flag governs whether the estate clones this tree, and it says nothing
-about whether a remote is configured in it.
+**The announcement FR-1.11o obliges has not been made.** Linking changed three
+escape spellings: U+2028 from ` ` to `\L`, U+2029 from ` ` to `\P`,
+U+0085 from `\x85` to `\N`. Both spellings escape and round-trip, and only a
+value carrying one of those characters is affected, which a `cwd` or a model
+name does not. The board's patterns match keys, so the expected impact is none,
+but saying so to its owner is the announcement, and it has not been sent.
 
-`docs/DECISIONS/the-remotes-are-off-until-the-documentation-is-ready.md` opens
-by asserting that no repository in this estate has a remote, and argues the
-absence is what keeps the scrubbed history from surviving in a clone or a cache.
-A remote holding commits through 2026-09-14 means that protection already
-lapsed here, whatever the decision intended.
+**The pin names a commit wrench's remote no longer carries.** The history
+rewrite replanted `f34be14` as `8e9d199`, with the same tree, and only
+`8e9d199` is on wrench's `origin/main`. A build the module cache cannot serve
+has nothing to fetch. Re-pin once, after wrench rewrites its commit messages
+(`clank/tasks/wrench/prose-cleanup/50`), since that changes every SHA again.
+A tag on the Go pack would make this a version bump; that is open in wrench.
 
-**This needs the user, and no session should settle it.** Either the decision is
-spent and the document gets rewritten, or the remote is there by accident and
-the question is what it already published. Both answers are about intent, which
-is not something measurement reaches. The 15 unpushed commits stay unpushed
-until it is answered.
-
-**What was going to end it is the documentation**, and that part stands on its
-own: these projects go up once their documentation is clean and appropriate,
-which is what `documentation/05`, `/10` and `/20` are for.
-
-**`PACE_CONFIDENT` at 0.6 and the squared fade** were tuned by eye against one
-evening's numbers. Expect them to move; only normal use answers whether the
-middle of a window feels too quiet.
+To upgrade: wrench pushes; `go get github.com/scriptedworld/wrench/go@<commit>`;
+the suite passes; and the rebuilt `bin/statusline` is checked for something the
+new pack changed, which is how the upgrade is known to have happened. The last
+time, that was the string `WRENCH_ALLOW_EXTERNAL_SCHEMA_REFS` disappearing.
 
 ## Open questions
 
-Section 4 of `REQUIREMENTS.md` holds six, each with an id so closing one is a
-change to a row: one row against two, colouring the countdown, a staleness
-marker on the cost, the parameter budget, whether the state file should say what
-a session is DOING, and which kind of absence a missing context block is.
+Section 4 of `REQUIREMENTS.md` holds them, each with an id, so closing one is a
+change to a row. `state-readers/10` is the one with a task, in `.questions`.
+Its first question, whose a reader over every session's file would be, is
+partly answered already: silo's board is that reader and has an owner. What
+remains is where a session's intent comes from, and whose vocabulary it uses.
 
-The last is the task tracker, in `.questions`. **Its premise
-has since been settled and the task file has not caught up:** the board is
-silo's dispatch tooling, so a reader over every session's file already exists
-and has an owner. What remains is narrower, being where intent comes from and
-whose vocabulary it uses.
-
-## The cost recovers a form it already surrendered, at width 79
-
-Checked 2026-09-05. `TestCostShortensThenDropsAsTheRowNarrows` sweeps the width
-down and asserts the cost never returns to a fuller form as the pane narrows.
-With `margin` at 3 it passes. At 8 it fails at width 79, which went back to a
-fuller form than 80 had.
-
-**Latent, not introduced.** The margin change exposed it; the non-monotonicity
-is in the layout. It was not chased because the session was out of context, and
-the default was left at 3 rather than editing the test to accommodate it, which
-would have hidden the bug the test exists to catch.
-
-**This blocks raising the default margin**, which wants to happen: 3 truncates
-against a real terminal. See below.
-
-## The margin default is known wrong and cannot move yet
-
-Checked 2026-09-05, measured by screenshotting the terminal at 313 columns. At
-`margin = 3` the line renders 309 and Claude Code cuts BOTH rows with its own
-ellipsis, losing the end of the session id and the saved figure. At 8 both
-render complete.
-
-**What eats the columns is not a fixed quantity.** The Remote Control indicator
-renders to the RIGHT of the status line when it is on. Nothing in the
-environment or the payload reports whether it is, so the margin cannot be
-derived. Measured: no `CLAUDE_*` variable carries it, and the payload keys are
-`context_window`, `display_name`, `effort`, `id`, `level`, `model`,
-`rate_limits`, `session_id`, `workspace`.
-
-This machine sets 8 in `~/.config/infobot/layout.json`. The compiled default
-moves once the monotonicity above is fixed.
-
-## The rows want describing in configuration rather than in code
-
-Wanted, not scheduled, and not started.
-
-**Two pieces of it landed 2026-09-05**, both following `internal/pricing`: the
-palette is `~/.config/infobot/palette.json` and the margin is
-`~/.config/infobot/layout.json`. Both overlay a compiled seed and fall back on
-anything malformed, because a status line that fails shows nothing at all. They
-are separate files deliberately: the palette is a symlink into `g0bl1n.theme`
-and is the same wherever the theme is adopted, while the margin is a fact about
-the terminal and the host build in front of it. That split is the one to keep
-when more of the construction moves to configuration. The shape of each row would be lines in
-a configuration file naming the segments and their order, so changing what the
-status line shows stops being a code change.
-
-**Most of the way there already.** Every segment is a function taking the
-payload and returning a string, and `compose` does nothing but pick them and put
-them in order. A template naming `model`, `path`, `context`, `session` would
-drive that loop with no segment needing to change.
-
-**The width fitting is what does not fall out of it, and it is the whole
-difficulty.** Fitting is not a property of any segment: the context bar takes
-whatever the row has left, which means measuring every other segment first, and
-the meter row compacts as a unit when it is over budget. So a template has to
-say more than an order. It has to say which segment absorbs the slack, which
-may be dropped, and in what order things give way, and that vocabulary does not
-exist yet.
-
-Worth doing after the compaction coupling below is fixed rather than before.
-Describing the current fitting behaviour in configuration would be encoding a
-defect in a file format.
-
-## Compaction hands row one a budget it did not have
-
-`Build` composes both rows, measures the meter row, and recomposes BOTH rows
-compacted when it is over budget. Row one then has more slack than it did, so
-the cost segment can take back detail it had already given up as the pane
-narrows, which FR-5.7 forbids.
-
-**Compaction is a decision about row two and should not hand row one a budget
-it did not have.**
-
-It is latent rather than firing: the monotonicity holds at ten gauge cells by
-where two thresholds happen to sit, not by construction. Measured 2026-08-31 at
-`9bfbfdf`, with no other change, widening the gauge to eleven cells breaks
-`TestCostShortensThenDropsAsTheRowNarrows` and twelve and thirteen break it too.
-Nine and ten pass.
-
-The reading beside each gauge is therefore declined below `readingMin` columns,
-which is not a weaker claim but a refusal to make the claim where it cannot be
-held. Fixing the coupling is what would let that restriction go.
-
-The obvious repair, keeping row one from the first composition and taking only
-row two from the second, is unsafe as it stands: `placeContext` moves the
-context segment between the rows, so one row from each composition can duplicate
-or drop it.
-
-## Two things that constrain changes to the state file
-
-**It has a reader outside this repository.** silo's `bin/board` pulls
-`session`, `written` and `context_percent` from every session's file with
-patterns anchored at the line start on the quoted key and the single space after
-the colon, taking the number bare. It no longer reads `cwd`, which follows the
-tool shell rather than the repository a session holds, and joins to herdr by
-session id instead. `written` is parsed by `date -d`, so its ISO 8601 form with
-an offset is load-bearing, and a file older than 15 minutes reads as a stopped
-session.
-FR-1.11o makes announcing a change to that form a requirement rather than a
-courtesy. Adding a key is safe; changing the shape is not.
-
-**Its exact bytes are asserted here** (FR-1.11p), against the wrench pack that
-emits them. Editing `TestCanonicalForm` to make it pass is how that check comes
-undone, and it is the only way it can.
-
-## Two requirement rows describe an arrangement that has moved
-
-Found writing `docs/SPEC.md`, which cites every live row and could not cite
-these two as they stand. Each needs a new id, since a retired one never comes
-back.
-
-**FR-4.3 and FR-4.4 name Python functions.** `time.time`, `limit_segment`,
-`place_context` and `compose` were the pre-port arrangement. What they require
-survives and is worth keeping: the clock is a parameter and the transcript root
-and the XDG paths are too, so section 7 and section 8 are tested against a
-fixture tree with nothing patched. Restate them against that property instead of
-against a call graph.
-
-**FR-5.12 says the opposite of the code.** It reads "with the width unknown the
-bar is a fixed fifty cells", and `docs/SPEC.md`, "The width", repeats it. The
-code draws no bar at all (`fitted` in `internal/render/segments.go`), and
-`TestUnknownWidthDrawsNoBar` asserts that while citing FR-5.12. The comments give
-the reason: a bar is a claim about room, and with no width any length is a guess
-the host truncates. Which of the two is intended needs a person; if it is the
-code, FR-5.12 is retired for a new row and the test and SPEC follow.
-
-## The form is described in prose and gets a schema
-
-`published-form/10` is `.questions`. silo `c4ef97a` settled that a component
-running once per event has its schema enforced by its suite and a check on the
-artifact, where a long-lived one validates on write, because linking the
-validator costs package init on every event.
-`docs/LESSONS/a-difference-with-two-explanations-is-not-a-measurement-yet.md`
-carries how that cost was measured.
-
-**The render path is not untouched.** wrench's pack links the validator and
-validates every write, so the render pays 1.8 to 3.2 ms of the validator's init
-per event (inittrace, 2026-09-29). Whether to keep that is the task's first
-question.
-
-**A schema does not retire FR-1.11p.** `1e+06` and `1000000` decode to the same
-number, so nothing a schema states about the decoded structure reaches
-FR-1.11q's rule about the spelling. The schema and the byte fixture cover
-different halves.
-
-## The wrench link is taken, and the announcement it obliges is not made
-
-Why the state file goes through wrench, and why infobot builds against the pack
-that is pushed: `docs/DECISIONS/the-state-file-is-emitted-by-wrenchs-pack.md`.
-What is still open follows. The Go pack has no tags, so `go.mod` carries a
-pseudo-version.
-
-**The announcement FR-1.11o obliges has not been made.** Linking changed the
-emitted bytes on three escape spellings, U+2028 from `\u2028` to `\L`, U+2029
-from `\u2029` to `\P`, U+0085 from `\x85` to `\N`. Both spellings escape and
-both round-trip, and the change reaches only a value carrying one of those three
-characters, which a `cwd` or a model name does not. That makes it small, not
-exempt: FR-1.11o says a change to the published form is announced **before it
-lands rather than discovered by whatever breaks**, and it landed first.
-
-The reader is silo's `bin/board`, which matches anchored patterns against the
-quoted key. Those patterns are unaffected by an escape inside a value, so the
-expected impact is none, but "we checked and it is none" is the announcement,
-and nobody has sent it.
-
-**Upgrading the pack, as done at `f34be14`.** wrench pushed at `f34be14`;
-`go get github.com/scriptedworld/wrench/go@latest` took the pseudo-version
-`v0.0.0-20260904181338-f34be142d905`; the suite passes; the rebuilt
-`bin/statusline` no longer contains `WRENCH_ALLOW_EXTERNAL_SCHEMA_REFS`, which
-is how the upgrade is checkable rather than assumed. None of it is optional next
-time either.
-
-The schema infobot compiles carries no `$ref`, so wrench's reference change
-cannot reach it. That is a reason to expect the upgrade to be quiet, not a reason
-to skip it.
-
-**The pin names a commit wrench's remote no longer carries.** The history
-rewrite replanted `f34be14` as `8e9d199`. Checked 2026-09-28 from inside wrench:
-both have tree `186d753`, and only `8e9d199` is on `origin/main`. A build that
-cannot be served from the module cache has nothing to fetch.
-
-Re-pin once, after wrench rewrites its commit messages
-(`clank/tasks/wrench/prose-cleanup/50`, `.planning` on 2026-09-28), since that
-changes every SHA again. The upgrade steps above apply unchanged. A tag on the
-Go pack would turn this into a version bump; that is open in wrench's
-`NEXT_STEPS.md`.
-
-**wrench's decision document is spent.**
-`docs/DECISIONS/infobots-hand-emitted-yaml-is-a-considered-duplicate.md` resolved
-a duplication that this change ended. It is rewritten there rather than here, and
-the fixture it defended stays on its own merits.
+`PACE_CONFIDENT` at 0.6 and the squared fade were tuned by eye against one
+evening's numbers. Only normal use says whether the middle of a window is too
+quiet.

@@ -40,7 +40,7 @@ binary:
     git show cd24fb4^:infobot/render.py    and its four siblings
 
 Any working copy of that lives in `.ephemera/perf/`, which is gitignored, so a
-fresh clone re-derives it rather than finding it.
+fresh clone re-derives it.
 
 The first row is the corpus payload, with no cost segment; the second adds a
 pane width and a live session id. Why the gap between them is file search:
@@ -64,19 +64,20 @@ left: no checker in the gate reads the two shell shims.
     cmd/               two entry points, one delegating call each
     internal/          the program: render, state, usage, pricing, payload, num
     Justfile           the two-word interface; recipes in just/
+    scripts/           the entry-point coverage run and the render probe
     README.md          the front door: what it is, how to build and wire it
     LICENSE, NOTICE    Apache 2.0
     REQUIREMENTS.md    what must be true of it
-    NEXT_STEPS.md      what is not done
+    NEXT_STEPS.md      what is not done, and why
     docs/PROJECT.md    this file
+    docs/SPEC.md       how it is built, and the published forms
+    docs/DECISIONS/    why a choice was made
+    docs/LESSONS/      what a mistake cost
+    docs/PATTERNS/     techniques that carry to other projects
 
 `README.md` is for somebody arriving at the repository, and this file is for
 somebody working in it. Where they cover the same ground the README states the
-instruction and this file states the reason, so the install steps live there and
-why the shim is the committed half lives here.
-
-The committed half is the shim and the built half is not:
-`docs/DECISIONS/claude-code-is-pointed-at-a-shim-not-a-binary.md`.
+instruction and the reason lives in `docs/`.
 
 ## How it is invoked
 
@@ -85,7 +86,7 @@ Claude Code's settings file names it by absolute path:
     "statusLine": { "type": "command", "command": ".../infobot/bin/infobot",
                     "refreshInterval": 10 }
 
-That file stays in silo, because it is Claude Code's configuration rather than
+That file stays in silo, because it is Claude Code's configuration, not
 infobot's. infobot does not read it.
 
 ## Two machines run it, and both stay on the latest commit
@@ -117,27 +118,15 @@ Two jigs, both adopted from toolbox as symlinks. `common-quality` gives
 complexity, traceability, suppressions and secrets; `go-std-quality` gives
 build, format, lint, tests, tidy, vet and vulnerabilities.
 
-**bolt exits 0 whenever the run completed, whatever the tools concluded**, so
-every call passes `--result-to-exitcode` and the verdict reaches the shell. The
-authority is `success` in the `result.yaml` a run names.
+bolt exits 0 whenever a run completed, whatever the tools concluded, so every
+call goes through `_verdict` in `just/base.just`, which reads `success` from the
+`result.yaml` the run names. How the recipes are layered is
+`docs/PATTERNS/the-two-word-interface.md`.
 
-**The entry points are measured, not excluded**, which is hard rule 5. They are
-one delegating call each and no test process reaches them, so
-`scripts/cover-entrypoint.sh` builds both with `go build -cover`, runs them, and
-merges the profile. Coverage is judged per file at 80%.
+Coverage is judged per file at 80%, and the two entry points are measured, not
+excluded, which is hard rule 5: `docs/PATTERNS/measuring-an-entry-point-with-go-build-cover.md`.
 
-One task is red: `lint`. 152 issues, of which 130 are escalated to toolbox as
-config decisions and 22 are infobot's own, every one of them a gosec finding
-that cannot be settled by an edit. Rule 4 admits no pragma without a person
-having answered first, so they stay red. The task that adopts the Go jig
-carries them.
-
-**Measure that uncapped or it is a floor.** golangci-lint truncates its own
-output by default, at 50 per linter and 3 per repeated message, and neither the
-shared config nor the jig turns it off. The same tree reads 124 capped and 187
-uncapped, and which findings are hidden shifts as the tree changes, so a fix can
-look like a regression. `--max-issues-per-linter 0 --max-same-issues 0`, filed
-for toolbox as `the-lint-task-reports-a-capped-count`.
+What is red, and why: `NEXT_STEPS.md`, "The gate is red".
 
 ## Perishable: the pricing table
 
@@ -166,15 +155,13 @@ the model reads at `cache_read`, which doubles or quadruples the largest line
 on those sessions. A model missing from the table leaves the cost segment blank
 on any session that ran only that model.
 
-**The file is the only copy.** Nothing is compiled in, so a price change is an
-edit to the file and never a rebuild. A host with no file, or one missing
-`rates`, `cache_read` or `cache_write`, renders with no cost segment. That makes
-the coordinator's refresh the thing that keeps the segment alive, on every host
-the status line runs on (see "Two machines run it").
+The file is the only copy, and without a usable one the cost segment is left
+out (FR-8.27, FR-8.28), so the coordinator's refresh is what keeps the segment
+alive.
 
 ## What is decided, and what is open
 
-Done rather than decided: Go. The port landed on 2026-08-28 and the Python is
+Done, not merely decided: Go. The port landed on 2026-08-28 and the Python is
 gone. It reads 17 of 18 identical against the golden corpus the Python
 produced, and the eighteenth differs on purpose.
 
@@ -197,7 +184,6 @@ Decided: two rows, not three. `docs/DECISIONS/two-rows-not-three.md`.
 Decided: the state file is written through wrench's pack.
 `docs/DECISIONS/the-state-file-is-emitted-by-wrenchs-pack.md`.
 
-Open: section 4 of `REQUIREMENTS.md`. Each open question is a requirement with
-an id rather than a line of prose, so closing one is a test or a decision
-against a row that exists. FR-4.2, which language and when, closed on 2026-08-28
-and is in the Retired table; the rest stand.
+Open: section 4 of `REQUIREMENTS.md`, each question a row with an id, so
+closing one is a test or a decision against a row that exists. What is not done
+is `NEXT_STEPS.md`.

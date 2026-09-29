@@ -56,7 +56,8 @@ which also retires FR-1.11n's two-repository contract.
 
 Go relocates the hazard rather than retiring it. An import that may not resolve
 becomes a build that may not have run or a symlink that may dangle, and both
-fail identically: a blank line nobody is told about.
+fail identically: a blank line nobody is told about. The answer is
+`docs/PATTERNS/a-shim-reports-its-own-binarys-absence.md`.
 
 Measured 2026-08-26, `~/bin/bolt` dangles on this machine, which is why infobot's own
 gate is run by invoking its checkers directly rather than through `bolt`. The
