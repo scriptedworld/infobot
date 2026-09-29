@@ -268,8 +268,8 @@ session.
 FR-1.11o makes announcing a change to that form a requirement rather than a
 courtesy. Adding a key is safe; changing the shape is not.
 
-**It is pinned against wrench by a fixture at each end, not by shared code.**
-FR-1.11p. Editing `TestCanonicalForm` to make it pass is how that pin comes
+**Its exact bytes are asserted here** (FR-1.11p), against the wrench pack that
+emits them. Editing `TestCanonicalForm` to make it pass is how that check comes
 undone, and it is the only way it can.
 
 ## Two requirement rows describe an arrangement that has moved
@@ -295,18 +295,17 @@ code, FR-5.12 is retired for a new row and the test and SPEC follow.
 
 ## The form is described in prose and gets a schema
 
-`published-form/10` is `.ready`. Raised from silo, which reads the form with
-anchored greps and wanted a machine-checkable contract, and settled by a change
-to the estate decision at silo `c4ef97a`: a component running once per event has
-its schema enforced by its suite and a check on the artifact, where a long-lived
-one validates on write.
-
-**The render path is untouched, and the measurement is why.** Validating nine
-keys is 10 microseconds, but linking the validator costs 6.2ms of package init
-in a process that starts once per event, so the rule read literally was 56% on
-top of an 11.8ms render. `.ephemera/schema-cost/` regenerates it and
+`published-form/10` is `.questions`. silo `c4ef97a` settled that a component
+running once per event has its schema enforced by its suite and a check on the
+artifact, where a long-lived one validates on write, because linking the
+validator costs package init on every event.
 `docs/LESSONS/a-difference-with-two-explanations-is-not-a-measurement-yet.md`
-carries how the number was got wrong first.
+carries how that cost was measured.
+
+**The render path is not untouched.** wrench's pack links the validator and
+validates every write, so the render pays 1.8 to 3.2 ms of the validator's init
+per event (inittrace, 2026-09-29). Whether to keep that is the task's first
+question.
 
 **A schema does not retire FR-1.11p.** `1e+06` and `1000000` decode to the same
 number, so nothing a schema states about the decoded structure reaches
@@ -315,16 +314,10 @@ different halves.
 
 ## The wrench link is taken, and the announcement it obliges is not made
 
-**Landed 2026-09-03.** `internal/state/state.go` imports
-`github.com/scriptedworld/wrench/go`, writes through `wrench.SaveYAMLFile`, and
-the 133-line hand emitter is deleted. `gate/05` was named here as the blocker
-and was never the blocker: `go get github.com/scriptedworld/wrench/go@latest`
-resolves, and `go.mod` carries the dependency at a pseudo-version because the Go
-pack has no tags, which is a different problem and still open.
-
-FR-1.11p is rewritten: one emitter and a conformance check, rather than two
-emitters pinned by two fixtures. That is the better of the two, and it is what
-this section predicted when it was still a proposal.
+Why the state file goes through wrench, and why infobot builds against the pack
+that is pushed: `docs/DECISIONS/the-state-file-is-emitted-by-wrenchs-pack.md`.
+What is still open follows. The Go pack has no tags, so `go.mod` carries a
+pseudo-version.
 
 **The announcement FR-1.11o obliges has not been made.** Linking changed the
 emitted bytes on three escape spellings, U+2028 from `\u2028` to `\L`, U+2029
@@ -339,19 +332,7 @@ quoted key. Those patterns are unaffected by an escape inside a value, so the
 expected impact is none, but "we checked and it is none" is the announcement,
 and nobody has sent it.
 
-**This repository does not build against the wrench beside it.** `go.mod` names
-`github.com/scriptedworld/wrench/go` at a pseudo-version fetched from GitHub and
-there is no `replace`, so the local checkout is invisible here: a rebuilt
-`bin/statusline` on 2026-09-04 still contained `WRENCH_ALLOW_EXTERNAL_SCHEMA_REFS`,
-a string wrench had removed that morning, because the published pack still has
-it.
-
-That is the right default and it has an ordering consequence worth writing down:
-**infobot is verified against the wrench that is pushed, not the one that is
-written.** Every green run here between 2026-09-03 and wrench landing was a run
-against the older pack.
-
-**Done 2026-09-04, in that order.** wrench pushed at `f34be14`;
+**Upgrading the pack, as done at `f34be14`.** wrench pushed at `f34be14`;
 `go get github.com/scriptedworld/wrench/go@latest` took the pseudo-version
 `v0.0.0-20260904181338-f34be142d905`; the suite passes; the rebuilt
 `bin/statusline` no longer contains `WRENCH_ALLOW_EXTERNAL_SCHEMA_REFS`, which

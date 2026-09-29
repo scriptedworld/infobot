@@ -57,27 +57,8 @@ sample.
 
 ## Why it is its own repository
 
-It came out of `silo`, which holds the standing rules, the settings, the hooks
-and the written record: things a person reads. infobot is a program, with its
-own requirements, its own gate and its own tests. Keeping it in silo showed:
-silo's gate never read `bin/statusline` at all, because lizard selects by file
-extension and the script had none.
-
-**That gap is still open here, and the split did not close it.** What moved was
-which gate runs, not what it can read. Every checker `just checks` invokes
-selects by Go extension, so the 77 lines of shell in `bin/infobot` and
-`bin/forget-session` are read by none of them. Measured 2026-08-28: lizard read
-26 of 26 `.go` files and 0 of 2 shims; `suppression-register.py:87` globs
-`*.go`.
-
-**Their behaviour is tested even so**, and the distinction matters. Five cases in
-`cmd/statusline/shim_test.go` execute the committed shim and carry `COVERS:`
-marks for FR-1.13 both ways, FR-3.8, FR-1.9 and FR-1.11f. What is unread is the
-text, so what is genuinely exposed is a suppression pragma in shell going
-unregistered, and any defect on a path those five do not walk.
-
-It is tracked, blocked on toolbox's shell jig, and
-neither `shellcheck` nor `shfmt` is installed on this machine yet.
+`docs/DECISIONS/infobot-is-its-own-repository.md`, including the gap the split
+left: no checker in the gate reads the two shell shims.
 
 ## Layout
 
@@ -99,10 +80,8 @@ somebody working in it. Where they cover the same ground the README states the
 instruction and this file states the reason, so the install steps live there and
 why the shim is the committed half lives here.
 
-**The committed half is the shim and the built half is not**, which is FR-1.13
-rather than a packaging preference. Claude Code names `bin/infobot` in
-`settings.json`, and a binary that has not been built is a blank line nobody is
-told about. The shim is what turns that silence into a row saying so.
+The committed half is the shim and the built half is not:
+`docs/DECISIONS/claude-code-is-pointed-at-a-shim-not-a-binary.md`.
 
 ## How it is invoked
 
@@ -182,33 +161,8 @@ them and runs the declaration rather than inventing one, so restructuring this
 block changes somebody else's behaviour and gets announced the way FR-1.11o's
 form does.
 
-It said one day until 2026-08-28. Three is the honest number rather than a
-loosening: the file was found five days stale that day, so the one-day figure
-had been violated by 400% and was aspirational. A window that is actually
-honoured is worth more than a shorter one that is not, and the refresh needs a
-person, which is what makes a tight window expensive.
-
-The cost of the window is bounded and small. The figure is a counterfactual on a
-subscription, what these prompts would have cost through the API, so a wrong
-rate misprices a number nobody is billed for. Measured 2026-08-28: re-reading
-after five days changed nothing at all, all fifteen models and all three cache
-multipliers identical.
-
-They drift, and not only on a schedule. Sonnet 5 launched at an introductory
-$2/$10 with a rise to $3/$15 booked for September; the rise was then cancelled
-and the introductory rate became the standard one. **That is the case for a
-person doing this rather than a fetch**, and it is not an argument about
-frequency: the announcement of a cancelled rise sat beside the table, so a
-refresh reading only the table could not have told a cancelled increase from an
-unapplied one at any interval.
-
-Nothing here refreshes it, and the status line cannot: it is a formatter that
-runs on every event and makes no network call. It sits with the coordinator, in
-`/mc`, rather than with `/grok` where this was first filed. The reason is
-contention: `/grok` runs at the start of every session and after every clear
-across every project, so a refresh there points a dozen sessions at one file and
-one web page at once, none aware of the others and none holding a lock. There is
-one coordinator, so it is the single writer.
+Why a person refreshes it, why the coordinator, and why three days:
+`docs/DECISIONS/the-rate-table-is-refreshed-by-a-person.md`.
 
 Each rate is `[input, output]` in dollars per million tokens. A model whose
 cache reads are not a tenth of input carries its own multiplier as a third
@@ -253,12 +207,8 @@ answers to. A case is therefore the cheapest render available and not a
 representative one. Timing the binary against it measures the render with the
 segment that reads files left out.
 
-Decided: the binary is built inside this repository and Claude Code reaches it
-through the committed shim, rather than through a symlink in `dotfiles/bin`
-which is what `bolt`, `converge` and `update` do. The difference is FR-1.13. A
-symlink cannot report its own target's absence, and neither can a missing
-binary, so the thing `settings.json` names has to be something that is always
-there and can look.
+Decided: Claude Code reaches the binary through the committed shim.
+`docs/DECISIONS/claude-code-is-pointed-at-a-shim-not-a-binary.md`.
 
 Decided: Go is the only implementation. Zig and two generations of C++ were
 built beside it and are gone; C++ went on 2026-09-25 with wrench's C++ pack, which
@@ -266,12 +216,10 @@ it would have taken its structured files from.
 `docs/DECISIONS/go-stays-deployed-while-cpp-clears-its-gate.md` has the figures
 and the reasons.
 
-Decided: two rows, not three. A third for exceptional states, a stale rate table
-or a promotion in effect, was declined. A row that appears only when there is
-something to say moves the prompt every time it comes and goes, and one always
-there spends the space on nothing most of the time. Those states belong on the
-segment already present, the way an unpriced model appends a plus to say the
-figure is a floor.
+Decided: two rows, not three. `docs/DECISIONS/two-rows-not-three.md`.
+
+Decided: the state file is written through wrench's pack.
+`docs/DECISIONS/the-state-file-is-emitted-by-wrenchs-pack.md`.
 
 Open: section 4 of `REQUIREMENTS.md`. Each open question is a requirement with
 an id rather than a line of prose, so closing one is a test or a decision
