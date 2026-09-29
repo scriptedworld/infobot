@@ -32,10 +32,9 @@ catch.
 
 ## What it costs
 
-The shim is one `readlink` and one `exec` per render. It has to resolve
-symlinks before looking for the binary, because a shim reached through a link
-otherwise finds itself and execs itself forever; the comment at the top of
-`bin/infobot` records that failure.
+The shim is one `readlink` and one `exec` per render. How it is built, including
+why it resolves its own symlinks first, is
+`docs/PATTERNS/a-shim-reports-its-own-binarys-absence.md`.
 
 The shell is read by no checker in the gate, since every checker selects by
 file extension. Its behaviour is tested by `cmd/statusline/shim_test.go`, which

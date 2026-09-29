@@ -48,7 +48,8 @@ measuring.
 
 ## What to do instead
 
-Classify, then count the classes. For this directory that means, for each id:
+Classify, then count the classes; the general method is
+`docs/PATTERNS/classify-then-count.md`. For this directory that means, for each id:
 does a transcript exist, is its newest file older than the hook, and was it
 written recently enough to belong to something still running.
 

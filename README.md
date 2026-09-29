@@ -73,12 +73,10 @@ That produces `bin/statusline` and `bin/forget`. Both are gitignored. What is
 committed is the pair of shell shims beside them, `bin/infobot` and
 `bin/forget-session`, which resolve symlinks, find the binary and exec it.
 
-**The shim is the thing you point Claude Code at, never the binary.** A binary
-that has not been built and a symlink that dangles both fail as a blank line
-nobody is told about, and a status line has no other tell: it is drawn or it is
-not, and a blank one is indistinguishable from a quiet session. The shim turns
-that silence into a row saying what to run. That is FR-1.13, and it is why the
-committed half is the shim and the built half is not.
+**The shim is the thing you point Claude Code at, never the binary.** Without a
+built binary it prints a row saying what to run, where the binary alone would
+leave a blank line nobody is told about (FR-1.13,
+`docs/PATTERNS/a-shim-reports-its-own-binarys-absence.md`).
 
 ## Install
 
@@ -197,6 +195,7 @@ it, and the gate fails a test that cites nothing or cites a requirement
     docs/PROJECT.md    the project detail: layout, gate, what is decided
     docs/DECISIONS/    why a choice was made
     docs/LESSONS/      what a mistake cost and how to avoid repeating it
+    docs/PATTERNS/     techniques used here that carry to other projects
 
 Work is tracked outside this repository, one directory per task, with state
 carried as the directory's suffix.
