@@ -27,9 +27,16 @@ func isolate(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	// Main reads palette.json and layout.json, and a test expects the seed.
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	// No host to ask, so the width is whatever the caller passes.
 	t.Setenv("TMUX", "")
 	t.Setenv("HERDR_PANE_ID", "")
+}
+
+// wideGauge is a rate-limit window drawn in full, its number beside the bar.
+func wideGauge(label string, span int) render.Gauge {
+	return render.Gauge{Label: label, Span: span, Reading: true}
 }
 
 func window(pct float64) map[string]any {
@@ -330,7 +337,7 @@ func TestRowsFitInsideTheBudget(t *testing.T) {
 	}
 }
 
-// COVERS FR-3.6, FR-5.12 | edge
+// COVERS FR-3.6 | edge
 //
 // The bar is DROPPED rather than clamped when the row has no room for it, and
 // the counts stay either way.
@@ -387,21 +394,19 @@ func TestBarShrinksWithThePaneThenGoesWhole(t *testing.T) {
 
 // COVERS FR-3.3, FR-5.12 | edge
 //
-// With the width unknown there is no bar at all. A bar is a claim about how
-// much room there is, and with nothing to fit against, any length is a guess
-// the host then truncates. The numbers say the same thing at a known cost, so
-// the row stays short and left-aligned.
-func TestUnknownWidthDrawsNoBar(t *testing.T) {
+// With the width unknown there is nothing to fit the bar against, so it is a
+// fixed fifty cells, and the counts are printed beside it as always.
+func TestUnknownWidthDrawsAFiftyCellBar(t *testing.T) {
 	isolate(t)
 	t.Setenv("NO_COLOR", "1")
 	rows := render.Build(payload.Map{
 		"context_window": window(50),
 	}, "/home/me", 0, clock)
-	if got := strings.Count(rows[0], "▰") + strings.Count(rows[0], "▱"); got != 0 {
-		t.Errorf("bar is %d cells, want none when the width is unknown", got)
+	if got := strings.Count(rows[0], "▰") + strings.Count(rows[0], "▱"); got != 50 {
+		t.Errorf("bar is %d cells, want 50 when the width is unknown", got)
 	}
 	if !strings.Contains(rows[0], "50%") {
-		t.Errorf("the percentage must survive when the bar does not: %q", rows[0])
+		t.Errorf("the percentage is missing: %q", rows[0])
 	}
 }
 
@@ -411,9 +416,9 @@ func TestUnknownWidthDrawsNoBar(t *testing.T) {
 // token counts appear there.
 func TestLimitSegmentShowsNoTokenCounts(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
-	got := render.LimitSegment("⏳ 5hr", payload.Map{
+	got := render.LimitSegment(wideGauge("⏳ 5hr", 5*3600), payload.Map{
 		"used_percentage": 34.0, "resets_at": at(3600),
-	}, 5*3600, false, true, clock)
+	}, clock)
 	if strings.Contains(got, "/") || strings.Contains(got, "consumed") {
 		t.Errorf("counts appeared in a window that carries none: %q", got)
 	}
@@ -425,7 +430,7 @@ func TestLimitSegmentShowsNoTokenCounts(t *testing.T) {
 // COVERS FR-1.3 | negative
 func TestLimitSegmentDroppedWithoutAPercentage(t *testing.T) {
 	for _, w := range []payload.Map{nil, {}, {"resets_at": at(3600)}} {
-		if got := render.LimitSegment("⏳ 5hr", w, 5*3600, false, true, clock); got != "" {
+		if got := render.LimitSegment(wideGauge("⏳ 5hr", 5*3600), w, clock); got != "" {
 			t.Errorf("LimitSegment(%v) = %q, want empty", w, got)
 		}
 	}
@@ -437,8 +442,11 @@ func TestLimitSegmentDroppedWithoutAPercentage(t *testing.T) {
 // drawing before anything is cut.
 func TestCompactGaugesReplaceBarsWhenTheRowIsTight(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
-	wide := render.LimitSegment("⏳ 5hr", payload.Map{"used_percentage": 34.0}, 5*3600, false, true, clock)
-	tight := render.LimitSegment("⏳ 5hr", payload.Map{"used_percentage": 34.0}, 5*3600, true, true, clock)
+	spent := payload.Map{"used_percentage": 34.0}
+	gauge := wideGauge("⏳ 5hr", 5*3600)
+	wide := render.LimitSegment(gauge, spent, clock)
+	gauge.Compact = true
+	tight := render.LimitSegment(gauge, spent, clock)
 	if !strings.Contains(wide, "▰") {
 		t.Errorf("wide form has no gauge: %q", wide)
 	}

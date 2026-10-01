@@ -10,30 +10,6 @@ import (
 	"github.com/scriptedworld/infobot/internal/state"
 )
 
-// margin is what Claude Code keeps for itself, so the pane width is not the
-// budget.
-//
-// 3 is the default and is too small on this machine. It assumes the host
-// indents two columns and keeps one at the right. At a real 313 columns the
-// line rendered 309 and Claude Code cut both rows with its own ellipsis, losing
-// the end of the session id and the saved figure. 8 renders complete.
-//
-// The default stays 3, deliberately. Raising it breaks
-// TestCostShortensThenDropsAsTheRowNarrows at width 79, which asserts the cost
-// never recovers a form it has already surrendered as the pane narrows. That
-// is a real non-monotonicity in the layout, latent at 3 and
-// exposed at 8, and papering over it by editing the test would hide a bug the
-// test exists to catch. Filed rather than fixed; this machine sets 8 in
-// layout.json, which is what configuration is for.
-//
-// A var, not a const: ~/.config/infobot/layout.json overrides it. The number is
-// a claim about the HOST'S CHROME, which this process cannot measure from the
-// inside, and being wrong by a column truncates every render. Configuration is
-// what lets it be dialled against what is actually drawn rather than rebuilt
-// against a guess, and it is why the wrong value survived as long as it did.
-// See layout_config.go.
-var margin = 3 //nolint:gochecknoglobals // overridden by layout.json at startup
-
 const (
 	brain     = "🧠"
 	hourglass = "⏳"
@@ -72,8 +48,8 @@ const (
 )
 
 const (
-	// barFallback is used when the width is unknown, so there is nothing to
-	// subtract from and 50 is a chosen number rather than a fit.
+	// barFallback is the context bar when the width is unknown, so there is
+	// nothing to subtract from and 50 is a chosen number rather than a fit.
 	barFallback = 50
 	// barMin is the width below which the bar is DROPPED rather than clamped
 	// to. Clamping overflows: in a 120-column pane a long path leaves six
@@ -114,11 +90,11 @@ const (
 	paceMinElapsed = 0.01
 )
 
-func sep() string {
+func (p palette) sep() string {
 	if plain() {
 		return " " + sepGlyph + " "
 	}
-	return " " + sepColour + sepGlyph + reset + " "
+	return " " + p.sepFG + sepGlyph + reset + " "
 }
 
 // Bar is a proportional bar whose fill fades along the ramp, cell by cell.
@@ -134,7 +110,13 @@ func sep() string {
 // A tint overrides the fade and paints every filled cell one colour. The rate
 // limit gauges use it to mean something the fade cannot: not where each cell
 // sits, but whether the whole reading is a problem.
+//
+// Bar draws in the seed palette; the rows Main prints use the configured one.
 func Bar(pct float64, cells int, tint string) string {
+	return seedPalette().bar(pct, cells, tint)
+}
+
+func (p palette) bar(pct float64, cells int, tint string) string {
 	pct = num.Clamp(pct, 0, 100)
 	if cells <= 0 {
 		return ""
@@ -151,12 +133,12 @@ func Bar(pct float64, cells int, tint string) string {
 	var out strings.Builder
 	held := ""
 	for i := 0; i < cells; i++ {
-		style, glyph := emptyColour, empty
+		style, glyph := p.emptyFG, empty
 		if i < full {
 			glyph = filled
 			style = tint
 			if style == "" {
-				style = ramp(float64(i+1) / float64(cells) * 100)
+				style = p.ramp(float64(i+1) / float64(cells) * 100)
 			}
 		}
 		if style != held {
@@ -177,7 +159,7 @@ func Bar(pct float64, cells int, tint string) string {
 // Drawn in the same dimcyan as the bar's empty cells rather than in its own
 // colour, so the frame stays one voice with the meter and neither competes with
 // the numbers.
-func rail(rows []string) []string {
+func (p palette) rail(rows []string) []string {
 	if len(rows) == 0 {
 		return rows
 	}
@@ -201,7 +183,7 @@ func rail(rows []string) []string {
 		if plain() {
 			out[i] = leads[i] + row
 		} else {
-			out[i] = emptyColour + leads[i] + reset + row
+			out[i] = p.emptyFG + leads[i] + reset + row
 		}
 	}
 	return out
@@ -282,7 +264,13 @@ func join(parts ...string) string {
 // their number. That asymmetry is deliberate: the context window is watched
 // constantly while working and the other two are infrequent details, so a wider
 // block of colour makes the loud one loud.
+//
+// ContextSegment draws in the seed palette; Main uses the configured one.
 func ContextSegment(cw payload.Map, cells int) string {
+	return seedPalette().contextSegment(cw, cells)
+}
+
+func (p palette) contextSegment(cw payload.Map, cells int) string {
 	// One formula, shared with the file the state package leaves behind, so a
 	// bar reading 56% cannot sit beside a file saying something else.
 	window, ok := state.Figures(cw)
@@ -293,13 +281,13 @@ func ContextSegment(cw payload.Map, cells int) string {
 	// rather than as a number to be found inside the picture of it.
 	counts := fmt.Sprintf("%s/%s (%.0f%% consumed)",
 		Tokens(window.Used), Tokens(window.Size), window.Percent)
-	return join(brain, Bar(window.Percent, cells, ""), colour(window.Percent, counts))
+	return join(brain, p.bar(window.Percent, cells, ""), p.colour(window.Percent, counts))
 }
 
 // rowWidth is the columns a row costs: its parts joined the way they will be
 // joined, so the separators between them count, and the rail it hangs off.
-func rowWidth(parts []string) int {
-	return VisibleWidth(strings.Join(parts, sep())) + VisibleWidth(railTop)
+func (p palette) rowWidth(parts []string) int {
+	return VisibleWidth(strings.Join(parts, p.sep())) + VisibleWidth(railTop)
 }
 
 // fitted is the context segment with its bar filling whatever the row leaves
@@ -311,28 +299,25 @@ func rowWidth(parts []string) int {
 //
 // One pass, because the rest of the segment is the same width whatever the bar
 // does: one more cell is one more column and nothing else moves.
-func fitted(cw payload.Map, others []string, at, width int) string {
+func (l look) fitted(cw payload.Map, others []string, at, width int) string {
 	if width == 0 {
-		// No bar when the width is unknown. A bar is a claim about how much
-		// room there is, and with nothing to fit against, any length is a
-		// guess that the host then truncates. The numbers say the same thing
-		// and cost a known handful of columns, so the row stays short and
-		// left-aligned instead of being cut.
-		return ContextSegment(cw, 0)
+		// Nothing to fit against, so the bar is a fixed length (FR-5.12)
+		// rather than a fit.
+		return l.contextSegment(cw, barFallback)
 	}
 	// The bar also brings the space that separates it from the counts, which
 	// the bar-less form measured here does not have.
-	bare := ContextSegment(cw, 0)
+	bare := l.contextSegment(cw, 0)
 	row := make([]string, 0, len(others)+1)
 	row = append(row, others[:at]...)
 	row = append(row, bare)
 	row = append(row, others[at:]...)
 
-	spare := width - margin - rowWidth(row) - 1
+	spare := width - l.margin - l.rowWidth(row) - 1
 	if spare < barMin {
 		return bare
 	}
-	return ContextSegment(cw, spare)
+	return l.contextSegment(cw, spare)
 }
 
 // elapsedFraction is how far through the window we are, and whether that is
@@ -351,9 +336,6 @@ func elapsedFraction(resetsAt float64, span int, now time.Time) (float64, bool) 
 // LimitSegment is a gauge and a countdown. No token counts exist for these
 // windows.
 //
-// label carries the emoji and the name together because they are one fixed
-// string at both call sites.
-//
 // The percentage is drawn AND printed. The bar is the same one the context
 // window uses, on the same ramp, so 80% is the same shade wherever it appears
 // and one glance reads all three meters.
@@ -371,7 +353,25 @@ func elapsedFraction(resetsAt float64, span int, now time.Time) (float64, bool) 
 // It is deliberately UNCOLOURED. It wants its own scale and probably an
 // inverted one, running TOWARD green as it nears zero, since a reset getting
 // closer is good news. Undecided, so left plain rather than guessed at.
-func LimitSegment(label string, window payload.Map, span int, compact, reading bool, now time.Time) string {
+//
+// LimitSegment draws in the seed palette; Main uses the configured one.
+func LimitSegment(g Gauge, window payload.Map, now time.Time) string {
+	return seedPalette().limitSegment(g, window, now)
+}
+
+// Gauge is one rate-limit window as the row draws it.
+//
+// Label carries the emoji and the name together because they are one fixed
+// string at both call sites. Compact replaces the bar with the number; Reading
+// prints the number beside the bar, and is decided from the width alone.
+type Gauge struct {
+	Label   string
+	Span    int
+	Compact bool
+	Reading bool
+}
+
+func (p palette) limitSegment(g Gauge, window payload.Map, now time.Time) string {
 	if window == nil {
 		return ""
 	}
@@ -383,23 +383,23 @@ func LimitSegment(label string, window payload.Map, span int, compact, reading b
 	// Concern where it can be worked out, raw spend where it cannot: with no
 	// reset time there is no window position, so the gauge falls back to
 	// meaning what the context meter's colour means.
-	tint := ramp(pct)
-	if elapsed, ok := elapsedFraction(resetsAt, span, now); ok {
-		tint = paceTint(pct, elapsed)
+	tint := p.ramp(pct)
+	if elapsed, ok := elapsedFraction(resetsAt, g.Span, now); ok {
+		tint = p.paceTint(pct, elapsed)
 	}
 	// The `@` is inside the tint, so the reading is one coloured token rather
 	// than a plain sigil against a coloured number. It carries the same colour
 	// as the bar it stands beside, which is what says the two mean one thing.
 	number := tinted(fmt.Sprintf("@%.0f%%", pct), tint)
-	gauge := Bar(pct, windowCells, tint)
-	if reading {
+	gauge := p.bar(pct, windowCells, tint)
+	if g.Reading {
 		// Two spaces, not one. The bar's last cell and the number mean the same
 		// thing and are the same colour, so a single space reads as one run and
 		// the eye does not find the boundary.
 		gauge += "  " + number
 	}
-	if compact {
+	if g.Compact {
 		gauge = number
 	}
-	return join(label, gauge, Countdown(resetsAt, now))
+	return join(g.Label, gauge, Countdown(resetsAt, now))
 }

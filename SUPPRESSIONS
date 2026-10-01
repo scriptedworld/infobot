@@ -7,36 +7,36 @@ silenced check and nobody remembering why.
 
 ## S-1, package-level tables Go cannot declare immutable
 
-**Twelve marks, one rule, five files.** The two on the compiled rate tables in
-`internal/pricing/pricing.go` went with the tables on 2026-09-28, when the rate
-file became the only source.
+**Five marks, one rule, four files.** The two on the compiled rate tables in
+`internal/pricing/pricing.go` went with the tables when the rate file became the
+only source. The seven on the palette went when the colours became a value
+passed down from `Main`, since palette.json overwrote them and they were not
+read-only after all.
 
-    internal/render/palette.go     ×7   //nolint:gochecknoglobals    the colours and the pace stops
     internal/render/render_test.go       //nolint:gochecknoglobals    the fixed clock
     internal/state/state.go         ×2   //nolint:gochecknoglobals    the input key list, and the compiled schema
     internal/state/state_test.go         //nolint:gochecknoglobals    the fixed timestamp
     internal/usage/usage.go              //nolint:gochecknoglobals    the counter names
 
 **The rule is "no package-level mutable state" and none of these is mutable.**
-Every one is built once at initialisation and only read afterwards: six colours
-and a list of pace stops, the keys an input payload may
-carry, a `sync.OnceValues` that compiles the status schema on first use, the
-names of the counters, and two fixed values that make a test deterministic.
+Every one is built once at initialisation and only read afterwards: the keys an
+input payload may carry, a `sync.OnceValues` that compiles the status schema on
+first use, the names of the counters, and two fixed values that make a test
+deterministic.
 
 **Go has no way to say so.** `const` reaches strings, numbers and booleans, and
 none of these is one: they are maps, slices and structs. So the language offers
 package-level `var` and nothing else, and the linter reads the only construct
-available as the thing it warns about. That is the gap being registered — not a
-disagreement about whether mutable global state is bad.
+available as the thing it warns about. That is the gap being registered, and
+not a disagreement about whether mutable global state is bad.
 
 **Why marks rather than a config change.** toolbox's shared golangci
 configuration already scopes this linter off for `styles?.go`, on the argument
 that Lip Gloss styles are conventionally package-level and confining them to
-their own file is good practice independently. `internal/render/palette.go` is
-that case exactly and could have joined the path pattern. The other seven are
-not: they are data tables and test fixtures sitting beside the code that uses
-them, where moving them to a file named for the linter would be arranging the
-source to suit a tool.
+their own file is good practice independently. These five are not styles: they
+are data tables and test fixtures sitting beside the code that uses them, where
+moving them to a file named for the linter would be arranging the source to
+suit a tool.
 
 Widening a shared configuration reaches five other repositories on the strength
 of one repository's findings, and none of them has met this yet. So it is marked
@@ -84,6 +84,30 @@ avoidable: there is no fixed path a transcript lives at.
 **What would retire these.** For G204 in `width.go`, a terminal-width syscall
 rather than a subprocess. For the rest, nothing: each is the operation the code
 is for, and the mark records that somebody looked rather than that nobody did.
+
+## S-4, gosec on the config read and the winsize ioctl
+
+**Two marks, two rules, two files.**
+
+    internal/render/layout_config.go   //nolint:gosec    reading palette.json or layout.json
+    internal/render/width_tty.go       //nolint:gosec    the kernel writing a winsize
+
+Asked 2026-09-30, when the suppression check found both marks in the source and
+in no entry: register them, remove them, or refactor them out? Answered
+2026-09-30: register both, with the reasons below.
+
+**G304, a file opened by a path from a variable.** `readConfig` opens
+`$XDG_CONFIG_HOME/infobot/<name>`, and the name is one of two string literals
+this package passes. Both configuration files go through this one read, so one
+mark covers them.
+
+**G103, unsafe.** TIOCGWINSZ takes a pointer the kernel writes the window size
+through, and `syscall.Syscall` takes it as a `uintptr`. That conversion is what
+the ioctl is.
+
+**What would retire these.** For G103, `golang.org/x/sys/unix.IoctlGetWinsize`,
+at the price of a dependency. For G304, nothing: reading a configured file is
+the operation.
 
 ## S-3, retired 2026-09-25
 

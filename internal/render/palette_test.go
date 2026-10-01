@@ -258,17 +258,17 @@ func TestOnlyConnectiveWordsAreDimmed(t *testing.T) {
 func TestPaceColoursTheGaugeByWhereItLands(t *testing.T) {
 	colourful(t)
 	// Half the window elapsed, half of it spent: lands exactly full.
-	onRate := render.LimitSegment("5hr", payload.Map{
+	onRate := render.LimitSegment(wideGauge("5hr", 5*3600), payload.Map{
 		"used_percentage": 50.0, "resets_at": at(5 * 3600 / 2),
-	}, 5*3600, false, true, clock)
+	}, clock)
 	// Same elapsed, far more spent: empties early.
-	hot := render.LimitSegment("5hr", payload.Map{
+	hot := render.LimitSegment(wideGauge("5hr", 5*3600), payload.Map{
 		"used_percentage": 90.0, "resets_at": at(5 * 3600 / 2),
-	}, 5*3600, false, true, clock)
+	}, clock)
 	// Same elapsed, barely touched: goes unspent.
-	cold := render.LimitSegment("5hr", payload.Map{
+	cold := render.LimitSegment(wideGauge("5hr", 5*3600), payload.Map{
 		"used_percentage": 5.0, "resets_at": at(5 * 3600 / 2),
-	}, 5*3600, false, true, clock)
+	}, clock)
 
 	green, warm, blue := firstFG(t, onRate), firstFG(t, hot), firstFG(t, cold)
 	// Named rather than negated inline, so the invariant reads forwards and the
@@ -291,12 +291,12 @@ func TestPaceColoursTheGaugeByWhereItLands(t *testing.T) {
 func TestVerdictFadesInAgainstGreen(t *testing.T) {
 	colourful(t)
 	// The same overspend, judged early and late in the window.
-	early := firstFG(t, render.LimitSegment("w", payload.Map{
+	early := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
 		"used_percentage": 20.0, "resets_at": at(5*3600 - 5*60),
-	}, 5*3600, false, true, clock))
-	late := firstFG(t, render.LimitSegment("w", payload.Map{
+	}, clock))
+	late := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
 		"used_percentage": 90.0, "resets_at": at(5 * 60),
-	}, 5*3600, false, true, clock))
+	}, clock))
 
 	// Early is close to green because almost nothing can be said yet.
 	if early != [3]int{43, 255, 158} {
@@ -308,12 +308,12 @@ func TestVerdictFadesInAgainstGreen(t *testing.T) {
 
 	// A fraction, not a duration: the same position in each window judges the
 	// same overspend identically.
-	fiveHour := firstFG(t, render.LimitSegment("w", payload.Map{
+	fiveHour := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
 		"used_percentage": 80.0, "resets_at": at(5 * 3600 / 2),
-	}, 5*3600, false, true, clock))
-	sevenDay := firstFG(t, render.LimitSegment("w", payload.Map{
+	}, clock))
+	sevenDay := firstFG(t, render.LimitSegment(wideGauge("w", 7*86400), payload.Map{
 		"used_percentage": 80.0, "resets_at": at(7 * 86400 / 2),
-	}, 7*86400, false, true, clock))
+	}, clock))
 	if fiveHour != sevenDay {
 		t.Errorf("windows judged differently at the same fraction: %v vs %v",
 			fiveHour, sevenDay)
@@ -328,12 +328,12 @@ func TestPaceClampsBeyondTheEndsOfTheScale(t *testing.T) {
 	colourful(t)
 	// Both project far past the top stop of 150, at the same window position,
 	// so both clamp to the same red.
-	bad := firstFG(t, render.LimitSegment("w", payload.Map{
+	bad := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
 		"used_percentage": 200.0, "resets_at": at(60),
-	}, 5*3600, false, true, clock))
-	worse := firstFG(t, render.LimitSegment("w", payload.Map{
+	}, clock))
+	worse := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
 		"used_percentage": 400.0, "resets_at": at(60),
-	}, 5*3600, false, true, clock))
+	}, clock))
 	if bad != worse {
 		t.Errorf("clamp failed: %v against %v", bad, worse)
 	}
@@ -345,9 +345,9 @@ func TestPaceClampsBeyondTheEndsOfTheScale(t *testing.T) {
 // meaning what the context meter's colour means.
 func TestWindowWithNoResetFallsBackToTheConsumptionRamp(t *testing.T) {
 	colourful(t)
-	noReset := firstFG(t, render.LimitSegment("w", payload.Map{
+	noReset := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
 		"used_percentage": 50.0,
-	}, 5*3600, false, true, clock))
+	}, clock))
 	ramp := rampAt(t, 50)
 	if noReset != ramp {
 		t.Errorf("fallback = %v, want the consumption ramp's %v", noReset, ramp)
@@ -369,9 +369,9 @@ func TestPaceArithmeticSurvivesItsEdges(t *testing.T) {
 		{"a reset further out than the window is long", at(9 * 3600)},
 		{"a reset one second away", at(1)},
 	} {
-		got := render.LimitSegment("w", payload.Map{
+		got := render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
 			"used_percentage": 50.0, "resets_at": c.resetsAt,
-		}, 5*3600, false, true, clock)
+		}, clock)
 		if got == "" {
 			t.Errorf("%s: segment vanished", c.name)
 			continue

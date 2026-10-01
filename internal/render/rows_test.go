@@ -104,12 +104,10 @@ func TestBarAndFileAgreeBecauseTheyShareAMeasurement(t *testing.T) {
 			"current_usage": map[string]any{"input_tokens": 10.0},
 		},
 	} {
+		isolate(t)
 		state := t.TempDir()
-		t.Setenv("HOME", t.TempDir())
 		t.Setenv("XDG_STATE_HOME", state)
 		t.Setenv("NO_COLOR", "1")
-		t.Setenv("TMUX", "")
-		t.Setenv("HERDR_PANE_ID", "")
 
 		data := payload.Map{"session_id": "agree", "context_window": given}
 		var out strings.Builder

@@ -33,19 +33,19 @@ func modelPart(data payload.Map) string {
 //
 // Repeating the root is noise on the common case, which is a session started
 // where the work is.
-func pathParts(data payload.Map, home string) []string {
+func (p palette) pathParts(data payload.Map, home string) []string {
 	workspace := data.Obj("workspace")
 	cwd := workspace.Str("current_dir")
 	project := workspace.Str("project_dir")
 
 	var parts []string
 	if cwd != "" {
-		parts = append(parts, cyan(homeRelative(cwd, home)))
+		parts = append(parts, p.cyan(homeRelative(cwd, home)))
 	}
 	if project != "" && project != cwd {
 		// The marker sits outside the colour the path carries, so what is
 		// tinted is the path and not the annotation.
-		parts = append(parts, rootGlyph+" "+cyan(homeRelative(project, home)))
+		parts = append(parts, rootGlyph+" "+p.cyan(homeRelative(project, home)))
 	}
 	return parts
 }
@@ -70,7 +70,7 @@ func sessionPart(data payload.Map) string {
 // It is decided from the WIDTH alone and never from whether compaction
 // happened, so the gauges do not depend on a decision taken after they are
 // built.
-func limitParts(data payload.Map, compact, reading bool, now time.Time) []string {
+func (p palette) limitParts(data payload.Map, compact, reading bool, now time.Time) []string {
 	limits := data.Obj("rate_limits")
 	var parts []string
 	for _, window := range []struct {
@@ -81,8 +81,8 @@ func limitParts(data payload.Map, compact, reading bool, now time.Time) []string
 		{hourglass + " 5hr", "five_hour", fiveHour},
 		{calendar + " 7d", "seven_day", sevenDay},
 	} {
-		seg := LimitSegment(window.label, limits.Obj(window.key), window.span, compact, reading, now)
-		if seg != "" {
+		g := Gauge{Label: window.label, Span: window.span, Compact: compact, Reading: reading}
+		if seg := p.limitSegment(g, limits.Obj(window.key), now); seg != "" {
 			parts = append(parts, seg)
 		}
 	}
@@ -96,25 +96,29 @@ func limitParts(data payload.Map, compact, reading bool, now time.Time) []string
 // all. A narrow split or a long path puts it over the budget before a single
 // cell of bar is added, and then it goes to the meter row rather than being
 // truncated: what truncation eats is the end of the row, the session id.
-func placeContext(cw payload.Map, identity, tail, meters []string, width int) ([]string, []string) {
-	bare := ContextSegment(cw, 0)
+func (l look) placeContext(
+	cw payload.Map, identity, tail, meters []string, width int,
+) ([]string, []string) {
+	bare := l.contextSegment(cw, 0)
 	if bare == "" {
 		return identity, meters
 	}
 	if width != 0 {
 		full := append(append(append([]string{}, identity...), bare), tail...)
-		if rowWidth(full) > width-margin {
-			return identity, append([]string{fitted(cw, meters, 0, width)}, meters...)
+		if l.rowWidth(full) > width-l.margin {
+			return identity, append([]string{l.fitted(cw, meters, 0, width)}, meters...)
 		}
 	}
 	others := append(append([]string{}, identity...), tail...)
-	return append(identity, fitted(cw, others, len(identity), width)), meters
+	return append(identity, l.fitted(cw, others, len(identity), width)), meters
 }
 
 // compose is the two rows as lists of parts, before they are joined.
-func compose(data payload.Map, home string, width int, compact bool, now time.Time) [][]string {
+func (l look) compose(
+	data payload.Map, home string, width int, compact bool, now time.Time,
+) [][]string {
 	var identity []string
-	for _, part := range append([]string{modelPart(data)}, pathParts(data, home)...) {
+	for _, part := range append([]string{modelPart(data)}, l.pathParts(data, home)...) {
 		if part != "" {
 			identity = append(identity, part)
 		}
@@ -123,9 +127,9 @@ func compose(data payload.Map, home string, width int, compact bool, now time.Ti
 	if part := sessionPart(data); part != "" {
 		tail = append(tail, part)
 	}
-	meters := limitParts(data, compact, width >= readingMin, now)
+	meters := l.limitParts(data, compact, width >= readingMin, now)
 
-	identity, meters = placeContext(data.Obj("context_window"), identity, tail, meters, width)
+	identity, meters = l.placeContext(data.Obj("context_window"), identity, tail, meters, width)
 	return [][]string{append(identity, tail...), meters}
 }
 
@@ -144,28 +148,33 @@ func compose(data payload.Map, home string, width int, compact bool, now time.Ti
 // A row with nothing in it is omitted rather than printed blank: early in a
 // session the context and rate-limit fields are all absent, and a stray empty
 // row looks like a fault.
+//
+// Build draws with the seed palette and margin; Main uses the configured ones.
 func Build(data payload.Map, home string, width int, now time.Time) []string {
-	// An unknown width takes the compact form outright. There is nothing to
-	// fit against, so the gauges give way to the percentages they draw and the
-	// row stays short and left-aligned rather than being drawn at a guessed
-	// length and cut by the host.
-	rows := compose(data, home, width, width == 0, now)
+	return seedLook().build(data, home, width, now)
+}
+
+func (l look) build(data payload.Map, home string, width int, now time.Time) []string {
+	// An unknown width takes the compact form for the gauges outright. There
+	// is nothing to fit against, so they give way to the percentages they draw
+	// rather than being drawn at a guessed length and cut by the host.
+	rows := l.compose(data, home, width, width == 0, now)
 	// The gauges give way to the percentages they draw rather than letting the
 	// row run past the budget, which is the rule the context bar follows too.
 	// Measured after composing rather than before, because the context segment
 	// relocates onto this row when row one cannot hold it, and that is exactly
 	// the case where the row is too long.
-	if width != 0 && len(rows[1]) > 0 && rowWidth(rows[1]) > width-margin {
-		rows = compose(data, home, width, true, now)
+	if width != 0 && len(rows[1]) > 0 && l.rowWidth(rows[1]) > width-l.margin {
+		rows = l.compose(data, home, width, true, now)
 	}
 
 	var joined []string
 	for _, row := range rows {
 		if len(row) > 0 {
-			joined = append(joined, strings.Join(row, sep()))
+			joined = append(joined, strings.Join(row, l.sep()))
 		}
 	}
-	return alignCost(rail(joined), data, width)
+	return l.alignCost(l.rail(joined), data, width)
 }
 
 // costForms is the cost segment at full length and shortened, from one read.
@@ -173,7 +182,7 @@ func Build(data payload.Map, home string, width int, now time.Time) []string {
 // Both forms come from the same totals because working them out means tailing a
 // file, and doing that twice to decide which of two strings fits would double
 // the only expensive thing on the row.
-func costForms(data payload.Map, transcripts string) (string, string) {
+func (p palette) costForms(data payload.Map, transcripts string) (string, string) {
 	figures, ok := pricing.Price(usage.Sum(data.Str("session_id"), transcripts))
 	if !ok {
 		return "", ""
@@ -187,7 +196,7 @@ func costForms(data payload.Map, transcripts string) (string, string) {
 	if figures.Saved <= 0 {
 		return total, total
 	}
-	full := total + sep() + bullseye + " " + dim("saved") + " " + pricing.Money(figures.Saved)
+	full := total + p.sep() + bullseye + " " + p.dim("saved") + " " + pricing.Money(figures.Saved)
 	return full, total
 }
 
@@ -197,23 +206,23 @@ func costForms(data payload.Map, transcripts string) (string, string) {
 // It goes on the meter row rather than the identity row because the identity
 // row has already given its slack to the context bar. With no meter row there
 // is nowhere for it that is not somewhere else's space, so it is dropped.
-func alignCost(lines []string, data payload.Map, width int) []string {
+func (l look) alignCost(lines []string, data payload.Map, width int) []string {
 	if len(lines) < 2 {
 		return lines
 	}
 	last := len(lines) - 1
-	long, short := costForms(data, "")
+	long, short := l.costForms(data, "")
 	// With no width to align against, the cost JOINS the row rather than being
 	// dropped. Pushing it right needs a right edge to push it to, and there
 	// isn't one; carried inline it reads as one more thing on a left-aligned
 	// row, separated the way the meters are separated from each other.
 	if width == 0 {
 		if long != "" {
-			lines[last] += sep() + long
+			lines[last] += l.sep() + long
 		}
 		return lines
 	}
-	room := width - margin - VisibleWidth(lines[last])
+	room := width - l.margin - VisibleWidth(lines[last])
 	for _, segment := range []string{long, short} {
 		gap := room - VisibleWidth(segment)
 		if segment != "" && gap >= costGutter {
@@ -229,12 +238,11 @@ func alignCost(lines []string, data payload.Map, width int) []string {
 // It exits 0 whatever it is given. Unparseable input is not worth a traceback
 // in the status bar, and a status line that fails shows nothing at all.
 func Main(stdin io.Reader, stdout io.Writer) int {
-	// Called here rather than from init(), which gochecknoinits forbids and
+	// Read here rather than from init(), which gochecknoinits forbids and
 	// which would also run during tests and read whatever palette the machine
 	// happens to have. This is the one entry point, so it is the one place the
-	// configured palette can be picked up exactly once.
-	loadPalette()
-	loadLayout()
+	// configuration is read, once, and then passed down.
+	configured := configuredLook()
 
 	raw, err := io.ReadAll(stdin)
 	if err != nil {
@@ -258,7 +266,7 @@ func Main(stdin io.Reader, stdout io.Writer) int {
 	// code is 0 by contract, but a second row written after the first failed is
 	// a torn status line rather than a missing one, and torn is harder to read
 	// as broken.
-	for _, row := range Build(data, home, TerminalWidth(), time.Now()) {
+	for _, row := range configured.build(data, home, TerminalWidth(), time.Now()) {
 		if _, err := fmt.Fprintln(stdout, row); err != nil {
 			break
 		}

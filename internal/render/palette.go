@@ -16,8 +16,8 @@ import (
 // where nothing is happening, then yellow to red compressed into 75-90, so the
 // colour moves fastest exactly where a glance needs to tell 80 from 88.
 //
-// Every colour below is a seed, not the setting. palette_config.go overlays
-// ~/.config/infobot/palette.json over these at startup, so the palette is
+// Every colour in seedPalette is a seed, not the setting. palette_config.go
+// overlays ~/.config/infobot/palette.json on it once, in Main, so the palette is
 // configuration and a re-cut reaches the status line without a rebuild. On this
 // estate that file is a symlink into g0bl1n.theme.
 //
@@ -25,11 +25,59 @@ import (
 // terminal behind it. It replaced a mixture: the backdrop was Tokyo Night
 // while the path and empty colours were still ENCOM's teal, so the status line
 // matched neither the terminal nor itself.
-var (
-	green  = rgb{43, 255, 158} //nolint:gochecknoglobals // #2BFF9E, built once
-	yellow = rgb{255, 212, 38} //nolint:gochecknoglobals // #FFD426
-	red    = rgb{255, 46, 110} //nolint:gochecknoglobals // #FF2E6E
-)
+//
+// A value passed down from Main rather than a set of package variables, so a
+// test draws with the seed whatever the machine has configured, and nothing a
+// render reads can be changed by an earlier one.
+type palette struct {
+	green, yellow, red         rgb
+	backdrop, alarmFG, alarmBG rgb
+	paceLow, paceUnder         rgb
+	pathFG, emptyFG            string
+	sepFG, dimFG               string
+}
+
+func seedPalette() palette {
+	return palette{
+		green:  rgb{43, 255, 158}, // #2BFF9E
+		yellow: rgb{255, 212, 38}, // #FFD426
+		red:    rgb{255, 46, 110}, // #FF2E6E
+
+		// The far ends of the alarm fade, described at alarm() below.
+		backdrop: rgb{13, 10, 32},   // #0D0A20, the terminal's own background
+		alarmFG:  rgb{255, 232, 92}, // #FFE85C bright_yellow
+		// #FF2E6E at 45%, because the palette carries no red dark enough to sit
+		// under text and still read as an alarm rather than as a block of colour.
+		alarmBG: rgb{115, 21, 50},
+
+		paceLow:   rgb{46, 123, 255},  // #2E7BFF blue: the window is barely being touched
+		paceUnder: rgb{211, 198, 245}, // #D3C6F5 light_foreground: under-spending it
+
+		// The accent, the same value the window frames and the active tag use,
+		// so the status line reads as part of the desktop instead of beside it.
+		pathFG: "\033[38;2;255;43;214m", // #FF2BD6
+
+		// The unused cells are an outline glyph and no background. The glyph
+		// carries its own shape, and a background behind it would fill the gaps
+		// between the parallelograms and turn the tail of the bar into a solid
+		// slab.
+		//
+		// A dim cyan, derived: #1FE0FF at 40%, because the palette carries no
+		// colour both dim enough to read as unused and cool enough to keep the
+		// pace scale ordered.
+		//
+		// The red channel is load-bearing. The pace scale is checked by
+		// asserting that red decreases from hot through on-rate to cold, and
+		// `firstFG` on a barely-used bar picks up this colour, not a pace colour.
+		// Muted (#6E5A9E, red 110) sits above green (#2BFF9E, red 43) and
+		// inverts that order, which the pace test catches; this (red 12) sits
+		// below it.
+		emptyFG: "\033[38;2;12;90;102m", // #0C5A66
+
+		sepFG: "\033[38;2;59;21;102m",   // #3B1566 selection
+		dimFG: "\033[38;2;142;124;195m", // #8E7CC3 dark_foreground
+	}
+}
 
 const (
 	pivot    = 75.0
@@ -57,42 +105,6 @@ const (
 // moves it. Read it out of kitty.conf if that happens.
 //
 // Bold is the one part that cannot fade, so it is on across the whole band.
-var (
-	//nolint:gochecknoglobals // #0D0A20, the terminal's own background
-	backdrop = rgb{13, 10, 32}
-	//nolint:gochecknoglobals // #FFE85C bright_yellow, far end of the foreground fade
-	alarmFG = rgb{255, 232, 92}
-	//nolint:gochecknoglobals // deep red, far end of the background fade. Derived:
-	// #FF2E6E at 45%, because the palette carries no red dark enough to sit
-	// under text and still read as an alarm rather than as a block of colour.
-	alarmBG = rgb{115, 21, 50}
-)
-
-// The accent, the same value the window frames and the active tag use, so the
-// status line reads as part of the desktop instead of beside it.
-// var, not const: palette.json overwrites these at startup. See
-// palette_config.go.
-var pathColour = "\033[38;2;255;43;214m" //nolint:gochecknoglobals // #FF2BD6 accent
-
-// The unused cells are an outline glyph and no background. The glyph carries
-// its own shape, and a background behind it would fill the gaps between the
-// parallelograms and turn the tail of the bar into a solid slab.
-//
-// A dim cyan, derived: #1FE0FF at 40%, because the palette carries no colour
-// both dim enough to read as unused and cool enough to keep the pace scale
-// ordered.
-//
-// The red channel is load-bearing, which is not obvious. The pace scale is
-// checked by asserting that red decreases from hot through on-rate to cold,
-// and `firstFG` on a barely-used bar picks up this colour, not a pace colour.
-// Muted (#6E5A9E, red 110) sits above green (#2BFF9E, red 43) and inverts that
-// order, which the pace test catches; this (red 12) sits below it.
-var emptyColour = "\033[38;2;12;90;102m" //nolint:gochecknoglobals // #0C5A66, dim cyan
-
-var (
-	sepColour = "\033[38;2;59;21;102m"   //nolint:gochecknoglobals // #3B1566 selection
-	dimColour = "\033[38;2;142;124;195m" //nolint:gochecknoglobals // #8E7CC3 dark_foreground
-)
 
 // paceStop is one anchor on the diverging pace scale.
 type paceStop struct {
@@ -100,13 +112,16 @@ type paceStop struct {
 	colour rgb
 }
 
-// The pace stops, here because they are built from the palette above.
-var paceStops = []paceStop{ //nolint:gochecknoglobals // colours built once and read per render
-	{0.0, rgb{46, 123, 255}},   // #2E7BFF blue: the window is barely being touched
-	{70.0, rgb{211, 198, 245}}, // #D3C6F5 light_foreground: under-spending it
-	{100.0, green},             // lands exactly full as it resets
-	{125.0, yellow},            // empties a fifth of the way early
-	{150.0, red},               // empties a third of the way early
+// paceStops are built from the palette, so the last three follow the ramp's
+// own colours rather than being named again.
+func (p palette) paceStops() [5]paceStop {
+	return [5]paceStop{
+		{0.0, p.paceLow},
+		{70.0, p.paceUnder},
+		{100.0, p.green},  // lands exactly full as it resets
+		{125.0, p.yellow}, // empties a fifth of the way early
+		{150.0, p.red},    // empties a third of the way early
+	}
 }
 
 type rgb struct{ r, g, b int }
@@ -136,11 +151,11 @@ func plain() bool {
 }
 
 // consumption is the ramp's colour at pct, below the alarm band.
-func consumption(pct float64) rgb {
+func (p palette) consumption(pct float64) rgb {
 	if pct <= pivot {
-		return mix(green, yellow, pct/pivot)
+		return mix(p.green, p.yellow, pct/pivot)
 	}
-	return mix(yellow, red, (pct-pivot)/(alarmAt-pivot))
+	return mix(p.yellow, p.red, (pct-pivot)/(alarmAt-pivot))
 }
 
 // ramp is just the escape for a percentage, with no text and no reset.
@@ -149,11 +164,11 @@ func consumption(pct float64) rgb {
 // would emit an open and a close around each of forty cells. The bar needs the
 // code alone, so it can open a span once and hold it for every cell that shares
 // a colour.
-func ramp(pct float64) string {
+func (p palette) ramp(pct float64) string {
 	if pct >= alarmAt {
-		return alarm(pct)
+		return p.alarm(pct)
 	}
-	return consumption(pct).fg()
+	return p.consumption(pct).fg()
 }
 
 // alarm is the alarm style at pct, faded in from the top of the ramp.
@@ -164,16 +179,16 @@ func ramp(pct float64) string {
 //
 // Both ends interpolate together, so the background filling in and the
 // foreground brightening are one movement rather than two.
-func alarm(pct float64) string {
+func (p palette) alarm(pct float64) string {
 	into := num.Clamp((pct-alarmAt)/(alarmTop-alarmAt), 0, 1)
-	front := mix(red, alarmFG, into)
-	back := mix(backdrop, alarmBG, into)
+	front := mix(p.red, p.alarmFG, into)
+	back := mix(p.backdrop, p.alarmBG, into)
 	return fmt.Sprintf("\033[1;38;2;%d;%d;%d;48;2;%d;%d;%dm",
 		front.r, front.g, front.b, back.r, back.g, back.b)
 }
 
 // colour wraps text in a colour interpolated from the percentage consumed.
-func colour(pct float64, text string) string {
+func (p palette) colour(pct float64, text string) string {
 	if text == "" || plain() {
 		return text
 	}
@@ -181,9 +196,9 @@ func colour(pct float64, text string) string {
 	// "high" but "about to matter", and a hue change alone stops being seen
 	// after the twentieth time.
 	if pct >= alarmAt {
-		return alarm(pct) + text + reset
+		return p.alarm(pct) + text + reset
 	}
-	return consumption(pct).fg() + text + reset
+	return p.consumption(pct).fg() + text + reset
 }
 
 // tinted puts one colour over a whole span, closed with a reset.
@@ -194,17 +209,17 @@ func tinted(text, escape string) string {
 	return escape + text + reset
 }
 
-func cyan(text string) string { return tinted(text, pathColour) }
+func (p palette) cyan(text string) string { return tinted(text, p.pathFG) }
 
 // dim marks a word present to be scanned past rather than read.
 //
 // An empty span would still emit an open and a reset with nothing between,
 // which happens at both ends of the bar where the fill or the track is empty.
-func dim(text string) string {
+func (p palette) dim(text string) string {
 	if text == "" {
 		return text
 	}
-	return tinted(text, dimColour)
+	return tinted(text, p.dimFG)
 }
 
 // paceRGB walks the diverging stops and interpolates between the two that
@@ -213,15 +228,16 @@ func dim(text string) string {
 // Outside the ends it clamps, so a window projected to land at 400% is the same
 // red as one landing at 150: once it will not last, by how much it will not
 // last stops changing what to do about it.
-func paceRGB(projected float64) rgb {
-	low := paceStops[0]
-	for _, high := range paceStops[1:] {
+func (p palette) paceRGB(projected float64) rgb {
+	stops := p.paceStops()
+	low := stops[0]
+	for _, high := range stops[1:] {
 		if projected <= high.at {
 			return mix(low.colour, high.colour, (projected-low.at)/(high.at-low.at))
 		}
 		low = high
 	}
-	return paceStops[len(paceStops)-1].colour
+	return stops[len(stops)-1].colour
 }
 
 // paceTint is the window's verdict, faded toward green by how much it can say
@@ -233,7 +249,7 @@ func paceRGB(projected float64) rgb {
 //
 // Green rather than grey or nothing, because green is this scale's "no comment"
 // as well as its "on rate", and both mean there is nothing to act on.
-func paceTint(pct, elapsed float64) string {
+func (p palette) paceTint(pct, elapsed float64) string {
 	projected := pct / max(elapsed, paceMinElapsed)
 	// Squared, so the verdict stays quiet through the middle of the window and
 	// arrives late. Running hot with most of the window still ahead is not
@@ -241,5 +257,5 @@ func paceTint(pct, elapsed float64) string {
 	// halfway mark.
 	trust := min(1.0, elapsed/paceConfident)
 	trust *= trust
-	return mix(green, paceRGB(projected), trust).fg()
+	return mix(p.green, p.paceRGB(projected), trust).fg()
 }
