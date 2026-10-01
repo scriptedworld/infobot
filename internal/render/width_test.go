@@ -96,7 +96,8 @@ func TestTmuxIsAskedAboutTheCallingPaneNotTheActiveOne(t *testing.T) {
 		t.Fatalf("tmux was never run: %v", err)
 	}
 	if !strings.Contains(string(asked), "-t %5") {
-		t.Errorf("tmux was asked %q, want it targeted at the calling pane %%5", strings.TrimSpace(string(asked)))
+		t.Errorf("tmux was asked %q, want it targeted at the calling pane %%5",
+			strings.TrimSpace(string(asked)))
 	}
 }
 
@@ -119,7 +120,8 @@ func TestTmuxWithoutAPaneIdStillAsks(t *testing.T) {
 		t.Fatalf("tmux was never run: %v", err)
 	}
 	if strings.Contains(string(asked), "-t") {
-		t.Errorf("tmux was asked %q, want no target when the pane id is unknown", strings.TrimSpace(string(asked)))
+		t.Errorf("tmux was asked %q, want no target when the pane id is unknown",
+			strings.TrimSpace(string(asked)))
 	}
 }
 
@@ -137,7 +139,8 @@ func TestZoomedPaneIsFittedToTheTabArea(t *testing.T) {
       "panes":[{"pane_id":"w4:p1","rect":{"width":99}},
                {"pane_id":"w4:p2","rect":{"width":96}}]}}}`))
 	if got := render.TerminalWidth(); got != 185 {
-		t.Errorf("TerminalWidth = %d, want the tab area 195 less the 10-column trim, not the stale rect 99", got)
+		t.Errorf("TerminalWidth = %d, want the tab area 195 less the 10-column trim, "+
+			"not the stale rect 99", got)
 	}
 }
 

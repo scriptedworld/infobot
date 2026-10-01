@@ -33,7 +33,8 @@ func withTable(t *testing.T, content string) {
 	if err := os.MkdirAll(filepath.Join(dir, "infobot"), 0o750); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, "infobot", "pricing.json"), []byte(content), 0o600); err != nil {
+	path := filepath.Join(dir, "infobot", "pricing.json")
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }
