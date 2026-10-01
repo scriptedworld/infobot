@@ -40,8 +40,8 @@ line emits also needs `docs/PROJECT.md` to still be true afterwards.
 
 **The emitted form is a published interface.** `bin/board` in another
 repository greps the state file this writes, one key to a line with quoted
-keys, and that dependency is recorded here as FR-1.11o. Changing the shape of
-the state file is an announcement, not a refactor.
+keys, and that dependency is recorded here as FR-1.11o. A change to the state
+file's shape is announced to that reader before it lands.
 
 The rendered rows are freer, but the escape handling is pinned by fixtures at
 both ends: a width table generated from the renderer's own measurement rather

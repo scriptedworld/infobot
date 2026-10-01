@@ -156,13 +156,12 @@ on those sessions. A model missing from the table leaves the cost segment blank
 on any session that ran only that model.
 
 The file is the only copy, and without a usable one the cost segment is left
-out (FR-8.27, FR-8.28), so the coordinator's refresh is what keeps the segment
-alive.
+out (FR-8.27, FR-8.28), so the segment depends on the coordinator's refresh.
 
 ## What is decided, and what is open
 
-Done, not merely decided: Go. The port landed on 2026-08-28 and the Python is
-gone. It reads 17 of 18 identical against the golden corpus the Python
+Done, not merely decided: Go is the implementation, and no Python remains. It
+reads 17 of 18 identical against the golden corpus the Python
 produced, and the eighteenth differs on purpose.
 
 The corpus was captured from the Python, which had no suite of its own:
@@ -173,9 +172,9 @@ countdown and the cost by construction, so no case is a representative render:
 Decided: Claude Code reaches the binary through the committed shim.
 `docs/DECISIONS/claude-code-is-pointed-at-a-shim-not-a-binary.md`.
 
-Decided: Go is the only implementation. Zig and two generations of C++ were
-built beside it and are gone; C++ went on 2026-09-25 with wrench's C++ pack, which
-it would have taken its structured files from.
+Decided: Go is the only implementation. Neither the Zig port nor either
+generation of C++ is kept, and wrench has dropped the C++ pack a C++ port would
+take its structured files from.
 `docs/DECISIONS/go-stays-deployed-while-cpp-clears-its-gate.md` has the figures
 and the reasons.
 

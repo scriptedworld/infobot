@@ -48,11 +48,10 @@ table and the session's own transcripts, and writes two small state files
 (`docs/SPEC.md` lists them).
 
 It runs on every Claude Code event, so its startup cost is paid constantly, and
-that cost is why it is Go and not the Python it replaced.
+that cost is why it is a compiled Go binary.
 
-**Measure it yourself; do not take a figure from here.** A render costs
-what your transcript makes it cost, and a number with no payload beside it says
-nothing:
+**Measure it yourself; do not take a figure from here.** What a render costs
+depends on your transcript:
 
     python3 bench/bench.py go 10 <a-transcript.jsonl> ./bin/infobot
 
@@ -177,9 +176,8 @@ test`, `just build` and `just format` need only the Go toolchain and work
 anywhere.
 
 Both refuse a binary older than its source, because every other check reads the
-source and the built artifact is downstream of all of them. A stale binary and a
-broken one look identical from the outside, which is to say like a quiet
-session.
+source and the built artifact is downstream of all of them. From outside, a
+stale binary and a broken one both look like a quiet session.
 
 **Every test names the requirement it discharges**, in a comment directly above
 it, and the gate fails a test that cites nothing or cites a requirement
@@ -213,8 +211,8 @@ opened by computed path, a test fixture that must land executable, or the one
 subprocess that asks the pane how wide it is. `NEXT_STEPS.md` has the detail.
 
 The two shell shims are read by no checker, because every checker selects by
-file extension and the shims have none. Their behaviour is tested five ways;
-their text is unread.
+file extension and the shims have none. The suite tests their behaviour five
+ways, but no linter or formatter reads their text.
 
 ## Licence
 

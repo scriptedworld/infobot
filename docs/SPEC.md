@@ -214,8 +214,8 @@ unlinks within (FR-1.11f).
 The palette's values, the glyphs, the ramp arithmetic and the pace scale, all of
 which are stated in `docs/REQUIREMENTS/the-meters-and-the-palette/` and
 `the-rate-limit-windows/`. The internals of
-wrench's Go pack. The Python original, the Zig experiment and two C++ ports,
-all retired.
+wrench's Go pack. Any implementation but Go; `docs/PROJECT.md` names the
+retired ones.
 
 ## Traceability
 
@@ -228,8 +228,8 @@ document does not reach:
   what the Go packages do; the rows need restating without those names, and
   `NEXT_STEPS.md` carries that.
 - FR-1.11p asserts the exact bytes emitted, which holds while Go is the only
-  writer. It wanted restating only for a second implementation, and none is
-  kept.
+  writer. Only a second implementation would need it restated, and there is
+  none.
 - FR-3.2 is refresh interval, set in the harness settings file, and nothing in
   this program implements it.
 - FR-1.13 is the shims', which are committed and exec the Go binaries.
