@@ -68,8 +68,8 @@ func TestRemoveTakesBothFilesAndSaysWhich(t *testing.T) {
 
 // COVERS FR-1.11f | edge
 //
-// A cleanup that exits 0 having removed nothing is the same shape as a gate
-// that passes having checked nothing, so it says which it was.
+// A cleanup that removed nothing still exits 0, so the log says nothing was
+// there instead of leaving the exit status to imply it.
 func TestNothingToRemoveIsSaidRatherThanImplied(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	var log strings.Builder

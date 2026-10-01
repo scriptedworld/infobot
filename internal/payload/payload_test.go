@@ -28,7 +28,7 @@ func TestNilMapAnswersLikeAnEmptyOne(t *testing.T) {
 	if absent.Has("anything") {
 		t.Error("Has on nil reported a key")
 	}
-	// And reaching two levels through nothing is still nothing.
+	// A chain of reaches through a nil Map ends at the zero value.
 	if got := absent.Obj("a").Obj("b").Str("c"); got != "" {
 		t.Errorf("chained reach = %q, want empty", got)
 	}

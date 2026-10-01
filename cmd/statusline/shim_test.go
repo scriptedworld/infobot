@@ -95,16 +95,12 @@ func TestAbsentBinaryHonoursNoColor(t *testing.T) {
 //
 // Claude Code reaches the status line through a symlink in another directory
 // to `infobot/bin/infobot`. `dirname "$0"` on the symlink's own path gives
-// that directory, so the shim looked for `statusline` there, found the
-// symlink, which is the shim, and exec'd itself.
+// that directory, where the `statusline` it finds is the symlink, which is the
+// shim, so a shim that does not resolve its own path execs itself.
 //
-// That ran for 35 minutes across ten sessions on 2026-08-28 and the only
-// visible symptom was every session's state file ceasing to update. The loop
-// never reaches the render, so nothing is printed, and a status line printing
-// nothing is indistinguishable from a quiet one.
-//
-// The Python this replaced called Path(__file__).resolve(), which follows
-// symlinks. The port dropped it without noticing it was load-bearing.
+// The loop never reaches the render, so nothing is printed, and a status line
+// printing nothing is indistinguishable from a quiet one. The only visible
+// symptom is every session's state file ceasing to update.
 func TestShimReachedThroughASymlinkDoesNotExecItself(t *testing.T) {
 	direct, code := shimIn(t, "infobot", true)
 	if code != 0 || !strings.Contains(direct, "RAN-THE-BINARY") {

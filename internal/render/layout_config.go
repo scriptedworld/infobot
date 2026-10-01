@@ -21,21 +21,21 @@ type look struct {
 // the budget.
 //
 // 3 is the default and is too small on this machine. It assumes the host
-// indents two columns and keeps one at the right. At a real 313 columns the
-// line rendered 309 and Claude Code cut both rows with its own ellipsis, losing
-// the end of the session id and the saved figure. 8 renders complete.
+// indents two columns and keeps one at the right. At a real 313 columns it
+// renders 309, and Claude Code cuts both rows with its own ellipsis, losing the
+// end of the session id and the saved figure. 8 renders complete.
 //
 // The default stays 3, deliberately. Raising it breaks
 // TestCostShortensThenDropsAsTheRowNarrows at width 79, which asserts the cost
 // never recovers a form it has already surrendered as the pane narrows. That
 // is a real non-monotonicity in the layout, latent at 3 and exposed at 8, and
 // editing the test to pass would hide the bug it exists to catch. This machine
-// sets 8 in layout.json, which is what configuration is for.
+// sets 8 in layout.json instead.
 //
 // The number is a claim about the host's chrome, which this process cannot
 // measure from the inside, and being wrong by a column truncates every render.
-// Configuration lets it be dialled against what is actually drawn rather than
-// rebuilt against a guess.
+// So it is configuration, adjusted against what is actually drawn without a
+// rebuild.
 const defaultMargin = 3
 
 // marginMax bounds what the file may set. A margin wider than this is a

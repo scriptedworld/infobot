@@ -5,7 +5,8 @@
 // absent on its own; used_percentage can be null early in a session. So the
 // payload is held as a tree of any rather than as a struct: a struct with
 // pointers everywhere says the same thing at more cost, and an absent field and
-// a zero field must stay distinguishable. Zero is a claim, absence is not.
+// a zero field must stay distinguishable, since a zero is a reported value and
+// an absent field reports nothing.
 package payload
 
 // Map is one JSON object. A nil Map answers like an empty one, so a caller

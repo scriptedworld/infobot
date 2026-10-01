@@ -37,8 +37,8 @@ const (
 //
 // It is tried last, after tmux and herdr, and the order is the point. Inside a
 // multiplexer the pane is what the line is drawn into and the terminal behind
-// it is wider, so answering with the terminal would overflow every pane. This
-// route is what is left when nothing owns the pane but the terminal itself.
+// it is wider, so answering with the terminal would overflow every pane, and
+// this route answers only when nothing but the terminal owns the pane.
 func ttyWidth() int {
 	pid := os.Getpid()
 	for range ancestorLimit {

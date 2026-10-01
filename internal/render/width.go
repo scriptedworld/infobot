@@ -75,7 +75,7 @@ func runeWidth(r rune) int {
 // tree to an ancestor that still holds it. It is outermost by definition, so
 // it must not answer while a multiplexer owns the pane: the terminal behind a
 // pane is wider than the pane, and answering with it overflows every render.
-// See width_tty.go. Before it existed this returned 0 in a bare kitty or
+// See width_tty.go. Without that route this would return 0 in a bare kitty or
 // ghostty, which is every session not run under a multiplexer.
 func TerminalWidth() int {
 	if w := tmuxWidth(); w != 0 {
@@ -90,9 +90,9 @@ func TerminalWidth() int {
 	// pane whose id no longer matches would each produce a row built past the
 	// edge and truncated on every render.
 	//
-	// Unknown costs the compact form. Overflow costs a cut tail, ten seconds
-	// later, forever. The two errors are not equally bad, which is the same
-	// argument `usable` makes about herdr's generous rectangle.
+	// Unknown costs the compact form; overflow costs a cut tail on every
+	// render. `usable` weighs the same two errors for herdr's generous
+	// rectangle.
 	if os.Getenv("TMUX") != "" || os.Getenv("HERDR_PANE_ID") != "" {
 		return 0
 	}

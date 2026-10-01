@@ -17,18 +17,14 @@
 // Written in canonical YAML through wrench, which validates it against the
 // schema beside this file on the way out: block style, one key to a line, keys
 // sorted, a string quoted and a number bare. The form is a published interface
-// (FR-1.11o), stated in docs/SPEC.md: silo's coordination board reads these
-// files with patterns anchored on the quoted key and the single space after the
-// colon, and takes the number bare. Changing the shape breaks it, and adding a
-// key does not.
+// (FR-1.11o, docs/SPEC.md) that silo's coordination board parses, so changing
+// the shape breaks it and adding a key does not.
 //
-// It emitted that form by hand until the Go port could link wrench's pack. Two
-// emitters of one published form was a considered duplicate rather than an
-// oversight, and what ended it was the port removing the reason: the argument
-// for hand-emitting was the Python pack's import cost and an interpreter that
-// might not resolve, and a statically linked pack has neither. wrench's
-// docs/DECISIONS/infobots-hand-emitted-yaml-is-a-considered-duplicate.md is the
-// decision this supersedes.
+// wrench's pack is the only emitter. wrench's
+// docs/DECISIONS/infobots-hand-emitted-yaml-is-a-considered-duplicate.md made
+// a second, hand-written emitter a considered duplicate because of the Python
+// pack's import cost and an interpreter that might not resolve. A statically
+// linked pack has neither, so that decision is superseded.
 //
 // The schema is infobot's own and is not in wrench's shipped set: the only
 // consumer is bin/board and the subject is a Claude Code session, where that

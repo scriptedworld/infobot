@@ -68,10 +68,10 @@ func TestBareTerminalIsFoundThroughAnAncestor(t *testing.T) {
 //
 // This is the damaging direction and the reason the terminal route is guarded,
 // not merely last. The terminal behind a pane is wider than the pane,
-// so answering with it builds a row past the edge and the host cuts the tail,
-// on every render, ten seconds apart, with no interaction needed.
+// so answering with it builds a row past the edge and the host cuts the tail
+// on every ten-second render, with no interaction needed.
 //
-// Unknown costs the compact form once. Overflow costs a truncated line forever.
+// Unknown costs the compact form, where overflow truncates every render.
 func TestAPresentHostThatCannotAnswerDoesNotBorrowTheTerminal(t *testing.T) {
 	if ancestorTTY(t) == "" {
 		t.Skip("no terminal in this process tree; the fallthrough cannot happen")

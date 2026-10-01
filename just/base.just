@@ -131,12 +131,9 @@ install:
 # to ask of a path before deleting it is "does anything execute this", which
 # includes hooks, service units and configuration.
 #
-# infobot's clean once carried `rm -f bin/statusline bin/forget` under the
-# heading "remove build output". Those were deployed artefacts that Claude Code
-# executes on every event, and running `just clean` stopped fifteen status files
-# being written for 25 minutes while every instrument reading them kept printing
-# the last values as current. Anyone writing a clean recipe from this template
-# will assume build output is disposable, because in most projects it is.
+# A built binary that a hook executes on every event is build output and a
+# deployed artefact at once. Removing it stops whatever it writes, and anything
+# reading that output keeps printing the last values as current.
 #
 # So a language layer overriding this removes run directories, coverage output
 # and intermediate build trees, and leaves the installed artefact alone. `just
@@ -170,8 +167,6 @@ clean:
 # `leak-scan` is clean with no `@`, in isolation, and with a body that itself
 # invokes `bolt secrets`. The jig keeps its name: `bolt.secrets.yaml` is
 # toolbox's and is untouched. Only the recipe is renamed.
-#
-# Every project answering to the same two words is a settled decision.
 
 # the secrets jig alone
 leak-scan:

@@ -13,9 +13,8 @@ import (
 // file it records its arguments to.
 //
 // The reply is the same whatever it is asked, so an assertion here is about the
-// QUESTION rather than the answer. That is the point: the bug this guards was a
-// well-formed reply about the wrong pane, which no assertion on the number can
-// catch.
+// QUESTION rather than the answer. The failure guarded is a well-formed reply
+// about the wrong pane, which no assertion on the number can catch.
 func fakeTmux(t *testing.T, reply string) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -104,8 +103,8 @@ func TestTmuxIsAskedAboutTheCallingPaneNotTheActiveOne(t *testing.T) {
 // COVERS FR-3.3 | edge
 //
 // Without TMUX_PANE there is no better question than the old one, so the
-// untargeted form stays as the fallback rather than the route going unknown.
-// A width read from the active pane beats no width at all.
+// untargeted form stays as the fallback and the route answers with the active
+// pane's width rather than going unknown.
 func TestTmuxWithoutAPaneIdStillAsks(t *testing.T) {
 	noHosts(t)
 	t.Setenv("TMUX", "/tmp/tmux-1000/default,1,0")

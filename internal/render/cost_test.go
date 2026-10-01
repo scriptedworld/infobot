@@ -105,7 +105,7 @@ func TestSavingIsDroppedWhenItIsNegative(t *testing.T) {
 //
 // The cost goes on the METER row rather than the identity row, because the
 // identity row has already given its slack to the context bar. With no meter
-// row there is nowhere for it that is not somewhere else's space.
+// row it is dropped rather than taking space another segment holds.
 func TestCostRidesTheMeterRowAndIsDroppedWithoutOne(t *testing.T) {
 	data := priced(t, usageLine(`"input_tokens":10000000`))
 	got := render.Build(data, "/home/me", 220, clock)
@@ -180,8 +180,7 @@ func TestCostShortensThenDropsAsTheRowNarrows(t *testing.T) {
 		if _, already := seen[got]; !already {
 			seen[got] = width
 		}
-		// It gives up detail before it gives up the row, and never recovers a
-		// form it has already surrendered as the pane keeps shrinking.
+		// As the width falls, the form never returns to a fuller one.
 		if got > previous {
 			t.Errorf("width %d went back to a fuller form than %d had", width, width+1)
 		}

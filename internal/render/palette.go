@@ -21,10 +21,9 @@ import (
 // configuration and a re-cut reaches the status line without a rebuild. On this
 // estate that file is a symlink into g0bl1n.theme.
 //
-// The seed is D1C3 Goblin, so a machine with no palette.json still matches the
-// terminal behind it. It replaced a mixture: the backdrop was Tokyo Night
-// while the path and empty colours were still ENCOM's teal, so the status line
-// matched neither the terminal nor itself.
+// The seed is D1C3 Goblin throughout, the backdrop and the path and empty
+// colours alike, so a machine with no palette.json still matches the terminal
+// behind it and the status line matches itself.
 //
 // A value passed down from Main rather than a set of package variables, so a
 // test draws with the seed whatever the machine has configured, and nothing a

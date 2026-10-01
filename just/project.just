@@ -22,14 +22,12 @@ build:
     go build -o bin/statusline ./cmd/statusline
     go build -o bin/forget ./cmd/forget-session
 
-# Committed is not deployed. Every other check reads the source: the tree is
-# clean because the source is committed, the tests pass because they compile the
-# source, and the gate is green for the same reason. The built artefact is
-# downstream of all of them and inside none.
+# Committed is not deployed. Every other check (a clean tree, a passing suite, a
+# green gate) reads the source, and the built artefact is downstream of all of
+# them and inside none.
 #
-# `bin/statusline` has run two commits behind a clean tree for 38 minutes, and
-# the status line has no failure output, so a stale binary and a broken one look
-# identical: like a quiet session.
+# The status line has no failure output, so a binary commits behind a clean
+# tree, a broken one and a quiet session all look the same.
 #
 # Bytes, not mtimes, because a build sets a fresh mtime whatever it
 # produced, so a timestamp answers "was this written" and never "is this
@@ -64,8 +62,7 @@ dist:
 # happened.
 #
 # So clean removes run directories, which are genuinely disposable, and rebuilds
-# rather than leaving a hole. `just clean` must not be the command that takes
-# the status line down.
+# rather than leaving a hole.
 
 # remove past run directories and tool caches, and leave the deployed binaries built
 clean:

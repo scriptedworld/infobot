@@ -14,10 +14,10 @@
 // not a fetch is in docs/PROJECT.md, "Perishable: the pricing table".
 //
 // Nothing is compiled in. The rates and the cache multipliers live only in that
-// file, so a price change is an edit to it and never a rebuild. With no usable
-// table the cost segment is left out, and a model missing from it leaves the
-// total flagged as a floor. A cost computed from a guessed rate is worse than no
-// cost, and a copy kept in the code is a guess once nobody refreshes it.
+// file, so a price change is an edit to it and never a rebuild, and no copy in
+// the code goes stale unseen. With no usable table the cost segment is left
+// out, and a model missing from it leaves the total flagged as a floor, so no
+// figure is ever priced from a guessed rate.
 package pricing
 
 import (

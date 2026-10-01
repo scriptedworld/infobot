@@ -52,16 +52,11 @@ func full() payload.Map {
 // matches anchored patterns on the quoted key and the single space after the
 // colon, and takes the number bare.
 //
-// It is also FR-1.11p, which changed shape on 2026-09-03 without changing what
-// it is for. It was a mutual pin between two emitters: infobot's hand emitter
-// here, and a frozen copy of its output as a fixture in wrench. The port deleted
-// the hand emitter, so wrench's pack now writes these bytes and this is a
-// conformance check against it rather than half of a pin.
-//
-// That is stronger, because the thing it guards is real. wrench's fixture never
-// re-derived infobot's output and so could not fail when infobot moved; this
-// test runs the emitter that actually writes the file. Editing it to make it
-// pass is still how the guarantee comes undone.
+// It is also FR-1.11p. wrench's pack writes these bytes, so this is a
+// conformance check that runs the emitter that actually writes the file, where
+// a frozen copy of its output could not fail when the emitter moved. When it
+// fails, the want string is not the thing to edit: FR-1.11o makes any byte
+// change one that is announced.
 func TestCanonicalForm(t *testing.T) {
 	want := `"context_percent": 48.2
 "context_remaining": 520000
@@ -241,9 +236,9 @@ func TestOverFullWindowClampsRemainingButNotPercent(t *testing.T) {
 // a million and silo's board matches `[0-9.]+` against the value, so it would
 // capture `1`, report a plausible small number, and never fail.
 //
-// wrench measured the same divergence across its three packs on 2026-08-28 and
-// four of six values disagreed, so this is not hypothetical and not only
-// infobot's. Held here for infobot's own emitter whatever the ecosystem settles.
+// wrench's three packs have been measured disagreeing on this spelling, so the
+// divergence is real and not only infobot's. It is held here for infobot's own
+// emitter whatever the ecosystem settles.
 func TestNumbersAreNeverSpelledWithAnExponent(t *testing.T) {
 	for _, pct := range []float64{
 		1e6, 1.23456789e8, 1e21, 1e-7, 0.0000001, 48.2, 0, 100,
@@ -310,8 +305,8 @@ func TestForgetRemovesTheStateFile(t *testing.T) {
 
 // controlRanges is every code point FR-1.11r names, plus the five separators
 // that look like they belong and do not. The separators are here to assert they
-// are left alone: a sweep found them already round tripping, so escaping them
-// would be a change with no defect behind it.
+// are left alone: they already round-trip, so escaping them would be a change
+// with no defect behind it.
 func controlRanges() (escaped, untouched []rune) {
 	for r := rune(0); r < 0x20; r++ {
 		escaped = append(escaped, r)
@@ -386,13 +381,12 @@ func TestTheLineBreakSetIsEscaped(t *testing.T) {
 		// not, so which of them fold is the reader's version rather than the
 		// character.
 		//
-		// The spelling changed when the emitter did, and the requirement did
-		// not. FR-1.11r is that these three are escaped rather than emitted
-		// raw, because a parser accepts them raw and hands back a space. The
-		// hand emitter spelled them `\u2028`, `\u2029` and `\x85`; wrench
-		// spells them with YAML's own names for the same code points. Both
-		// escape; both round-trip. This is the byte change FR-1.11o obliges
-		// infobot to announce, and it reaches only values carrying one of these
+		// FR-1.11r is that these three are escaped rather than emitted raw,
+		// because a parser accepts them raw and hands back a space. It
+		// requires an escape and not a spelling: wrench writes YAML's own
+		// names for these code points, where `\u2028`, `\u2029` and `\x85`
+		// would round-trip equally. The spelling is part of the form FR-1.11o
+		// publishes, and it reaches only values carrying one of these
 		// characters, which a cwd or a model name does not.
 		{"\u2028", `"cwd": "/a\Lb"`},
 		{"\u2029", `"cwd": "/a\Pb"`},

@@ -161,8 +161,9 @@ func TestAtMostOneSubprocessAndOnlyForTheWidth(t *testing.T) {
 
 // COVERS FR-3.11 | edge
 //
-// A host that does not answer costs a BOUNDED wait and then counts as unknown.
-// A hung multiplexer must not hang a line that renders on every event.
+// A host that does not answer costs a BOUNDED wait and then counts as unknown,
+// because the line renders on every event and a hung multiplexer would
+// otherwise hang it.
 func TestAHungHostIsBoundedAndCountsAsUnknown(t *testing.T) {
 	t.Setenv("TMUX", "")
 	dir := t.TempDir()

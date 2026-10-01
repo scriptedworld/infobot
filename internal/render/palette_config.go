@@ -9,9 +9,8 @@ import (
 // read once, in Main, and wins when it is there.
 //
 // This follows internal/pricing exactly, including the reason: anything
-// malformed falls back rather than failing, because a status line that fails
-// shows nothing at all and the wrong colour is a smaller wrong than a blank
-// row.
+// malformed falls back to the seed rather than failing, because a status line
+// that fails shows nothing at all, where a seed colour only looks wrong.
 
 // paletteFile is the wire shape. Hex strings rather than triples, because a
 // person editing this copies them out of a palette that is written in hex.

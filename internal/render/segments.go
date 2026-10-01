@@ -262,8 +262,8 @@ func join(parts ...string) string {
 //
 // The WHOLE span is coloured here, while the rate-limit segments colour only
 // their number. That asymmetry is deliberate: the context window is watched
-// constantly while working and the other two are infrequent details, so a wider
-// block of colour makes the loud one loud.
+// constantly while working and the other two are infrequent details, so the one
+// watched constantly carries the wider block of colour.
 //
 // ContextSegment draws in the seed palette; Main uses the configured one.
 func ContextSegment(cw payload.Map, cells int) string {
@@ -388,8 +388,8 @@ func (p palette) limitSegment(g Gauge, window payload.Map, now time.Time) string
 		tint = p.paceTint(pct, elapsed)
 	}
 	// The `@` is inside the tint, so the reading is one coloured token rather
-	// than a plain sigil against a coloured number. It carries the same colour
-	// as the bar it stands beside, which is what says the two mean one thing.
+	// than a plain sigil against a coloured number. It carries the colour of
+	// the bar beside it, so the two read as one measurement.
 	number := tinted(fmt.Sprintf("@%.0f%%", pct), tint)
 	gauge := p.bar(pct, windowCells, tint)
 	if g.Reading {

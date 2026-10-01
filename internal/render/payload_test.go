@@ -172,8 +172,8 @@ func TestAmbiguousWidthCountsAsOne(t *testing.T) {
 		"▰", "▱", // the bar's own glyphs
 		"─", "╭", "├", "╰", "╵", // the rail
 		// Written as an escape rather than as the glyph: it is invisible in
-		// most editors and a raw copy of it is easily lost, which is how this
-		// line first asserted the width of an empty string.
+		// most editors and a raw copy of it is easily lost, leaving this line
+		// asserting the width of an empty string.
 		"", // the powerline separator, private use
 		"⌂", // the project root marker
 	} {

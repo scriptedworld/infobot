@@ -1,8 +1,7 @@
 // Command statusline is the status line's entry point, and nothing else.
 //
-// The render lives in internal/render, where a test can reach it and a checker
-// can read it. A body written in an entry point can only be exercised by
-// running the binary.
+// The render lives in internal/render, because a body written in an entry point
+// can only be exercised by running the binary.
 package main
 
 import (

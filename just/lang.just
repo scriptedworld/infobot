@@ -1,7 +1,7 @@
 # The Go layer. Everything true of a Go CLI and nothing true of one project.
 #
-# A language template owns this file and writes nothing else. It is here because
-# no template exists yet, and it is written to be lifted into one.
+# A language template owns this file and writes nothing else. No Go template
+# exists to write it, so it is kept here in a form a template can take over.
 #
 # What is and is not generic: `./...` and `./cmd/...` are Go's own spellings and
 # hold for any module, so build, test, format and format-check need no project
@@ -30,8 +30,7 @@
 # evidence the run happened and never evidence it passed.
 # `--result-to-exitcode` asks bolt to translate, and `_verdict` reads `success`
 # out of the result file bolt names instead, so a run that writes no result at
-# all is refused rather than read as a pass. That is hard rule 6, and it is
-# structure here rather than a habit to remember.
+# all is refused rather than read as a pass. That is hard rule 6.
 #
 # `--definitions` is passed through, which is what makes `_verdict` variadic: a
 # recipe cannot add an argument to another recipe's command line, so an adopter

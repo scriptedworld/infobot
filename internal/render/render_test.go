@@ -311,10 +311,8 @@ func TestProjectRootHiddenWhenItMatchesTheWorkingDirectory(t *testing.T) {
 // keeps, and what exceeds it is cut rather than wrapped.
 // Below about 70 columns two rate limit windows cannot be made to fit even
 // once their gauges are given up for the percentages, so the row runs over and
-// the terminal cuts it. Measured on the Python this replaced: at width 60 its
-// meter row was the same 65 columns against the same 57 budget. That is FR-3.6
-// working, not a fitting bug, so the fitting assertion starts where fitting is
-// achievable.
+// the terminal cuts it. That is FR-3.6 working, not a fitting bug, so the
+// fitting assertion starts where fitting is achievable.
 func TestRowsFitInsideTheBudget(t *testing.T) {
 	isolate(t)
 	for _, width := range []int{80, 120, 191, 223} {
@@ -365,8 +363,8 @@ func TestBarIsDroppedNotClampedWhenThereIsNoRoom(t *testing.T) {
 //
 // The bar shrinks with the pane and is dropped whole below BAR_MIN rather than
 // clamped to it. Clamping overflows, which costs the whole row to save a bar
-// that at 12% a cell was not saying much. Cell counts measured against the
-// Python this replaced, at the widths where the two must agree.
+// that at 12% a cell was not saying much. The cell counts are reference values,
+// so a change to any of them is a change to how the bar is sized.
 func TestBarShrinksWithThePaneThenGoesWhole(t *testing.T) {
 	isolate(t)
 	t.Setenv("NO_COLOR", "1")
@@ -460,10 +458,10 @@ func TestCompactGaugesReplaceBarsWhenTheRowIsTight(t *testing.T) {
 
 // COVERS FR-1.4 | regression
 //
-// A failure confined to one segment costs only that segment. The Python this
-// replaced wrapped the whole render in a bare except, so a malformed resets_at
-// blanked BOTH rows; golden/malformed-resets.txt captured that. Here the field
-// is absent data and the rest of the line survives.
+// A failure confined to one segment costs only that segment: a malformed
+// resets_at must not blank BOTH rows, which is what wrapping the whole render
+// in one recovery does (testdata/parity/golden/malformed-resets.txt). Here the
+// field is absent data and the rest of the line survives.
 func TestOneBadFieldCostsOnlyItsSegment(t *testing.T) {
 	isolate(t)
 	t.Setenv("NO_COLOR", "1")

@@ -143,7 +143,7 @@ func TestPriceReturnsNothingWhenNothingCouldBePriced(t *testing.T) {
 // COVERS FR-8.29 | property
 //
 // A cache read is CHARGED, at the table's cache_read for a model with no
-// multiplier of its own. 90% off is not free.
+// multiplier of its own, rather than counted as free.
 func TestCacheReadsAreChargedAtTheTablesMultiplier(t *testing.T) {
 	withTable(t, standard)
 	got, ok := pricing.Price(totals("claude-opus-5", map[string]float64{
