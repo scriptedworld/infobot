@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"context"
 	"errors"
 	"os"
 	"os/exec"
@@ -38,7 +39,7 @@ func shimIn(t *testing.T, name string, withBinary bool) (string, int) {
 		}
 	}
 
-	cmd := exec.Command(shim) //nolint:gosec // a shim has to be executable to be a shim
+	cmd := exec.CommandContext(t.Context(), shim) //nolint:gosec // the shim this test wrote
 	cmd.Stdin = strings.NewReader(`{"session_id":"shim-check"}`)
 	out, err := cmd.Output()
 	code := 0
@@ -94,8 +95,8 @@ func TestAbsentBinaryHonoursNoColor(t *testing.T) {
 //
 // Claude Code reaches the status line through a symlink in another directory
 // to `infobot/bin/infobot`. `dirname "$0"` on the symlink's own path gives
-// that directory, so the binary the shim looked for was the symlink itself, which is
-// the symlink, which is the shim. It exec'd itself.
+// that directory, so the shim looked for `statusline` there, found the
+// symlink, which is the shim, and exec'd itself.
 //
 // That ran for 35 minutes across ten sessions on 2026-08-28 and the only
 // visible symptom was every session's state file ceasing to update. The loop
@@ -137,21 +138,14 @@ func TestShimReachedThroughASymlinkDoesNotExecItself(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := exec.Command(link) //nolint:gosec // a shim has to be executable to be a shim
+	// A loop would run until the deadline kills it rather than failing, so the
+	// deadline is the assertion as much as the output is.
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, link) //nolint:gosec // the shim this test wrote
 	cmd.Stdin = strings.NewReader(`{"session_id":"symlink-check"}`)
-	// A loop would run until this fires rather than failing, so the timeout is
-	// the assertion as much as the output is.
-	done := make(chan struct{})
-	var out []byte
-	var runErr error
-	go func() {
-		out, runErr = cmd.Output()
-		close(done)
-	}()
-	select {
-	case <-done:
-	case <-time.After(10 * time.Second):
-		_ = cmd.Process.Kill()
+	out, runErr := cmd.Output()
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		t.Fatal("the shim did not terminate: it is exec'ing itself through the symlink")
 	}
 	if runErr != nil {
