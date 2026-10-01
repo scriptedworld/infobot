@@ -1,6 +1,6 @@
 # An optimised build removes the allocation a test arms
 
-The C++ suite, deleted with `cxx/` and last at `e1e99b1`, had an allocator that
+The C++ suite, deleted with `cxx/` and last at `1eacb3c`, had an allocator that
 failed one named allocation, so a test could take the exception edges gcov
 counts. Its own tests asked for the next allocation to fail and then made one:
 

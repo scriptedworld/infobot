@@ -13,9 +13,9 @@ implementation, the only one the gate reads in full, and it takes its YAML,
 JSON and schema handling from wrench's Go pack. Zig was deleted at 2c19f0b and
 Python retired before that.
 
-The last commit holding both C++ trees is `e1e99b1`:
+The last commit holding both C++ trees is `1eacb3c`:
 
-    git checkout e1e99b1 -- cpp/ cxx/
+    git checkout 1eacb3c -- cpp/ cxx/
 
 A restore brings back one known defect with it. Its coverage runs invoked gcov
 from `~/.projects` rather than from the repository, and over the toolchain as

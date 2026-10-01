@@ -27,7 +27,7 @@ rebuilding, committing and deploying to two hosts, for a change that is data.
 
 Keep perishable data in one place, with its refresh owned. Where it is missing,
 show nothing rather than a guess: infobot now leaves the cost segment out with
-no usable rate file (FR-8.27, FR-8.28, at `0f62594`), and the coordinator's
+no usable rate file (FR-8.27, FR-8.28, at `cafcf59`), and the coordinator's
 refresh writes the file on every host.
 
 A fallback still suits data that does not expire, such as the palette

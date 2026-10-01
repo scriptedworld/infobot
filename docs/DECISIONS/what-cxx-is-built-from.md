@@ -1,7 +1,7 @@
 # What cxx is built from
 
 **RETIRED 2026-09-25, with the C++ rebuild.** `cxx/` is deleted, last at
-`e1e99b1`, and `go-stays-deployed-while-cpp-clears-its-gate.md` says why. The
+`1eacb3c`, and `go-stays-deployed-while-cpp-clears-its-gate.md` says why. The
 library measurements below are kept for anyone choosing C++ dependencies
 again.
 

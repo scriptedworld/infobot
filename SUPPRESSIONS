@@ -113,4 +113,4 @@ the operation.
 
 A test-only replacement `operator new` in the C++ rebuild, approved under rule 4
 on 2026-09-15. It went with `cxx/`, which is deleted; the entry and its
-question and answer are at `e1e99b1`. The number is not reused.
+question and answer are at `1eacb3c`. The number is not reused.
