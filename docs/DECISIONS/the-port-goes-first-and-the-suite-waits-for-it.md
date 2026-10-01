@@ -1,8 +1,7 @@
 # The port goes first, and the suite waits for it
 
-This reverses a deferral that was recorded, reasoned and correct when it was
-made, so what follows is why the ground moved, not why the earlier call was
-wrong.
+This reverses an earlier deferral of the port. The deferral was sound on its
+inputs, and what follows is which of them changed.
 
 ## What was decided before
 
@@ -10,7 +9,7 @@ Go was settled as the language. The timing was not, and the recommendation in
 the task tracker was to defer: two of the four arguments
 for porting had not survived checking, the gate read the Python cleanly once the
 render moved out of the extensionless entry point, and the display was still
-changing shape most days. Porting a moving target means porting twice.
+changing shape most days, so a port made then would have had to be made again.
 
 ## What changed
 

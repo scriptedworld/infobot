@@ -5,53 +5,42 @@ This file holds what the tasks do not: open problems, and why each is open.
 
     ( setopt null_glob; print -l <task-tree>/**/*.ready )
 
-## The gate is red
+## The gate is red on lint alone
 
-`just checks` stops at `common-quality`, so `go-std-quality` is not reached:
-
-- **suppressions**: four pragmas in `internal/render` disagree with
-  `SUPPRESSIONS`, below.
-- **wording**: `bin/voice-tells.py` finds the prose findings that
-  `documentation/30` owns, which waits on `documentation/filing/`.
-
-Behind them, `lint` in the Go jig is red on 152 findings when measured
-uncapped. golangci-lint caps its own output at 50 per linter and 3 per repeated
-message, and neither the shared config nor the jig turns that off, so measure
-it this way or the count is a floor that shifts as the tree changes:
+`common-quality` passes, wording and suppressions included. `go-std-quality`
+fails on `lint` and nothing else: format, build, vet, tidy, vulnerabilities,
+the suite and per-file coverage all pass. Measure lint uncapped, because
+golangci-lint caps its own output at 50 per linter and 3 per repeated message,
+and neither the shared config nor the jig turns that off:
 
     golangci-lint run --config config/go-std-quality.golangci.yml \
         --max-issues-per-linter 0 --max-same-issues 0
 
-130 of them are questions for toolbox's shared config, which has no
-per-project override, and are filed there:
+126 of the findings are questions for toolbox's shared config, which has no
+per-project override, and are filed there. They are decided there, not worked
+around here:
 
-    paralleltest      89   the tests were never meant to run in parallel
-    mnd               28   none is truly magic
-    gochecknoglobals  13   all are types Go's const cannot hold, none mutated
+    paralleltest      94   the tests were never meant to run in parallel
+    mnd               32   none is truly magic
 
-22 are infobot's own, all gosec, and none is settled by an edit:
+15 are infobot's own, all gosec, and none is settled by an edit:
 
     G304  10   a file opened by computed path: the transcripts, the rate
-               table, and temporary paths a test has just built
-    G306   7   a WriteFile that must land executable; 0600 is not a mode a
+               table, the terminal, and temporary paths a test has just built
+    G306   5   a WriteFile that must land executable; 0600 is not a mode a
                script runs from, so rule and fixture cannot both hold
-    G204   3   a subprocess with a variable: the width query the design
-               requires, and two tests invoking the shim
-    G301   1   and G302 1, both the state file's mode, below
 
 `jig-adoption/10` carries them.
 
-## Twenty-four pragmas were added without anyone being asked
+## Fifteen pragmas still carry answers nobody gave
 
-Merged at `9e92fa9`: fourteen `gochecknoglobals` and ten `gosec`, with a
+`9e92fa9` added fourteen `gochecknoglobals` and ten `gosec` pragmas, with a
 `SUPPRESSIONS` file asserting answers to questions nobody had been asked. Hard
-rule 4 admits no pragma until a person has answered why. `palette_config.go`
-and `width_tty.go` were built on top, so reverting is possible and not a clean
-revert.
-
-It needs a decision, not an edit. Keeping them adopts answers nobody gave.
-Dropping them returns 24 findings and the position above. The four
-`internal/render` files `suppressions` fails on are part of the same set.
+rule 4 admits no pragma until a person has answered why. Seven of the
+`gochecknoglobals` went when the palette became a value, and S-4's two were
+asked and answered. The rest, S-1 and S-2, still need a decision: keeping them
+adopts answers nobody gave, and dropping them returns their findings to the
+count above.
 
 ## The state file's mode is a question, not a finding
 
@@ -62,30 +51,29 @@ asserts what no requirement states. silo's board reads the files as the same
 user, so 0600 would not break the one known reader. Tightening it drops an
 intent recorded nowhere else.
 
-## This repository has a remote the decision says it should not
+## A push waits on the gate
 
 `origin` is `git@github.com:scriptedworld/infobot.git`, and the last commit
-known to be there is `de7d2de`. `docs/DECISIONS/the-remotes-are-off-until-the-documentation-is-ready.md`
-opens by saying no repository here has a remote, because the absence is what
-keeps the scrubbed history from surviving in a clone or a cache. Here that
-protection has already lapsed.
+there is `de7d2de`. A push waits on the four conditions in
+`docs/DECISIONS/a-push-waits-on-history-and-documentation-review.md`, and of
+those the gate is what is left: lint is red, as above.
 
 `clone = false` in `dotfiles/repos.live.yaml` still holds; it governs whether
 the estate clones this tree, not whether a remote is configured in it.
 
-This needs a person: either the decision is spent and gets rewritten, or the
-remote is there by accident and the question is what it already published.
-Nothing is pushed until it is answered.
-
 ## Requirement rows that disagree with the code
 
-**FR-5.12** reads "with the width unknown the bar is a fixed fifty cells", and
-`docs/SPEC.md`, "The width", repeats it. The code draws no bar at all (`fitted`
-in `internal/render/segments.go`), and `TestUnknownWidthDrawsNoBar` asserts that
-while citing FR-5.12. The comment beside the code says why: a bar is a claim
-about room, and with no width any length is a guess the host truncates. Which
-is intended needs a person. If it is the code, FR-5.12 is retired for a new row
-and the test and SPEC follow.
+**FR-3.3** says an unknown width "means render the full form", and
+`docs/SPEC.md`, "The width", repeats it. The context bar is drawn at FR-5.12's
+fifty cells there, but `build` takes the compact form for the rate-limit gauges
+at width 0, printing their percentages without bars. Which is intended needs a
+person.
+
+**FR-6.11, FR-3.5 and FR-1.7** predate the configuration files. FR-6.11 names
+the ENCOM teal the seed no longer uses, FR-3.5 fixes the reserve at three where
+`layout.json` sets it, and FR-1.7's list of files opened leaves out
+`palette.json` and `layout.json`. The tests for the two files cite FR-6.11 and
+FR-3.5 because SPEC does; the rows want restating under new ids.
 
 **FR-4.3 and FR-4.4** name Python functions (`time.time`, `limit_segment`,
 `place_context`, `compose`). What they require survives in Go: the clock, the
@@ -195,5 +183,5 @@ partly answered already: silo's board is that reader and has an owner. What
 remains is where a session's intent comes from, and whose vocabulary it uses.
 
 `PACE_CONFIDENT` at 0.6 and the squared fade were tuned by eye against one
-evening's numbers. Only normal use says whether the middle of a window is too
-quiet.
+evening's numbers. Whether the middle of a window reads too quiet is open until
+normal use shows it.

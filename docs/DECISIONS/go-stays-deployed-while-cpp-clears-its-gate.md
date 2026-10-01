@@ -2,11 +2,11 @@
 
 **RETIRED 2026-09-25. There is no C++ port. Go is the only implementation.**
 
-wrench dropped its C++ pack: a contract-conformant one came to about 3,200
-lines, a third of them tests, and was judged too much to carry. The rebuild
-took every structured file from that pack, so it had nothing to link, and C++
-was dropped here with it. Both trees are deleted, the first port in `cpp/` and
-the rebuild in `cxx/`, along with the C++ jig's wiring.
+wrench has no C++ pack: a contract-conformant one comes to about 3,200 lines,
+a third of them tests, which is more than wrench takes on. The rebuild took
+every structured file from that pack, so it has nothing to link, and infobot
+has no C++ either. Both trees are deleted, the first port in `cpp/` and the
+rebuild in `cxx/`, along with the C++ jig's wiring.
 
 Go was kept because nothing else was a candidate. It is the deployed
 implementation, the only one the gate reads in full, and it takes its YAML,
@@ -21,8 +21,7 @@ A restore brings back one known defect with it. Its coverage runs invoked gcov
 from `~/.projects` rather than from the repository, and over the toolchain as
 well as `cpp/src`, so 63 `.gcov` files landed outside every tree, 58 of them
 standard library headers. Run gcov from the repository root and restrict it to
-the project's sources. The inbox entry that reported it was closed on this
-retirement, since nothing left here can produce it.
+the project's sources.
 
 The figures below stay, because they are what any later attempt at a faster
 implementation is measured against. Where they say what is decided, that is the

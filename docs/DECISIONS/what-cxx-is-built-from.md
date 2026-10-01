@@ -27,7 +27,7 @@ validated. The transcript lines do not.
 The pack binds jsoncons, and it is built to be right rather than quick. On the
 same corpus, 33 files and 61,317,795 bytes summed to identical totals, jsoncons
 takes 259.3 ms where simdjson takes 42.5 ms (measured by wrench; infobot's own
-earlier reading of simdjson on that corpus was 33.3 ms, against glaze at 35.8
+reading of simdjson on that corpus was 33.3 ms, against glaze at 35.8
 and nlohmann/json at 140.8). A first render reads every transcript the session
 has, so that difference is paid at the start of every session, and later renders
 read only what was appended (FR-8.6).

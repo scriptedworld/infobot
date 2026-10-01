@@ -6,9 +6,8 @@ own.
 
 ## Why
 
-The form is a published interface (FR-1.11o): silo's board reads it with
-anchored patterns, so quoting, one key to a line, the space after the colon and
-bare numbers all matter. wrench's pack emits canonical YAML to that shape, and
+The form is a published interface whose readers match its exact layout
+(FR-1.11o). wrench's pack emits canonical YAML to that shape, and
 it is the emitter every other tool here uses.
 
 Before the Go port, infobot emitted the form by hand, kept in step with wrench

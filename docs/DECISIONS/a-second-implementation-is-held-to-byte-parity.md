@@ -20,19 +20,19 @@ instructions, and the cause was an arena that never freed.
 
 The cost and the ecosystem are the same reason, not two. The Zig build was
 hand-spun throughout because there was nothing to reach for: YAML emitted by
-hand with no library, and the rest written the same way. An arena that never
-frees is what seat-of-the-pants allocation looks like when nobody has already
-solved it for you.
+hand with no library, and the rest written the same way. The arena that never
+freed came from the same place: allocation written by hand, with no library
+that had already solved it.
 
 So the 19x is not a fact about Zig the language. It is what a hand-rolled
 implementation costs, and needing to hand-roll is the ecosystem argument
 arriving as a number instead of an opinion.
 
-Both cost measurements in this repository's history were taken on the same axis
-and only one was trustworthy. A later run using a Python wrapper, ten
-iterations, no CPU pinning, on a machine running eight other sessions, reported
-Zig ahead by 2x. It was measuring scheduler noise. The instrument that answered
-was the one that pinned the CPU and counted instructions.
+Two cost measurements of the Zig tree exist on the same axis, and only one is
+trustworthy. The other, using a Python wrapper, ten iterations, no CPU pinning,
+on a machine running eight other sessions, reported Zig ahead by 2x. It
+measured scheduler noise. The instrument that answers is the one that pins the
+CPU and counts instructions.
 
 ---
 
@@ -62,8 +62,7 @@ any width but full.
 A difference is a defect in the Zig tree until shown otherwise. Two were found
 this way and both were real: a percentage of 12.5 printing `13%` against Go's
 `12%`, and the transcript grouping falling back to filenames because a reader
-left its delimiter in the stream. Neither would have been found by reading the
-code.
+left its delimiter in the stream.
 
 ## Why it is not deployed
 

@@ -20,8 +20,8 @@ about what is read and not about how often.
 
 ## Why the coordinator and not every session
 
-The refresh was first filed against `/grok`, which runs at the start of every
-session and after every clear, in every project. That would point a dozen
+Filing the refresh against `/grok` would run it at the start of every session
+and after every clear, in every project. That would point a dozen
 sessions at one file and one web page at once, none aware of the others and
 none holding a lock. There is one coordinator, so it is the single writer.
 
@@ -30,19 +30,19 @@ and makes no network call (FR-1.6).
 
 ## Why three days
 
-It was one day, and the file was found five days stale, so the figure had never
-been honoured. A window that is kept beats a shorter one that is not, and the
-refresh needs a person, which is what makes a tight window expensive.
+A one-day window does not hold: under one, the file was found five days stale.
+The refresh needs a person, which is what makes a tight window expensive, so
+the window is set where it will be kept.
 
 The cost of a stale rate is small and bounded. The figure is a counterfactual on
 a subscription, what these tokens would have cost through the API, so a wrong
-rate misprices a number nobody is billed for. When the five-day-stale file was
-re-read, nothing in it had changed.
+rate misprices a number nobody is billed for. The file found five days stale
+needed no change when it was checked against the page.
 
 ## Why nothing is compiled in
 
-A seed compiled into the binary used to stand in when the file was missing. It
-went stale unnoticed, and a price change meant a rebuild. With the file as the
+A seed compiled into the binary to stand in when the file is missing goes stale
+unnoticed, and a price change means a rebuild. With the file as the
 only copy, a price change is an edit, and a host with no usable file renders
 with no cost segment (FR-8.28), which is visible. The lesson is
 `docs/LESSONS/a-fallback-copy-of-perishable-data-goes-stale-unseen.md`.

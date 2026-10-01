@@ -7,7 +7,7 @@ not asking the same question, so they do not share a colour scale.
 
 The context bar's colour is its own fill: each cell takes the ramp of the
 percentage it stands for, green at the start through to the alarm at 90. Full
-is the emergency there, because a full context window is the end of the road.
+is the emergency there, because a full context window leaves no room to work.
 
 A rate limit gauge is coloured by **where the window is projected to land when
 it resets**: spend divided by how far through the window we are. Its length
