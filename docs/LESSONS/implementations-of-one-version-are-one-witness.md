@@ -11,7 +11,7 @@ round trip. The range was C0, DEL and C1. wrench pointed out that U+2028 and
 U+2029 sit outside it and that Go escapes both.
 
 I checked instead of adopting, which was right, and I checked the wrong thing.
-Three parsers, three implementations, no shared code:
+Three parsers sharing no code:
 
     PyYAML       U+2028 round trips raw
     go-yaml      U+2028 round trips raw
@@ -45,8 +45,8 @@ an artefact of one parser's incompleteness.
 
 ## Why three parsers were not three witnesses
 
-They were all asked, and they all answered, and they still corroborated nothing.
-They agreed because they share an era rather than an argument: none of them
+All three were asked the question, and their answers corroborated nothing. They
+agreed because they share an era rather than an argument: none of them
 implements the 1.1 break set completely, so all three inherit the same gap.
 **Agreement across implementations of one version is one implementation counted
 three times.**
@@ -80,5 +80,5 @@ answer lives.
 
 Nothing shipped wrong: the reversal landed an hour after the first decision and
 before anything depended on it. What it cost was a decision defended in writing
-to a peer and then withdrawn, which is cheap, and is the reason to write the
-reasoning down, not only the conclusion.
+to a peer and then withdrawn. That is cheap because the reasoning was written
+down along with the conclusion.

@@ -17,8 +17,8 @@ carrying the half that faces the file's readers. The link was taken at infobot
 
 For those two weeks the requirements table said the pin was not needed, while
 two emitters of one published form ran with nothing holding them together.
-Whether the gap later closed was never the point: the table recorded a live gap
-as a closed one, and anybody reading it in between was told something false.
+The link landing later does not change what the table said in between: anybody
+reading it was told a live gap was closed.
 
 ## What to do
 

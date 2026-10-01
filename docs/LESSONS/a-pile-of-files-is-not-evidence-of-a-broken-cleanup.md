@@ -1,14 +1,14 @@
 # A pile of files is not evidence of a broken cleanup
 
-2026-08-26. Two sessions spent an evening on a conclusion that a count made
-obvious and a classification dissolved. Nothing was broken.
+2026-08-26. An evening went into a conclusion that a count made obvious and a
+classification dissolved. Nothing was broken.
 
 ## What happened
 
 A `SessionEnd` hook was installed at 11:54 to remove the two state files each
 session leaves under `~/.local/state/infobot`. By evening the directory held 27
-files. A second session counted them, compared against an estimate of how many
-sessions had ever run, and concluded: *this is not a cleanup that sometimes
+files. Counted against an estimate of how many sessions had ever run, they led
+to the conclusion: *this is not a cleanup that sometimes
 misses, it is a cleanup that has never removed anything.*
 
 That went into a task as its premise. It was wrong.
@@ -43,8 +43,7 @@ premise because of who said it.
 **Three of the files were the observer's own.** Probes that render write an
 offsets file for whatever session id their payload carries. Four of them did not
 move `XDG_STATE_HOME`, so fixture ids landed in the real directory naming
-sessions that never existed. The measurement was polluted by the act of
-measuring.
+sessions that never existed.
 
 ## What to do instead
 

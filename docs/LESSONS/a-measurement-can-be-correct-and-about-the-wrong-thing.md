@@ -6,7 +6,7 @@ verifying the claim felt like the whole job.
 
 ## What happened
 
-Another session measured that importing wrench's Python pack fails on this
+A relayed measurement showed that importing wrench's Python pack fails on this
 machine:
 
     /usr/bin/python3 -c "import wrench"
@@ -27,11 +27,10 @@ and the two interpreters did not carry the same packages:
 Under the interpreter infobot actually used, the import would have succeeded.
 The requirement was true about a runtime nothing here ran on.
 
-**Everything above is past tense now, and the reason is this lesson's own.**
 infobot is Go, from 2026-08-28, and has no interpreter to resolve. The account
-stays because the failure it describes is not about Python, and because a lesson
-rewritten to look as though it had always been about the current code teaches
-nothing about how the mistake was reached.
+stays in the past tense because the failure it describes is not about Python,
+and because a lesson rewritten to look as though it had always been about the
+current code teaches nothing about how the mistake was reached.
 
 ## Why verifying did not catch it
 
@@ -40,9 +39,10 @@ else's command confirms the command does what they said; it says nothing about
 whether the thing measured is the thing the argument needs. `head -1 bin/infobot`
 was the missing step and it is one line.
 
-The failure survives good practice. Both sessions were deliberately verifying
-rather than trusting, and both verified the same wrong thing, because the second
-inherited the first's framing along with its number.
+The failure survives good practice. The measurement and its re-run were both
+deliberate verification rather than trust, and both verified the same wrong
+thing, because the re-run inherited the original's framing along with its
+number.
 
 ## What to ask of a measurement before building on it
 

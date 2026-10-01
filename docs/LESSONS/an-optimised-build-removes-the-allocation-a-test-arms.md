@@ -37,12 +37,12 @@ allocation itself. The call is then opaque and no optimiser can elide it:
 
 **Run the suite in an optimised build as well as the instrumented one.**
 The `cxx-clang` recipe built Release with Clang, so the second run varied the
-optimisation level as well as the compiler. Both of those are the sort of
-difference that decides whether a test is measuring what it says.
+optimisation level as well as the compiler.
 
 ## What it generalises to
 
-A suite that only ever runs in one configuration is evidence about that
-configuration. Anything the compiler is permitted to do differently, elision of
-allocations, of copies, of a read the optimiser can prove is unused, is a place
-where a passing test can be reporting on a program the user never runs.
+Anything the compiler is permitted to do differently between builds, eliding an
+allocation, a copy, or a read the optimiser can prove is unused, is a place
+where a test that passes in one configuration can fail in another, so a suite
+run in one configuration is evidence about that configuration only. Here the
+gate ran -O0 and a person building by hand runs Release.

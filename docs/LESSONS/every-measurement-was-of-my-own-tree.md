@@ -83,11 +83,11 @@ recommendation turns on rather than the one the experiments cover.
 convention as of today.** That is a claim about other people's files with a
 timestamp on it, and it is the most perishable thing a finding can contain.
 
-**Ask whoever owns it, which is cheaper than any of this.** The rename had an
-owner, a commit and a reason, and a message would have returned all three.
+**Ask whoever owns it, which is cheaper than any of this.** silo made the
+rename at `12a5d4e` and recorded why, and one message to silo would have
+returned it.
 
 ## What it is not
 
 Not an argument against filing. The mechanism the finding established was right
-and is still right, and it is why the rename exists at all. The failure was
-narrow: one premise, about somebody else's tree, inherited from mine.
+and is still right, and it is why the rename exists at all.

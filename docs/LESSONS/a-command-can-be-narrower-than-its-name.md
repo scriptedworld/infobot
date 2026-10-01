@@ -1,9 +1,10 @@
 # A command can be narrower than its name, and carrying it does not help
 
-2026-08-28. Earlier the same day I wrote that a relayed finding should carry the
-command rather than the conclusion, because a conclusion has no seam to check.
-That is right and it is not sufficient. A command carries its own claim in its
-name, and the name can be wider than what it does.
+2026-08-28. `a-claim-phrased-as-a-conclusion-has-no-seam-to-check.md` says a
+relayed finding should carry the command rather than the conclusion, because a
+conclusion has no seam to check. That is right and it is not sufficient. A
+command carries its own claim in its name, and the name can be wider than what
+it does.
 
 ## What happened
 
@@ -11,7 +12,7 @@ A shared secrets jig declares `detect-secrets scan --baseline .secrets.baseline`
 and no adopter has that file, so it exits 2 on a usage error every run. The
 question was whether committing a baseline would fix it or make it worse.
 
-Two sessions measured it. Three probes between them. Every one was flawed.
+Dispatch and I ran three probes between us, and every one was flawed.
 
     probe 1  mine       credential written, never committed
                         `detect-secrets scan app.py` to check it was detectable
@@ -39,8 +40,7 @@ it pointed at the wrong thing.
 
 So the earlier rule needs its boundary written next to it: **carrying the
 command makes a claim checkable against what the command does, not against what
-the question was.** Where the two differ, a published command is a conclusion
-with extra steps.
+the question was.**
 
 ## What actually caught it
 
@@ -65,15 +65,15 @@ the fixture is detectable is a second experiment, and its result does not
 transfer to the first.
 
 **When two measurements agree on the conclusion and differ on a detail, chase
-the detail.** That is the case where agreement is least informative.
+the detail.**
 
 ## What it cost, and what it did not
 
 Nothing was acted on. The recommendation reached from three bad probes happened
 to be the right one, and it was re-derived properly before it went anywhere. The
-cost was two sessions' measurement time and a corrected figure sent twice.
+cost was the time three probes took and a corrected figure sent twice.
 
-The rate is not a fact about either session. Both of us hit the same trap, and
+The rate is not a fact about either of us. Both of us hit the same trap, and
 one of dispatch's flawed runs was inside the command it used to catch mine. That
 is evidence about how well this failure hides, which argues for the measurement
 rather than against the measurer.

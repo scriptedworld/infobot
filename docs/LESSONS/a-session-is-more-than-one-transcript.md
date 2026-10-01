@@ -61,5 +61,5 @@ counted subagents but followed only one side of a clear. Both looked correct in
 testing, because a session with no subagents and no clear is the case you reach
 for first.
 
-A transcript is a file and a session is a set of them, so ask what the set is
-before reading any of it.
+Before reading a session's usage, collect its set: every subagent file, and
+every transcript sharing its root.

@@ -68,9 +68,9 @@ second. So the state file in `state_dir()` is exactly as fresh as the last
 transcript entry: it cannot go stale while the session is doing anything, and
 when the session is idle the numbers it holds are not changing.
 
-That answers the question that started this, which was how often the file should
-be refreshed. It refreshes when there is something to refresh, and a timer would
-be strictly worse: staleness during activity, and pointless writes during idle.
+So the file needs no refresh schedule. It refreshes when there is something to
+refresh, and a timer would be strictly worse: staleness during activity, and
+pointless writes during idle.
 
 **One case renders nothing: a queued message.** A message arriving while the
 session is idle is parked, and the transcript records it, but nothing renders
@@ -89,13 +89,15 @@ reports context, not activity.
     f=~/.local/state/infobot/<session>.status.yaml
     for i in $(seq 1 150); do stat -c '%y' "$f"; sleep 0.5; done | uniq
 
-Do nothing for a minute in the middle of it. The gap is the finding.
+Do nothing for a minute in the middle of it. The output shows a gap of about
+that minute with no write inside it.
 
 ## Nothing removes the file when the session ends
 
 The status line is the only thing that writes it, and it is never called again
-after the last entry. Fifteen offsets files had accumulated in `state_dir()`
-before anyone noticed, one per session since the offsets were introduced.
+after the last entry. Without a cleanup, offsets files accumulate in
+`state_dir()`, one per session since the offsets were introduced. Fifteen had
+built up before anyone noticed.
 
 A `SessionEnd` hook removes both, calling `bin/forget-session`. It cannot be
 proven from inside a session, because it fires as the session goes.

@@ -53,8 +53,7 @@ build output is its deployed artefact has the same trap waiting in the same
 recipe; `bolt` is the next one, since `bin/bolt` is installed and gates the
 estate.
 
-**Prefer a loud absence to a quiet stale value.** An instrument that cannot
-answer should say so. This one answered.
+**Prefer a loud absence to a quiet stale value.**
 
 ## What it cost
 

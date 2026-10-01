@@ -34,9 +34,9 @@ the rule is expensive here in principle. If it is init, it is one library's
 choice, another might cost nothing, and the answer is about linkage rather than
 about validating.
 
-**I could not tell which from the number, and the number looked finished.** That
-is the whole failure mode: a difference with tight variance reads as a result,
-and its ambiguity is invisible because the ambiguity is not in the data.
+**I could not tell which from the number, and the number looked finished.** A
+difference with tight variance reads as a result, and nothing in the data shows
+that two explanations fit it.
 
 ## The control
 
@@ -61,7 +61,7 @@ Confirmed by a second instrument that agrees to two decimals:
 ## Why the right answer needed the control and not more runs
 
 More runs of `nodep` against `bare` would have tightened a figure that was
-already tight. Precision is not the axis the error was on.
+already tight, and no number of runs separates size from init.
 
 The decision that followed turns entirely on which explanation was true. It came
 out as process lifetime: a component running once per event enforces its
@@ -87,8 +87,7 @@ timing runs agreeing is not.
 
 **Cite the control when reporting.** Without `padded` in the table the result
 reads as "the binary got bigger", and a reader has no way to see the conclusion
-is unsupported. That is what makes it a measurement somebody else can act on
-rather than a number they have to trust.
+is unsupported.
 
 ## Where it sits
 
