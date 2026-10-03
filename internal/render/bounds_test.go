@@ -1,9 +1,11 @@
 package render_test
 
 import (
+	"errors"
 	"fmt"
 	"go/parser"
 	"go/token"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -109,18 +111,15 @@ func hostCounter(t *testing.T, reply string) (script, log string) {
 	t.Helper()
 	dir := t.TempDir()
 	log = filepath.Join(dir, "calls")
-	script = filepath.Join(dir, "host")
-	body := "#!/bin/sh\necho call >> " + log + "\nprintf '%s\\n' '" + reply + "'\n"
-	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
-		t.Fatal(err)
-	}
+	script = writeExecutable(t, dir, "host",
+		"#!/bin/sh\necho call >> "+log+"\nprintf '%s\\n' '"+reply+"'\n")
 	return script, log
 }
 
 func calls(t *testing.T, log string) int {
 	t.Helper()
-	raw, err := os.ReadFile(log)
-	if os.IsNotExist(err) {
+	raw, err := readFixture(log)
+	if errors.Is(err, fs.ErrNotExist) {
 		return 0
 	}
 	if err != nil {
@@ -166,12 +165,8 @@ func TestAtMostOneSubprocessAndOnlyForTheWidth(t *testing.T) {
 // otherwise hang it.
 func TestAHungHostIsBoundedAndCountsAsUnknown(t *testing.T) {
 	t.Setenv("TMUX", "")
-	dir := t.TempDir()
-	script := filepath.Join(dir, "host")
 	// Longer than the two second bound, so returning at all is the assertion.
-	if err := os.WriteFile(script, []byte("#!/bin/sh\nsleep 30\n"), 0o755); err != nil {
-		t.Fatal(err)
-	}
+	script := writeExecutable(t, t.TempDir(), "host", "#!/bin/sh\nsleep 30\n")
 	t.Setenv("HERDR_PANE_ID", "w1:p1")
 	t.Setenv("HERDR_BIN_PATH", script)
 

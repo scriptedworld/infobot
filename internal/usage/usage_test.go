@@ -189,7 +189,12 @@ func TestOnlyAppendedBytesAreParsed(t *testing.T) {
 		t.Fatalf("first read = %v, want 10", got)
 	}
 
-	handle, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o600)
+	dir, err := os.OpenRoot(filepath.Dir(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = dir.Close() }()
+	handle, err := dir.OpenFile(filepath.Base(path), os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
 		t.Fatal(err)
 	}

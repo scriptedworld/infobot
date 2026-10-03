@@ -19,6 +19,9 @@ const (
 	// continues with state then ppid, so two fields must be present before the
 	// parent can be read.
 	statFieldsAfterName = 2
+
+	// ptsDir holds the pseudo-terminals a process's descriptors can point at.
+	ptsDir = "/dev/pts"
 )
 
 // ttyWidth is the columns of the terminal an ancestor holds, or 0.
@@ -66,7 +69,7 @@ func ttyWidth() int {
 func ttyOf(pid int) string {
 	for _, fd := range []string{"0", "1", "2"} {
 		link, err := os.Readlink("/proc/" + strconv.Itoa(pid) + "/fd/" + fd)
-		if err == nil && strings.HasPrefix(link, "/dev/pts/") {
+		if err == nil && strings.HasPrefix(link, ptsDir+"/") {
 			return link
 		}
 	}
@@ -112,8 +115,20 @@ func parentOf(pid int) int {
 // O_NOCTTY matters: without it, opening a terminal from a process with no
 // controlling terminal can ACQUIRE it as one, which is a side effect a status
 // line has no business having.
+//
+// The pts is opened through a root on /dev/pts, so a link read out of /proc
+// can name a terminal and nothing else.
 func winsizeColumns(path string) int {
-	file, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOCTTY|syscall.O_NONBLOCK, 0)
+	name, ok := strings.CutPrefix(path, ptsDir+"/")
+	if !ok {
+		return 0
+	}
+	root, err := os.OpenRoot(ptsDir)
+	if err != nil {
+		return 0
+	}
+	defer func() { _ = root.Close() }()
+	file, err := root.OpenFile(name, os.O_RDONLY|syscall.O_NOCTTY|syscall.O_NONBLOCK, 0)
 	if err != nil {
 		return 0
 	}

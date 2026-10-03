@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/scriptedworld/infobot/internal/render"
 )
@@ -19,10 +20,8 @@ func fakeTmux(t *testing.T, reply string) string {
 	t.Helper()
 	dir := t.TempDir()
 	argv := filepath.Join(dir, "argv")
-	script := "#!/bin/sh\nprintf '%s\\n' \"$*\" > " + argv + "\nprintf '%s\\n' " + reply + "\n"
-	if err := os.WriteFile(filepath.Join(dir, "tmux"), []byte(script), 0o755); err != nil {
-		t.Fatal(err)
-	}
+	writeExecutable(t, dir, "tmux",
+		"#!/bin/sh\nprintf '%s\\n' \"$*\" > "+argv+"\nprintf '%s\\n' "+reply+"\n")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	return argv
 }
@@ -31,12 +30,30 @@ func fakeTmux(t *testing.T, reply string) string {
 // routes can be exercised without a multiplexer.
 func fakeHost(t *testing.T, body string) string {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "host")
-	script := "#!/bin/sh\ncat <<'REPLY'\n" + body + "\nREPLY\n"
-	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
+	return writeExecutable(t, t.TempDir(), "host", "#!/bin/sh\ncat <<'REPLY'\n"+body+"\nREPLY\n")
+}
+
+// writeExecutable puts a script a test runs into dir and returns its path.
+//
+// os.CopyFS keeps the execute bits of the entry it copies, so the script lands
+// runnable without a separate chmod.
+func writeExecutable(t *testing.T, dir, name, script string) string {
+	t.Helper()
+	fixture := fstest.MapFS{name: {Data: []byte(script), Mode: 0o755}}
+	if err := os.CopyFS(dir, fixture); err != nil {
 		t.Fatal(err)
 	}
-	return path
+	return filepath.Join(dir, name)
+}
+
+// readFixture reads a file a test wrote, through a root on its directory.
+func readFixture(path string) ([]byte, error) {
+	root, err := os.OpenRoot(filepath.Dir(path))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = root.Close() }()
+	return root.ReadFile(filepath.Base(path))
 }
 
 func noHosts(t *testing.T) {
@@ -90,7 +107,7 @@ func TestTmuxIsAskedAboutTheCallingPaneNotTheActiveOne(t *testing.T) {
 	if got := render.TerminalWidth(); got != 257 {
 		t.Errorf("TerminalWidth = %d, want the calling pane's 257", got)
 	}
-	asked, err := os.ReadFile(argv)
+	asked, err := readFixture(argv)
 	if err != nil {
 		t.Fatalf("tmux was never run: %v", err)
 	}
@@ -114,7 +131,7 @@ func TestTmuxWithoutAPaneIdStillAsks(t *testing.T) {
 	if got := render.TerminalWidth(); got != 180 {
 		t.Errorf("TerminalWidth = %d, want 180 from the untargeted fallback", got)
 	}
-	asked, err := os.ReadFile(argv)
+	asked, err := readFixture(argv)
 	if err != nil {
 		t.Fatalf("tmux was never run: %v", err)
 	}

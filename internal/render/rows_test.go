@@ -2,7 +2,6 @@ package render_test
 
 import (
 	"encoding/json"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -115,7 +114,7 @@ func TestBarAndFileAgreeBecauseTheyShareAMeasurement(t *testing.T) {
 			t.Fatalf("exit = %d", code)
 		}
 
-		file, err := os.ReadFile(filepath.Join(state, "infobot", "agree.status.yaml"))
+		file, err := readFixture(filepath.Join(state, "infobot", "agree.status.yaml"))
 		if err != nil {
 			t.Fatalf("no state file: %v", err)
 		}

@@ -8,36 +8,55 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 	"time"
 )
+
+// stub stands in for a built binary and says that it ran.
+const stub = "#!/bin/sh\ncat >/dev/null\necho RAN-THE-BINARY\n"
+
+// committedShim is the shim as committed in bin/, read through a root on that
+// directory.
+func committedShim(t *testing.T, name string) []byte {
+	t.Helper()
+	bin, err := os.OpenRoot("../../bin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = bin.Close() }()
+	source, err := bin.ReadFile(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return source
+}
+
+// executables writes each script into dir, runnable. os.CopyFS keeps the
+// execute bits of the entries it copies, so nothing is chmodded afterwards.
+func executables(t *testing.T, dir string, scripts map[string][]byte) {
+	t.Helper()
+	fixture := fstest.MapFS{}
+	for name, body := range scripts {
+		fixture[name] = &fstest.MapFile{Data: body, Mode: 0o755}
+	}
+	if err := os.CopyFS(dir, fixture); err != nil {
+		t.Fatal(err)
+	}
+}
 
 // shimIn copies the committed shim into a scratch directory, optionally with a
 // binary beside it, and runs it. The shim resolves the binary from its own
 // location, so a copy exercises exactly what the real path does.
 func shimIn(t *testing.T, name string, withBinary bool) (string, int) {
 	t.Helper()
-	root, err := filepath.Abs("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	source, err := os.ReadFile(filepath.Join(root, "bin", name))
-	if err != nil {
-		t.Fatal(err)
-	}
 	dir := t.TempDir()
 	shim := filepath.Join(dir, name)
-	//nolint:gosec // a shim must be executable
-	if err := os.WriteFile(shim, source, 0o755); err != nil {
-		t.Fatal(err)
-	}
+	scripts := map[string][]byte{name: committedShim(t, name)}
 	if withBinary {
 		target := map[string]string{"infobot": "statusline", "forget-session": "forget"}[name]
-		stub := "#!/bin/sh\ncat >/dev/null\necho RAN-THE-BINARY\n"
-		//nolint:gosec // a shim must be executable
-		if err := os.WriteFile(filepath.Join(dir, target), []byte(stub), 0o755); err != nil {
-			t.Fatal(err)
-		}
+		scripts[target] = []byte(stub)
 	}
+	executables(t, dir, scripts)
 
 	cmd := exec.CommandContext(t.Context(), shim) //nolint:gosec // the shim this test wrote
 	cmd.Stdin = strings.NewReader(`{"session_id":"shim-check"}`)
@@ -109,24 +128,12 @@ func TestShimReachedThroughASymlinkDoesNotExecItself(t *testing.T) {
 
 	// A symlink to the shim, in a directory holding nothing else, which is the
 	// shape that directory has.
-	root, err := filepath.Abs("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	source, err := os.ReadFile(filepath.Join(root, "bin", "infobot"))
-	if err != nil {
-		t.Fatal(err)
-	}
 	home := t.TempDir()
 	shim := filepath.Join(home, "infobot")
-	//nolint:gosec // a shim must be executable
-	if err := os.WriteFile(shim, source, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	stub := "#!/bin/sh\ncat >/dev/null\necho RAN-THE-BINARY\n"
-	if err := os.WriteFile(filepath.Join(home, "statusline"), []byte(stub), 0o755); err != nil {
-		t.Fatal(err)
-	}
+	executables(t, home, map[string][]byte{
+		"infobot":    committedShim(t, "infobot"),
+		"statusline": []byte(stub),
+	})
 
 	elsewhere := t.TempDir()
 	link := filepath.Join(elsewhere, "statusline")

@@ -25,7 +25,12 @@ func write(t *testing.T, data payload.Map) string {
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	state.Write(data, stamp)
 	path := state.Path(data.Str("session_id"))
-	raw, err := os.ReadFile(path)
+	root, err := os.OpenRoot(filepath.Dir(path))
+	if err != nil {
+		t.Fatalf("no state directory: %v", err)
+	}
+	defer func() { _ = root.Close() }()
+	raw, err := root.ReadFile(filepath.Base(path))
 	if err != nil {
 		t.Fatalf("no state file written: %v", err)
 	}

@@ -67,18 +67,23 @@ func configuredLook() look {
 // readConfig is one of infobot's files under the XDG config home, or nil.
 //
 // A missing file is the normal case on a machine that has not configured one,
-// and an unreadable one is treated the same way: the seed stands.
+// and an unreadable one is treated the same way: the seed stands. The read goes
+// through a root on infobot's config directory, so it cannot leave it.
 func readConfig(name string) []byte {
-	root := os.Getenv("XDG_CONFIG_HOME")
-	if root == "" {
+	base := os.Getenv("XDG_CONFIG_HOME")
+	if base == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
 			return nil
 		}
-		root = filepath.Join(home, ".config")
+		base = filepath.Join(home, ".config")
 	}
-	path := filepath.Join(root, "infobot", name)
-	raw, err := os.ReadFile(path) //nolint:gosec // a name this package chose
+	root, err := os.OpenRoot(filepath.Join(base, "infobot"))
+	if err != nil {
+		return nil
+	}
+	defer func() { _ = root.Close() }()
+	raw, err := root.ReadFile(name)
 	if err != nil {
 		return nil
 	}

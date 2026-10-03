@@ -53,18 +53,14 @@ list and it is one command.
 
 ## S-2, gosec on the shims, the width probe and the transcript reads
 
-**Ten marks, four rules, four files.**
+**Seven marks, three rules, four files.** The three G306 marks on the shim
+test's executable fixtures went when the fixtures were written through
+`os.CopyFS`, which keeps an entry's execute bits.
 
-    cmd/statusline/shim_test.go  ×3   //nolint:gosec    writing an executable shim
     cmd/statusline/shim_test.go  ×2   //nolint:gosec    running the shim it just wrote
     internal/render/width.go          //nolint:gosec    asking the terminal its width
     internal/state/state.go           //nolint:gosec    creating the state directory
     internal/usage/usage.go      ×3   //nolint:gosec    reading a transcript by path
-
-**G306, a file written 0755.** `shim_test.go` writes a shell script and then
-runs it. A shim that is not executable is not a shim, so 0600 would test
-something other than the thing. The file is in a per-test temporary directory
-that goes away with the test.
 
 **G204, a subprocess built from a variable.** Two are the same test running the
 shim whose path it just chose. The third is `width.go` asking the terminal how
@@ -85,29 +81,24 @@ avoidable: there is no fixed path a transcript lives at.
 rather than a subprocess. For the rest, nothing: each is the operation the code
 is for, and the mark records that somebody looked rather than that nobody did.
 
-## S-4, gosec on the config read and the winsize ioctl
+## S-4, gosec on the winsize ioctl
 
-**Two marks, two rules, two files.**
+**One mark, one rule, one file.**
 
-    internal/render/layout_config.go   //nolint:gosec    reading palette.json or layout.json
     internal/render/width_tty.go       //nolint:gosec    the kernel writing a winsize
 
-Asked 2026-09-30, when the suppression check found both marks in the source and
-in no entry: register them, remove them, or refactor them out? Answered
-2026-09-30: register both, with the reasons below.
-
-**G304, a file opened by a path from a variable.** `readConfig` opens
-`$XDG_CONFIG_HOME/infobot/<name>`, and the name is one of two string literals
-this package passes. Both configuration files go through this one read, so one
-mark covers them.
+Asked 2026-09-30, when the suppression check found it in the source and in no
+entry: register it, remove it, or refactor it out? Answered 2026-09-30: register
+it, with the reason below. The G304 mark answered with it, on the config read,
+went when `readConfig` began reading through an `os.Root` on infobot's config
+directory.
 
 **G103, unsafe.** TIOCGWINSZ takes a pointer the kernel writes the window size
 through, and `syscall.Syscall` takes it as a `uintptr`. That conversion is what
 the ioctl is.
 
-**What would retire these.** For G103, `golang.org/x/sys/unix.IoctlGetWinsize`,
-at the price of a dependency. For G304, nothing: reading a configured file is
-the operation.
+**What would retire it.** `golang.org/x/sys/unix.IoctlGetWinsize`, at the price
+of a dependency.
 
 ## S-3, retired 2026-09-25
 

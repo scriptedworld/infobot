@@ -58,8 +58,8 @@ func (t Table) ReadFor(model string) float64 {
 	return t.CacheRead
 }
 
-// TablePath is where the rates on disk live.
-func TablePath() string {
+// configDir is infobot's directory under the XDG config home, or "".
+func configDir() string {
 	root := os.Getenv("XDG_CONFIG_HOME")
 	if root == "" {
 		home, err := os.UserHomeDir()
@@ -68,7 +68,7 @@ func TablePath() string {
 		}
 		root = filepath.Join(home, ".config")
 	}
-	return filepath.Join(root, "infobot", "pricing.json")
+	return filepath.Join(root, "infobot")
 }
 
 // Load returns the table on disk and whether there is a usable one.
@@ -76,12 +76,20 @@ func TablePath() string {
 // Usable means rates, cache_read and cache_write are all present. Anything less
 // reports false rather than failing: a status line that fails shows nothing at
 // all, and the caller drops only the cost segment.
+//
+// The file is read through a root on infobot's config directory, so the read
+// cannot leave it.
 func Load() (Table, bool) {
-	path := TablePath()
-	if path == "" {
+	dir := configDir()
+	if dir == "" {
 		return Table{}, false
 	}
-	raw, err := os.ReadFile(path)
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return Table{}, false
+	}
+	defer func() { _ = root.Close() }()
+	raw, err := root.ReadFile("pricing.json")
 	if err != nil {
 		return Table{}, false
 	}
