@@ -16,31 +16,28 @@ and neither the shared config nor the jig turns that off:
     golangci-lint run --config config/go-std-quality.golangci.yml \
         --max-issues-per-linter 0 --max-same-issues 0
 
-126 of the findings are questions for toolbox's shared config, which has no
-per-project override, and are filed there. They are decided there, not worked
-around here:
+All 126 findings are questions for toolbox's shared config, which has no
+per-project override, and wait on toolbox's `go-jig/10`. They are decided
+there, not worked around here:
 
     paralleltest      94   the tests were never meant to run in parallel
     mnd               32   none is truly magic
 
-15 are infobot's own, all gosec, and none is settled by an edit:
+gosec finds nothing. A file opened by a computed path is read through an
+`os.Root` on the directory that holds it, and an executable test fixture is
+written through `os.CopyFS`, which keeps its execute bits.
 
-    G304  10   a file opened by computed path: the transcripts, the rate
-               table, the terminal, and temporary paths a test has just built
-    G306   5   a WriteFile that must land executable; 0600 is not a mode a
-               script runs from, so rule and fixture cannot both hold
-
-`jig-adoption/10` carries them.
-
-## Fifteen pragmas still carry answers nobody gave
+## Twelve pragmas still carry answers nobody gave
 
 `9e92fa9` added fourteen `gochecknoglobals` and ten `gosec` pragmas, with a
 `SUPPRESSIONS` file asserting answers to questions nobody had been asked. Hard
 rule 4 admits no pragma until a person has answered why. Seven of the
-`gochecknoglobals` went when the palette became a value, and S-4's two were
-asked and answered. The rest, S-1 and S-2, still need a decision: keeping them
-adopts answers nobody gave, and dropping them returns their findings to the
-count above.
+`gochecknoglobals` went when the palette became a value, three `gosec` when
+the shim fixtures went through `os.CopyFS`, and S-4 was asked and answered.
+The twelve left in S-1 and S-2 still need a decision: keeping them adopts
+answers nobody gave, and dropping them returns their findings to the count
+above. The three G304 marks on the transcript reads could go the same way as
+the config reads, through an `os.Root` on the transcript directory.
 
 ## The state file's mode is a question, not a finding
 
