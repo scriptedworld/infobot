@@ -1,6 +1,7 @@
 package render_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,10 +51,14 @@ func writeExecutable(t *testing.T, dir, name, script string) string {
 func readFixture(path string) ([]byte, error) {
 	root, err := os.OpenRoot(filepath.Dir(path))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fixture directory: %w", err)
 	}
 	defer func() { _ = root.Close() }()
-	return root.ReadFile(filepath.Base(path))
+	raw, err := root.ReadFile(filepath.Base(path))
+	if err != nil {
+		return nil, fmt.Errorf("fixture: %w", err)
+	}
+	return raw, nil
 }
 
 func noHosts(t *testing.T) {

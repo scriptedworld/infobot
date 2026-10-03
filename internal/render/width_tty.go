@@ -45,8 +45,8 @@ const (
 func ttyWidth() int {
 	pid := os.Getpid()
 	for range ancestorLimit {
-		if path := ttyOf(pid); path != "" {
-			if columns := winsizeColumns(path); columns != 0 {
+		if pts := ttyOf(pid); pts != "" {
+			if columns := winsizeColumns(pts); columns != 0 {
 				return columns
 			}
 		}
@@ -61,7 +61,8 @@ func ttyWidth() int {
 	return 0
 }
 
-// ttyOf is the pts a process holds on one of its standard descriptors, or "".
+// ttyOf is the pts a process holds on one of its standard descriptors, named
+// within ptsDir, or "".
 //
 // All three are checked because which one survives is not predictable: a
 // process may have stdout redirected and stderr still on the terminal, which
@@ -69,8 +70,8 @@ func ttyWidth() int {
 func ttyOf(pid int) string {
 	for _, fd := range []string{"0", "1", "2"} {
 		link, err := os.Readlink("/proc/" + strconv.Itoa(pid) + "/fd/" + fd)
-		if err == nil && strings.HasPrefix(link, ptsDir+"/") {
-			return link
+		if pts, ok := strings.CutPrefix(link, ptsDir+"/"); err == nil && ok {
+			return pts
 		}
 	}
 	return ""
@@ -118,17 +119,13 @@ func parentOf(pid int) int {
 //
 // The pts is opened through a root on /dev/pts, so a link read out of /proc
 // can name a terminal and nothing else.
-func winsizeColumns(path string) int {
-	name, ok := strings.CutPrefix(path, ptsDir+"/")
-	if !ok {
-		return 0
-	}
+func winsizeColumns(pts string) int {
 	root, err := os.OpenRoot(ptsDir)
 	if err != nil {
 		return 0
 	}
 	defer func() { _ = root.Close() }()
-	file, err := root.OpenFile(name, os.O_RDONLY|syscall.O_NOCTTY|syscall.O_NONBLOCK, 0)
+	file, err := root.OpenFile(pts, os.O_RDONLY|syscall.O_NOCTTY|syscall.O_NONBLOCK, 0)
 	if err != nil {
 		return 0
 	}
