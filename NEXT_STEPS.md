@@ -29,15 +29,13 @@ written through `os.CopyFS`, which keeps its execute bits.
 
 ## Twelve pragmas still carry answers nobody gave
 
-`9e92fa9` added fourteen `gochecknoglobals` and ten `gosec` pragmas, with a
-`SUPPRESSIONS` file asserting answers to questions nobody had been asked. Hard
-rule 4 admits no pragma until a person has answered why. Seven of the
-`gochecknoglobals` went when the palette became a value, three `gosec` when
-the shim fixtures went through `os.CopyFS`, and S-4 was asked and answered.
-The twelve left in S-1 and S-2 still need a decision: keeping them adopts
-answers nobody gave, and dropping them returns their findings to the count
-above. The three G304 marks on the transcript reads could go the same way as
-the config reads, through an `os.Root` on the transcript directory.
+S-1 and S-2 in `SUPPRESSIONS` hold twelve pragmas, from `9e92fa9`, whose
+answers nobody gave. Hard rule 4 admits no pragma until a person has answered
+why, so each needs a decision: keeping it adopts an answer nobody gave, and
+dropping it returns its finding to the count above. S-4's one mark was asked
+and answered. The three G304 marks on the transcript reads could be removed
+instead, by reading through an `os.Root` on the transcript directory as the
+config reads do.
 
 ## The state file's mode is a question, not a finding
 
@@ -159,10 +157,9 @@ value carrying one of those characters is affected, which a `cwd` or a model
 name does not. The board's patterns match keys, so the expected impact is none,
 but saying so to its owner is the announcement, and it has not been sent.
 
-**The pin names a commit wrench's remote no longer carries.** The history
-rewrite replanted `f34be14` as `8e9d199`, with the same tree, and only
-`8e9d199` is on wrench's `origin/main`. A build the module cache cannot serve
-has nothing to fetch. Re-pin once, after wrench rewrites its commit messages
+**The pin names a commit wrench's remote does not carry.** The pin is
+`f34be14`; wrench's `origin/main` holds the same tree as `8e9d199`. A build the
+module cache cannot serve has nothing to fetch. Re-pin once, after wrench rewrites its commit messages
 (`clank/tasks/wrench/prose-cleanup/50`), since that changes every SHA again.
 A tag on the Go pack would make this a version bump; that is open in wrench.
 
