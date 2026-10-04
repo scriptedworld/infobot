@@ -201,18 +201,10 @@ carried as the directory's suffix.
 
 ## Known gaps
 
-`just checks` is red. In `common-quality`, `suppressions` fails on pragmas that
-were added without the decision they need, and `wording` on prose still being
-brought to the writing standard. Behind them, `lint` in the Go jig reports 152
-findings, none of which may be settled with a suppression pragma, so each is a
-decision. Most are three rules asking for a house style this project does not
-keep; the 22 that are its own are all `gosec`, and each is inherent: a file
-opened by computed path, a test fixture that must land executable, or the one
-subprocess that asks the pane how wide it is. `NEXT_STEPS.md` has the detail.
-
-The two shell shims are read by no checker, because every checker selects by
-file extension and the shims have none. The suite tests their behaviour five
-ways, but no linter or formatter reads their text.
+`just checks` is red on the Go jig's `lint` alone: two rules, `paralleltest`
+and `mnd`, ask for a house style this project does not keep, and the shared
+configuration that enables them is where that is decided. `NEXT_STEPS.md` has
+the detail.
 
 ## Licence
 

@@ -53,7 +53,7 @@ sample.
 ## Why it is its own repository
 
 `docs/DECISIONS/infobot-is-its-own-repository.md`, including the gap the split
-left: no checker in the gate reads the two shell shims.
+left on its own, the unread shell shims, and the shell jig that closed it.
 
 ## Layout
 
@@ -114,9 +114,11 @@ only when the host's rate table is usable.
 
     just checks
 
-Two jigs, both adopted from toolbox as symlinks. `common-quality` gives
-complexity, traceability, suppressions and secrets; `go-std-quality` gives
-build, format, lint, tests, tidy, vet and vulnerabilities.
+Three jigs, all adopted from toolbox as symlinks. `common-quality` gives
+complexity, traceability, suppressions, wording and secrets;
+`shell-std-quality` runs shellcheck and shfmt over the shims and scripts, with
+the indent taken from `.editorconfig`; `go-std-quality` gives build, format,
+lint, tests, tidy, vet and vulnerabilities.
 
 bolt exits 0 whenever a run completed, whatever the tools concluded, so every
 call goes through `_verdict` in `just/base.just`, which reads `success` from the
@@ -126,7 +128,7 @@ call goes through `_verdict` in `just/base.just`, which reads `success` from the
 Coverage is judged per file at 80%, and the two entry points are measured, not
 excluded, which is hard rule 5: `docs/PATTERNS/measuring-an-entry-point-with-go-build-cover.md`.
 
-What is red, and why: `NEXT_STEPS.md`, "The gate is red".
+What is red, and why: `NEXT_STEPS.md`, "The gate is red on lint alone".
 
 ## Perishable: the pricing table
 

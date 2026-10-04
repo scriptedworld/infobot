@@ -36,6 +36,6 @@ The shim is one `readlink` and one `exec` per render. How it is built, including
 why it resolves its own symlinks first, is
 `docs/PATTERNS/a-shim-reports-its-own-binarys-absence.md`.
 
-The shell is read by no checker in the gate, since every checker selects by
-file extension. Its behaviour is tested by `cmd/statusline/shim_test.go`, which
-runs the committed shim; `gate/10` tracks giving it a reader.
+The gate reads the shell through toolbox's shell jig, which selects the shims
+by shebang, and `cmd/statusline/shim_test.go` tests its behaviour by running
+the committed shim.

@@ -12,18 +12,18 @@ gate that reads code.
 Keeping it in silo showed the gap: silo's gate never read the status line at
 all, because lizard selects by file extension and the script had none.
 
-## What it did not fix
+## What it did not fix on its own
 
-The split changed which gate runs, not what the gate can read. Every checker
-`just checks` invokes still selects by extension, so the two shell shims,
-`bin/infobot` and `bin/forget-session`, are read by none of them: lizard reads
-every `.go` file and neither shim, and the suppression register globs `*.go`.
+The split changed which gate runs, not what the gate can read. A checker that
+selects by extension reads neither shell shim, `bin/infobot` or
+`bin/forget-session`, so the same gap existed here as in silo until a checker
+chose files another way.
 
-Their behaviour is tested even so. Five cases in `cmd/statusline/shim_test.go`
-run the committed shim and cover FR-1.13 both ways, FR-3.8, FR-1.9 and
-FR-1.11f. What is unread is the text: a suppression pragma in shell would go
-unregistered, and a defect on a path those five do not walk would go unseen.
-`gate/10` tracks it, waiting on toolbox's shell jig.
+toolbox's shell jig is that checker. It picks files by extension, startup-file
+name or shebang, so `just checks` runs shellcheck and shfmt over both shims and
+the scripts, and the suppression register finds a shell pragma by shebang too.
+Their behaviour is also tested: five cases in `cmd/statusline/shim_test.go` run
+the committed shim and cover FR-1.13 both ways, FR-3.8, FR-1.9 and FR-1.11f.
 
 ## What stays in silo
 

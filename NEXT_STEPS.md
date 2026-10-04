@@ -7,8 +7,8 @@ This file holds what the tasks do not: open problems, and why each is open.
 
 ## The gate is red on lint alone
 
-`common-quality` passes, wording and suppressions included. `go-std-quality`
-fails on `lint` and nothing else: format, build, vet, tidy, vulnerabilities,
+`common-quality` passes, wording and suppressions included, and so does
+`shell-std-quality`. `go-std-quality` fails on `lint` and nothing else: format, build, vet, tidy, vulnerabilities,
 the suite and per-file coverage all pass. Measure lint uncapped, because
 golangci-lint caps its own output at 50 per linter and 3 per repeated message,
 and neither the shared config nor the jig turns that off:
