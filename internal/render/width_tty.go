@@ -20,6 +20,8 @@ const (
 	// parent can be read.
 	statFieldsAfterName = 2
 
+	// procDir is the process table the walk reads.
+	procDir = "/proc"
 	// ptsDir holds the pseudo-terminals a process's descriptors can point at.
 	ptsDir = "/dev/pts"
 )
@@ -43,14 +45,35 @@ const (
 // it is wider, so answering with the terminal would overflow every pane, and
 // this route answers only when nothing but the terminal owns the pane.
 func ttyWidth() int {
-	pid := os.Getpid()
+	return AncestorTerminalWidth(procDir, ptsDir, os.Getpid())
+}
+
+// AncestorTerminalWidth walks up from pid through the process table at proc,
+// and answers with the columns of the first terminal under pts that a process
+// holds on a standard descriptor, or 0.
+//
+// ttyWidth passes /proc, /dev/pts and this process. Taking them as arguments
+// lets a test walk a process tree it built, so the walk is measured on a
+// machine with no terminal anywhere above it.
+func AncestorTerminalWidth(proc, pts string, pid int) int {
+	table, err := os.OpenRoot(proc)
+	if err != nil {
+		return 0
+	}
+	defer func() { _ = table.Close() }()
+	terminals, err := os.OpenRoot(pts)
+	if err != nil {
+		return 0
+	}
+	defer func() { _ = terminals.Close() }()
+
 	for range ancestorLimit {
-		if pts := ttyOf(pid); pts != "" {
-			if columns := winsizeColumns(pts); columns != 0 {
+		if name := ttyOf(table, pts, pid); name != "" {
+			if columns := winsizeColumns(terminals, name); columns != 0 {
 				return columns
 			}
 		}
-		parent := parentOf(pid)
+		parent := parentOf(table, pid)
 		// 1 is init and 0 means the read failed. Neither has a terminal, and
 		// neither has a parent worth asking.
 		if parent <= 1 {
@@ -61,31 +84,31 @@ func ttyWidth() int {
 	return 0
 }
 
-// ttyOf is the pts a process holds on one of its standard descriptors, named
-// within ptsDir, or "".
+// ttyOf is the terminal a process holds on one of its standard descriptors,
+// named within pts, or "".
 //
 // All three are checked because which one survives is not predictable: a
 // process may have stdout redirected and stderr still on the terminal, which
 // is exactly the shape Claude Code leaves behind.
-func ttyOf(pid int) string {
+func ttyOf(table *os.Root, pts string, pid int) string {
 	for _, fd := range []string{"0", "1", "2"} {
-		link, err := os.Readlink("/proc/" + strconv.Itoa(pid) + "/fd/" + fd)
-		if pts, ok := strings.CutPrefix(link, ptsDir+"/"); err == nil && ok {
-			return pts
+		link, err := table.Readlink(strconv.Itoa(pid) + "/fd/" + fd)
+		if name, ok := strings.CutPrefix(link, pts+"/"); err == nil && ok {
+			return name
 		}
 	}
 	return ""
 }
 
-// parentOf reads the parent pid out of /proc/<pid>/stat, or 0.
+// parentOf reads the parent pid out of <pid>/stat in the table, or 0.
 //
 // It is parsed from the last ')', not by splitting. Field two is the executable
 // name in parentheses and it can contain both spaces and parentheses, so a process
 // named `foo bar) baz` shifts every field for anything that splits on space.
 // The kernel guarantees the final ')' closes that field, so everything after
 // it is positional and safe.
-func parentOf(pid int) int {
-	raw, err := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/stat")
+func parentOf(table *os.Root, pid int) int {
+	raw, err := table.ReadFile(strconv.Itoa(pid) + "/stat")
 	if err != nil {
 		return 0
 	}
@@ -117,15 +140,10 @@ func parentOf(pid int) int {
 // controlling terminal can ACQUIRE it as one, which is a side effect a status
 // line has no business having.
 //
-// The pts is opened through a root on /dev/pts, so a link read out of /proc
-// can name a terminal and nothing else.
-func winsizeColumns(pts string) int {
-	root, err := os.OpenRoot(ptsDir)
-	if err != nil {
-		return 0
-	}
-	defer func() { _ = root.Close() }()
-	file, err := root.OpenFile(pts, os.O_RDONLY|syscall.O_NOCTTY|syscall.O_NONBLOCK, 0)
+// The terminal is opened through a root on the pts directory, so a link read
+// out of the process table can name a terminal and nothing else.
+func winsizeColumns(terminals *os.Root, name string) int {
+	file, err := terminals.OpenFile(name, os.O_RDONLY|syscall.O_NOCTTY|syscall.O_NONBLOCK, 0)
 	if err != nil {
 		return 0
 	}

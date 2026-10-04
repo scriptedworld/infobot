@@ -2,6 +2,7 @@ package render_test
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -59,6 +60,83 @@ func TestBareTerminalIsFoundThroughAnAncestor(t *testing.T) {
 	noHosts(t)
 	if got := render.TerminalWidth(); got <= 0 {
 		t.Errorf("TerminalWidth = %d, want the terminal an ancestor holds", got)
+	}
+}
+
+// process adds pid to a fake process table: its stat line, and its standard
+// descriptors as links whose text is what the kernel would report.
+func process(t *testing.T, proc string, pid int, stat string, fds map[string]string) {
+	t.Helper()
+	dir := filepath.Join(proc, strconv.Itoa(pid))
+	if err := os.MkdirAll(filepath.Join(dir, "fd"), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "stat"), []byte(stat), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for fd, target := range fds {
+		if err := os.Symlink(target, filepath.Join(dir, "fd", fd)); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// fakeTerminals is a pts directory holding name as a plain file, which opens
+// like a terminal and has no window size.
+func fakeTerminals(t *testing.T, name string) string {
+	t.Helper()
+	pts := t.TempDir()
+	if err := os.WriteFile(filepath.Join(pts, name), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return pts
+}
+
+// COVERS FR-3.3, FR-3.4 | edge
+//
+// The walk passes a process holding only pipes, finds a pts on its parent's
+// stderr, and keeps walking when that pts reports no size, until init. A
+// terminal with no size is not a width, so the answer is unknown rather than a
+// guess. Built from a fake process table, so it runs where no terminal exists.
+func TestTheWalkPassesAPtsWithNoSizeAndStopsAtInit(t *testing.T) {
+	proc := t.TempDir()
+	pts := fakeTerminals(t, "7")
+	process(t, proc, 100, "100 (statusline) S 50 0 0", map[string]string{
+		"0": "socket:[11]", "1": "pipe:[12]", "2": "/dev/null",
+	})
+	process(t, proc, 50, "50 (claude code) S 1 0 0", map[string]string{
+		"0": "pipe:[13]", "2": filepath.Join(pts, "7"),
+	})
+	if got := render.AncestorTerminalWidth(proc, pts, 100); got != 0 {
+		t.Errorf("width = %d, want 0 from a pts with no size", got)
+	}
+}
+
+// COVERS FR-3.3 | negative
+//
+// A process table that cannot be read, a stat that does not parse, and a
+// process that is its own parent each end the walk at unknown. The last is
+// what the ancestor limit is for: the walk stops rather than loops.
+func TestAnUnreadableTreeIsUnknown(t *testing.T) {
+	pts := fakeTerminals(t, "7")
+	missing := filepath.Join(t.TempDir(), "absent")
+	if got := render.AncestorTerminalWidth(missing, pts, 100); got != 0 {
+		t.Errorf("no process table: width = %d, want 0", got)
+	}
+	for _, stat := range []string{
+		"100 no parenthesis at all",
+		"100 (statusline)",
+		"100 (statusline) S not-a-pid",
+		"100 (statusline) S 100",
+	} {
+		proc := t.TempDir()
+		process(t, proc, 100, stat, nil)
+		if got := render.AncestorTerminalWidth(proc, missing, 100); got != 0 {
+			t.Errorf("stat %q, no pts directory: width = %d, want 0", stat, got)
+		}
+		if got := render.AncestorTerminalWidth(proc, pts, 100); got != 0 {
+			t.Errorf("stat %q: width = %d, want 0", stat, got)
+		}
 	}
 }
 
