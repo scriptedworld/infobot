@@ -13,7 +13,10 @@
 # build shows as the shim's message rather than as an error from this script.
 set -eu
 
-[ $# -ge 1 ] || { echo "usage: $0 PAYLOAD [CONFIG_DIR]" >&2; exit 2; }
+[ $# -ge 1 ] || {
+    echo "usage: $0 PAYLOAD [CONFIG_DIR]" >&2
+    exit 2
+}
 payload=$1
 here=$(cd "$(dirname "$0")/.." && pwd)
 
@@ -24,4 +27,4 @@ if [ $# -ge 2 ]; then
     XDG_CONFIG_HOME=$2
     export XDG_CONFIG_HOME
 fi
-NO_COLOR=1 TMUX= HERDR_PANE_ID= XDG_STATE_HOME=$state "$here/bin/infobot" < "$payload"
+NO_COLOR=1 TMUX='' HERDR_PANE_ID='' XDG_STATE_HOME=$state "$here/bin/infobot" <"$payload"

@@ -47,5 +47,5 @@ go tool covdata textfmt -i="$covdata" -o="$profile"
 # An empty conversion leaves a file with no mode line, which merges as a broken
 # profile rather than as nothing. Restore the no-op form instead.
 if [ ! -s "$profile" ]; then
-    printf 'mode: atomic\n' > "$profile"
+    printf 'mode: atomic\n' >"$profile"
 fi

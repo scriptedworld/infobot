@@ -1,0 +1,12 @@
+# The shell scripts' layout, which shfmt reads when the shell jig checks them.
+# Four spaces is the indent the scripts were written in. The shims carry no
+# extension, so they are named.
+root = true
+
+[*.sh]
+indent_style = space
+indent_size = 4
+
+[bin/{infobot,forget-session}]
+indent_style = space
+indent_size = 4

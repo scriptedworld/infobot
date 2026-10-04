@@ -3,6 +3,18 @@
 # What is here names this project's binaries and where they are used from, which
 # is the part neither the base nor the Go layer can know.
 
+# The Go layer's two jigs, and the shell jig for the shims and scripts. The
+# shims are what Claude Code executes, and no Go checker reads them, so this
+# project adds the jig the language layer does not know it needs. Defined here,
+# the recipe replaces the Go layer's, so its two lines are repeated. The shell
+# jig runs before the Go one, being the cheaper.
+
+# all the quality tooling, the shell scripts included
+checks:
+    @just _verdict common-quality --definitions requirements-directory
+    @just _verdict shell-std-quality
+    @just _verdict go-std-quality --definitions go-std-quality
+
 # scripts/parity.py compares Go's output with any other implementation's,
 # given its two binaries. None is kept, so only the checker's own test runs.
 
