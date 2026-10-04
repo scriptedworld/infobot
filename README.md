@@ -201,10 +201,7 @@ carried as the directory's suffix.
 
 ## Known gaps
 
-`just checks` is red on the Go jig's `lint` alone: two rules, `paralleltest`
-and `mnd`, ask for a house style this project does not keep, and the shared
-configuration that enables them is where that is decided. `NEXT_STEPS.md` has
-the detail.
+`just checks` passes. What is still open, and why, is in `NEXT_STEPS.md`.
 
 ## Licence
 

@@ -5,72 +5,48 @@ This file holds what the tasks do not: open problems, and why each is open.
 
     ( setopt null_glob; print -l <task-tree>/**/*.ready )
 
-## The gate is red on lint alone
-
-`common-quality` passes, wording and suppressions included, and so does
-`shell-std-quality`. `go-std-quality` fails on `lint` and nothing else: format, build, vet, tidy, vulnerabilities,
-the suite and per-file coverage all pass. Measure lint uncapped, because
-golangci-lint caps its own output at 50 per linter and 3 per repeated message,
-and neither the shared config nor the jig turns that off:
-
-    golangci-lint run --config config/go-std-quality.golangci.yml \
-        --max-issues-per-linter 0 --max-same-issues 0
-
-All 126 findings are questions for toolbox's shared config, which has no
-per-project override, and wait on toolbox's `go-jig/10`. They are decided
-there, not worked around here:
-
-    paralleltest      94   the tests were never meant to run in parallel
-    mnd               32   none is truly magic
-
-gosec finds nothing. A file opened by a computed path is read through an
-`os.Root` on the directory that holds it, and an executable test fixture is
-written through `os.CopyFS`, which keeps its execute bits.
-
 ## Twelve pragmas still carry answers nobody gave
 
 S-1 and S-2 in `SUPPRESSIONS` hold twelve pragmas, from `9e92fa9`, whose
 answers nobody gave. Hard rule 4 admits no pragma until a person has answered
 why, so each needs a decision: keeping it adopts an answer nobody gave, and
-dropping it returns its finding to the count above. S-4's one mark was asked
+dropping it returns its finding to lint, which turns the gate red. S-4's one mark was asked
 and answered. The three G304 marks on the transcript reads could be removed
 instead, by reading through an `os.Root` on the transcript directory as the
 config reads do.
 
 ## The state file's mode is a question, not a finding
 
-gosec wants 0600 where the file is written 0644.
+The status file is written 0644, where the offsets file beside it is 0600.
 `TestFileIsReadableByOtherPrograms` pins 0644 while citing FR-1.11b, which is
 about writing whole or not at all and says nothing of a mode, so the test
 asserts what no requirement states. silo's board reads the files as the same
 user, so 0600 would not break the one known reader. Tightening it drops an
 intent recorded nowhere else.
 
-## A push waits on the gate
+## Pushing
 
-`origin` is `git@github.com:scriptedworld/infobot.git`, and the last commit
-there is `de7d2de`. A push waits on the four conditions in
-`docs/DECISIONS/a-push-waits-on-history-and-documentation-review.md`, and of
-those the gate is what is left: lint is red, as above.
+`origin` is `git@github.com:scriptedworld/infobot.git`. A push waits on the
+conditions in `docs/DECISIONS/a-push-waits-on-history-and-documentation-review.md`.
 
 `clone = false` in `dotfiles/repos.live.yaml` still holds; it governs whether
 the estate clones this tree, not whether a remote is configured in it.
 
 ## Requirement rows that disagree with the code
 
-**FR-3.3** says an unknown width "means render the full form", and
+FR-3.3 says an unknown width "means render the full form", and
 `docs/SPEC.md`, "The width", repeats it. The context bar is drawn at FR-5.12's
 fifty cells there, but `build` takes the compact form for the rate-limit gauges
 at width 0, printing their percentages without bars. Which is intended needs a
 person.
 
-**FR-6.11, FR-3.5 and FR-1.7** predate the configuration files. FR-6.11 names
+FR-6.11, FR-3.5 and FR-1.7 predate the configuration files. FR-6.11 names
 the ENCOM teal the seed no longer uses, FR-3.5 fixes the reserve at three where
 `layout.json` sets it, and FR-1.7's list of files opened leaves out
 `palette.json` and `layout.json`. The tests for the two files cite FR-6.11 and
 FR-3.5 because SPEC does; the rows want restating under new ids.
 
-**FR-4.3 and FR-4.4** name Python functions (`time.time`, `limit_segment`,
+FR-4.3 and FR-4.4 name Python functions (`time.time`, `limit_segment`,
 `place_context`, `compose`). What they require survives in Go: the clock, the
 transcript root and the XDG paths are parameters, so sections 7 and 8 are
 tested against a fixture tree with nothing patched. Each needs restating under a

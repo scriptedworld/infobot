@@ -128,7 +128,7 @@ call goes through `_verdict` in `just/base.just`, which reads `success` from the
 Coverage is judged per file at 80%, and the two entry points are measured, not
 excluded, which is hard rule 5: `docs/PATTERNS/measuring-an-entry-point-with-go-build-cover.md`.
 
-What is red, and why: `NEXT_STEPS.md`, "The gate is red on lint alone".
+What is still open, and why: `NEXT_STEPS.md`.
 
 ## Perishable: the pricing table
 
