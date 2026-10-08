@@ -21,7 +21,7 @@ any of them to build or to run; `README.md` says what it does need.
 One job: turn the session payload into rows. Formatter is a constraint, not a
 description. No network, and one subprocess to ask whoever owns the pane how
 wide it is, required because every other route to the width fails under Claude
-Code. tmux and herdr are both answered; see FR-3.3. The files it opens are the
+Code. tmux and herdr are both answered; see FR-3.12. The files it opens are the
 rate table and the session's own transcripts, both for the cost segment and
 both named in this document.
 

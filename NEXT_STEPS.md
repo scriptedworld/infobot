@@ -34,11 +34,10 @@ the estate clones this tree, not whether a remote is configured in it.
 
 ## Requirement rows that disagree with the code
 
-FR-3.3 says an unknown width "means render the full form", and
-`docs/SPEC.md`, "The width", repeats it. The context bar is drawn at FR-5.12's
-fifty cells there, but `build` takes the compact form for the rate-limit gauges
-at width 0, printing their percentages without bars. Which is intended needs a
-person.
+FR-5.12 draws the context bar at fifty cells when the width is unknown, as the
+code has since `d5a1368`. `4e76c9d`, which chose the compact form at an unknown
+width, drew no context bar there. Which holds is asked in clank
+`requirements/10`.
 
 FR-6.11, FR-3.5 and FR-1.7 predate the configuration files. FR-6.11 names
 the ENCOM teal the seed no longer uses, FR-3.5 fixes the reserve at three where

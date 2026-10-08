@@ -68,7 +68,7 @@ func noHosts(t *testing.T) {
 	t.Setenv("HERDR_BIN_PATH", "")
 }
 
-// COVERS FR-3.3, FR-3.4 | negative
+// COVERS FR-3.12, FR-3.4 | negative
 //
 // With no multiplexer, the answer is the TERMINAL or unknown, and never the
 // fabricated 80 a library would hand back. Believing that 80 would truncate a
@@ -122,7 +122,7 @@ func TestTmuxIsAskedAboutTheCallingPaneNotTheActiveOne(t *testing.T) {
 	}
 }
 
-// COVERS FR-3.3 | edge
+// COVERS FR-3.12 | edge
 //
 // Without TMUX_PANE there is no better question than the old one, so the
 // untargeted form stays as the fallback and the route answers with the active
@@ -184,7 +184,7 @@ func TestUnfocusedPaneUnderZoomKeepsItsOwnRectangle(t *testing.T) {
 	}
 }
 
-// COVERS FR-3.3 | edge
+// COVERS FR-3.12 | edge
 //
 // A tab holding exactly one pane answers whatever id that pane carries. It
 // covers an id in the environment that no longer names the pane the process
@@ -202,7 +202,7 @@ func TestLonePaneAnswersEvenWhenTheIdDoesNotMatch(t *testing.T) {
 	}
 }
 
-// COVERS FR-3.3 | negative
+// COVERS FR-3.12 | negative
 //
 // Every other mismatch is reported unknown rather than guessed at.
 func TestMismatchedIdAmongSeveralPanesIsUnknown(t *testing.T) {
@@ -219,7 +219,7 @@ func TestMismatchedIdAmongSeveralPanesIsUnknown(t *testing.T) {
 	}
 }
 
-// COVERS FR-3.3 | negative
+// COVERS FR-3.12 | negative
 func TestUnreadableHostReplyIsUnknown(t *testing.T) {
 	for _, reply := range []string{"", "not json", "{}", `{"result":{}}`} {
 		t.Run(reply, func(t *testing.T) {
@@ -233,7 +233,7 @@ func TestUnreadableHostReplyIsUnknown(t *testing.T) {
 	}
 }
 
-// COVERS FR-3.3 | positive
+// COVERS FR-3.12 | positive
 //
 // tmux answers whenever it is there, because tmux inside a herdr pane is the
 // one this line is drawn in and it is the narrower of the two.
