@@ -44,7 +44,7 @@ func ancestorTTY(t *testing.T) string {
 	return ""
 }
 
-// COVERS FR-3.12, FR-3.4 | positive
+// COVERS FR-3.3, FR-3.4 | positive
 //
 // The bare terminal case: no multiplexer, and Claude Code hands the status line
 // pipes rather than a terminal, so nothing among fd0, fd1, fd2, COLUMNS or
@@ -92,7 +92,7 @@ func fakeTerminals(t *testing.T, name string) string {
 	return pts
 }
 
-// COVERS FR-3.12, FR-3.4 | edge
+// COVERS FR-3.3, FR-3.4 | edge
 //
 // The walk passes a process holding only pipes, finds a pts on its parent's
 // stderr, and keeps walking when that pts reports no size, until init. A
@@ -112,7 +112,7 @@ func TestTheWalkPassesAPtsWithNoSizeAndStopsAtInit(t *testing.T) {
 	}
 }
 
-// COVERS FR-3.12 | negative
+// COVERS FR-3.3 | negative
 //
 // A process table that cannot be read, a stat that does not parse, and a
 // process that is its own parent each end the walk at unknown. The last is

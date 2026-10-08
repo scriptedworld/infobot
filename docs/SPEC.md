@@ -49,7 +49,7 @@ id shows as eight characters.
 ## The order of a render
 
 1. Decode the payload. Absent is absent, never zero (FR-1.3).
-2. Ask the pane its width, or establish that it is unknown (FR-3.12).
+2. Ask the pane its width, or establish that it is unknown (FR-3.3).
 3. Load the palette and the margin, each falling back to its seed (FR-6.11,
    FR-3.5), and the rate table, which has no seed: without a usable one the
    cost segment is left out (FR-8.28).
@@ -66,7 +66,7 @@ and the process exits 0 whatever it was given (FR-1.2).
 ## The width
 
 Whoever owns the pane is asked directly, innermost first, because every ordinary
-route fails under Claude Code (FR-3.12). tmux is asked when `TMUX` is set, herdr
+route fails under Claude Code (FR-3.3). tmux is asked when `TMUX` is set, herdr
 when `HERDR_PANE_ID` is; the route that answers runs and the others do not
 (FR-1.8). A herdr pane that is zoomed is fitted to its tab's area (FR-3.7), and
 a reported rectangle is trimmed to what can be drawn into.
@@ -74,10 +74,8 @@ a reported rectangle is trimmed to what can be drawn into.
 A host that does not answer costs a bounded wait and then counts as unknown
 (FR-3.11). The bound covers the whole query, including a grandchild holding the
 pipe open after the host itself has gone, so it is a deadline on the read rather
-than a signal to the child. Unknown is not a guess (FR-3.4), and the rows take
-their compact form there: each rate limit window prints its percentage with no
-gauge (FR-5.14), the cost follows the meters on the meter row instead of being
-pushed right (FR-5.15), and the context bar is a fixed fifty cells (FR-5.12).
+than a signal to the child. Unknown is not a guess: the rows render in full form
+with a fixed fifty-cell bar (FR-3.4, FR-5.12).
 
 The width the rows are fitted to is the pane less three columns, which belong to
 Claude Code (FR-3.5), and the rail is part of what a row costs (FR-5.11).

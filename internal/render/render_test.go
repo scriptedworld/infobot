@@ -390,7 +390,7 @@ func TestBarShrinksWithThePaneThenGoesWhole(t *testing.T) {
 	}
 }
 
-// COVERS FR-5.12 | edge
+// COVERS FR-3.3, FR-5.12 | edge
 //
 // With the width unknown there is nothing to fit the bar against, so it is a
 // fixed fifty cells, and the counts are printed beside it as always.

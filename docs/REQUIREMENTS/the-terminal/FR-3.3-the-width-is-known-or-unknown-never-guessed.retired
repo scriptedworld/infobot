@@ -1,7 +1,0 @@
-# FR-3.3, retired
-
-Retirement is carried by this file's name. The row is kept so the id stays registered as retired and can never be reused.
-
-| ID | Went | Why, and what replaced it |
-|---|---|---|
-| FR-3.3 | 2026-10-08 | Said an unknown width means render the full form. The rate limit windows take their compact form there instead, chosen at `4e76c9d` and kept in the answer to clank `open-questions/10` Q1. Replaced by FR-3.12, which keeps how the width is established, and by FR-5.14 and FR-5.15 for what the rows do at an unknown width. |
