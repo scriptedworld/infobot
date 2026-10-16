@@ -135,7 +135,7 @@ func Write(data payload.Map, now time.Time) {
 	// here: a state file that cannot be written costs a reader a measurement it
 	// can take another way, and the status line's one hard guarantee is that it
 	// renders or shows nothing.
-	_ = wrench.SaveYAMLFile(fields(data, session, now), target, schema, wrench.LocalFile)
+	_ = wrench.SaveYAMLFile(fields(data, session, now), target, schema, wrench.LocalFile())
 }
 
 //go:embed status.schema.json
