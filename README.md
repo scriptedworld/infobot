@@ -5,7 +5,7 @@ session JSON on stdin and writes two rows: where you are, and how much of the
 context window and the seven-day rate-limit window you have spent.
 
     ╭─ Opus 5.5 (1M context) - xhigh  ~/src/infobot/internal  ⌂ ~/src/infobot  🧠 ▰▰▰▰▰▱▱▱▱▱ 480k/1.0M (48% consumed)  ⟨9823d31e⟩
-    ╰─ ⏳ 5hr ▰▰▰▱▱▱▱▱▱▱  @31% 2h10m  📅 7d ▰▰▰▰▰▰▱▱▱▱  @64% 3d3h                  💵 $51.49  🎯 saved $410
+    ╰─ 📅 7d ▰▰▰▰▰▰▱▱▱▱  @64% 3d3h                                                  💵 $51.49  🎯 saved $410
 
 The context bar grows to fill whatever the pane leaves after the text, so it is
 much longer than this in a real terminal, and the gap before the cost widens to
@@ -17,8 +17,8 @@ push it to the right edge. Everything else is what it renders.
     🧠 bar, 480k/1.0M       the context window: tokens held on the input side,
                             out of its size (FR-2.5)
     ⟨9823d31e⟩              the first eight characters of the session id
-    ⏳ 5hr, 📅 7d            the two rate-limit windows: how much is spent, then
-                            the time until the window resets (FR-7.9)
+    📅 7d                   the rate-limit window: how much is spent, then the
+                            time until it resets (FR-7.9)
     💵 $51.49               what the tokens so far would have cost through
                             the API at list rates; nothing is billed (FR-8.1)
     🎯 saved $410           what caching saved against paying the plain input

@@ -165,15 +165,14 @@ def compare(ws, other, case):
     return None, rows
 
 
-def payload(pct: float = 40, five: float = 20, seven: float = 30, session=SESSION, **extra):
+def payload(pct: float = 40, seven: float = 30, session=SESSION, **extra):
     body = {
         "session_id": session,
         "model": {"display_name": "Opus 5 (1M context)"},
         "effort": {"level": "xhigh"},
         "workspace": {"current_dir": "/home/me/src/infobot", "project_dir": "/home/me/src"},
         "context_window": {"context_window_size": 1000000, "used_percentage": pct},
-        "rate_limits": {"five_hour": {"used_percentage": five},
-                        "seven_day": {"used_percentage": seven}},
+        "rate_limits": {"seven_day": {"used_percentage": seven}},
     }
     body.update(extra)
     return json.dumps(body)
@@ -199,10 +198,8 @@ def widths(ws, config="", sweep=True):
     percents = [0, 1, 12.5, 23, 49.5, 50, 74.9, 75, 75.1, 80, 88, 89.9, 90, 95, 99.9, 100]
     for width in columns:
         for pct in percents if sweep else [0, 49.5, 90, 100]:
-            for five in (0, 34, 99) if sweep else (34,):
-                env = dict(herdr, PARITY_WIDTH=str(width))
-                yield Case(f"herdr width {width} pct {pct} five {five}", payload(pct, five), env,
-                           config=config)
+            env = dict(herdr, PARITY_WIDTH=str(width))
+            yield Case(f"herdr width {width} pct {pct}", payload(pct), env, config=config)
     for width in (80, 160):
         for pct in (12.5, 90):
             env = dict(herdr, PARITY_WIDTH=str(width), NO_COLOR="1")
@@ -216,8 +213,7 @@ def countdown():
     now = int(time.time())
     env = {"TMUX": "/tmp/tmux-parity,1,0", "TMUX_PANE": "%1", "PARITY_WIDTH": "200"}
     for ahead in (5 * 60, 2 * 3600, 3 * 86400, -600):
-        limits = {"five_hour": {"used_percentage": 30, "resets_at": now + ahead + 30},
-                  "seven_day": {"used_percentage": 60, "resets_at": now + ahead * 7 + 30}}
+        limits = {"seven_day": {"used_percentage": 60, "resets_at": now + ahead * 7 + 30}}
         yield Case(f"countdown {ahead}s", payload(rate_limits=limits), env)
 
 
