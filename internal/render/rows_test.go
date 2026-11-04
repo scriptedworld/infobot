@@ -219,6 +219,9 @@ func TestGaugesAreFixedAtTenCells(t *testing.T) {
 	}}
 	for _, width := range []int{120, 160, 200, 250} {
 		got := rows(t, windows, width)
+		if len(got) == 0 {
+			t.Fatalf("width %d: the gauge did not render: no rows", width)
+		}
 		meters := got[len(got)-1]
 		cells := strings.Count(meters, "▰") + strings.Count(meters, "▱")
 		if cells != 10 {

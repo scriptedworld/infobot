@@ -203,6 +203,9 @@ func TestCostKeepsThreeColumnsOfClearSpace(t *testing.T) {
 	data := priced(t, usageLine(`"input_tokens":10000000`))
 	for width := 120; width <= 240; width += 4 {
 		got := render.Build(data, "/home/me", width, clock)
+		if len(got) == 0 {
+			t.Fatalf("width %d: no rows", width)
+		}
 		meters := got[len(got)-1]
 		cut := strings.Index(meters, "💵")
 		if cut < 0 {
