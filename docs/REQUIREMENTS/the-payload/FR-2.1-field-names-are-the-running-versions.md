@@ -2,4 +2,4 @@
 
 | ID | Requirement | |
 |---|---|---|
-| FR-2.1 | Field names are those the running Claude Code sends. The payload carries `context_window`, `rate_limits.{five_hour,seven_day}` and `effort.level`, and `resets_at` is a numeric epoch rather than a timestamp string. | [D] |
+| FR-2.1 | Field names are those the running Claude Code sends. The status line reads `context_window`, `rate_limits.seven_day` and `effort.level` by those names, and `resets_at` is read as a numeric epoch rather than a timestamp string. | [D] |

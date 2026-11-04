@@ -24,15 +24,15 @@ so it pales through white into blue.
 
     PACE_STOPS = 0 blue, 70 white, 100 green, 125 yellow, 150 red
 
-My calibration example settled the anchor: 80% spent with an hour left of five
-projects to exactly 100%, which is the boundary of concern rather than the
+My calibration example settled the anchor: 80% spent with a fifth of the window
+left projects to exactly 100%, which is the boundary of concern rather than the
 middle of it. An earlier version reused the context meter's ramp and made that
 case an alarm, which treats efficient use as a crisis and then says nothing
 different when the window will actually run dry.
 
 ## Why the verdict fades in
 
-The projection is unreliable early: a percent spent two minutes into five hours
+The projection is unreliable early: a percent spent two minutes into a window
 divides by almost nothing and reads as catastrophe. Rather than withhold the
 verdict below a threshold, which puts a colour change at an arbitrary moment,
 the judged colour is mixed against green in proportion to how far the window has
@@ -41,9 +41,9 @@ run, squared so it stays quiet through the middle and arrives late.
 Green is the right thing to fade toward because on this scale it is both "on
 rate" and "nothing to say", which are the same instruction to the reader.
 
-`PACE_CONFIDENT = 0.6` is where the verdict reaches full strength: three hours
-into a five hour window. A fraction, not a duration, so the seven day
-window matures at the same point in its own life instead of after an afternoon.
+`PACE_CONFIDENT = 0.6` is where the verdict reaches full strength: three fifths
+of the way through the window. A fraction, not a duration, so it does not
+depend on how long the window is.
 
 ## What was tried and rejected
 
