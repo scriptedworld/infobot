@@ -3,7 +3,7 @@
 What must be true of the status line. One file per requirement,
 `<category>/FR-<id>-<slug>.md`, each holding its row.
 
-Derived from `bin/infobot` and the payload shape read out of `claude` 2.1.233.
+Derived from `bin/infobot` and the fields the status line reads.
 
 Requirements are stated as observable properties: what is true of a run, not
 how anything is arranged. The reasoning behind a row lives in `docs/DECISIONS/`
