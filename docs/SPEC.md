@@ -84,14 +84,14 @@ Claude Code (FR-3.5), and the rail is part of what a row costs (FR-5.11).
 
 Two rows hanging off a left rail (FR-5.1). The identity row carries the model,
 the path, the context bar and the session id; the meter row carries the rate
-limit windows and the cost. Where the context segment sits depends on what fits
+limit window (FR-7.10) and the cost. Where the context segment sits depends on what fits
 (FR-5.2, FR-5.3), and the cost rides the meter row only (FR-5.7, FR-5.8).
 
 Fitting measures a row as the terminal draws it: escapes cost nothing,
 combining marks cost nothing, east-asian `W` and `F` cost two columns, and
 ambiguous characters count as one (FR-3.9, FR-3.10). What exceeds the budget is
 cut from the right, and a meter too small to say anything is dropped instead of
-drawn small (FR-3.6). A row left with no parts is omitted (FR-5.5). The session
+drawn small (FR-3.6). A row left with no parts is omitted (FR-1.5). The session
 id closes the identity row (FR-5.4), parts are divided by a separator costing
 one column (FR-5.10), each segment opens with a fixed marker (FR-5.13), and a
 meter row over budget gives up its gauges before anything is cut (FR-5.6).

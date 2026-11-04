@@ -2,7 +2,7 @@
 
 The status line Claude Code renders at the bottom of the screen. It reads the
 session JSON on stdin and writes the rows that say where you are and how much of
-the context window and the rate limit windows you have spent.
+the context window and the seven-day rate limit window you have spent.
 
 The name is the caretaker of the Great Clock, who keeps the machinery running
 and tells you what state it is in. It replaces `milton`.

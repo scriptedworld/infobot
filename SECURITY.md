@@ -8,7 +8,7 @@ payload on stdin, and prints the two rows it writes to stdout.
 It reads:
 
 - the session payload on stdin, which carries the working directory, the model,
-  context usage and, for subscribers, rate-limit windows
+  context usage and, where it is present, the seven-day rate-limit window
 - the session's transcripts under `~/.claude/projects/`, its subagents'
   included, to count what a session has spent
 - its own configuration under `~/.config/infobot/`: the rate table, the palette

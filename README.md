@@ -2,7 +2,7 @@
 
 The status line Claude Code draws at the bottom of the screen. It reads the
 session JSON on stdin and writes two rows: where you are, and how much of the
-context window and the rate-limit windows you have spent.
+context window and the seven-day rate-limit window you have spent.
 
     ╭─ Opus 5.5 (1M context) - xhigh  ~/src/infobot/internal  ⌂ ~/src/infobot  🧠 ▰▰▰▰▰▱▱▱▱▱ 480k/1.0M (48% consumed)  ⟨9823d31e⟩
     ╰─ ⏳ 5hr ▰▰▰▱▱▱▱▱▱▱  @31% 2h10m  📅 7d ▰▰▰▰▰▰▱▱▱▱  @64% 3d3h                  💵 $51.49  🎯 saved $410
