@@ -35,10 +35,11 @@ ask a host how wide the pane is (FR-1.8).
 Those are the only files opened (FR-1.7). A field the payload gains that nothing
 here reads changes no output (FR-2.13).
 
-What the payload means is FR-2.2 to FR-2.12: which window carries counts, how a
-percentage and its counts derive each other, that the context counts are the
-input side only, how the model name and the path are built, and that the session
-id shows as eight characters.
+How the payload is read is FR-2.2 to FR-2.12: that only the context window
+shows counts, how a percentage and its counts derive each other and that a
+stated percentage is printed as stated, that the context counts are the input
+side only, how the model name and the path are built, and that the session id
+shows as eight characters.
 
 ## What a render writes
 
