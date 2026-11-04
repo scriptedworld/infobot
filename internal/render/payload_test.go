@@ -11,12 +11,13 @@ import (
 
 // COVERS FR-2.1 | property
 //
-// resets_at is a NUMERIC EPOCH rather than a timestamp string, which is what
-// the running Claude Code sends. A string is not a timestamp in another
-// spelling, it is absent data, and it costs its own countdown and nothing else.
+// resets_at is a NUMERIC EPOCH rather than a timestamp string. A string is not a
+// timestamp in another spelling, it is absent data, and it costs its own
+// countdown and nothing else.
 func TestResetsAtIsANumericEpoch(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
-	numeric := render.LimitSegment(wideGauge("5hr", 5*3600), payload.Map{
+	label := "📅 7d"
+	numeric := render.LimitSegment(wideGauge(label, week), payload.Map{
 		"used_percentage": 34.0, "resets_at": at(3600),
 	}, clock)
 	if !strings.Contains(numeric, "1h00m") {
@@ -24,24 +25,71 @@ func TestResetsAtIsANumericEpoch(t *testing.T) {
 	}
 
 	for _, spelled := range []any{"2026-08-28T12:00:00Z", "4102444800", true, nil} {
-		got := render.LimitSegment(wideGauge("5hr", 5*3600), payload.Map{
+		got := render.LimitSegment(wideGauge(label, week), payload.Map{
 			"used_percentage": 34.0, "resets_at": spelled,
 		}, clock)
 		if got == "" {
 			t.Errorf("resets_at %v dropped the whole window", spelled)
 		}
-		if strings.ContainsAny(strings.TrimPrefix(got, "5hr"), "hm") {
+		if !strings.HasSuffix(strings.TrimRight(got, " "), "%") {
 			t.Errorf("resets_at %v produced a countdown: %q", spelled, got)
+		}
+	}
+}
+
+// COVERS FR-2.1 | property
+//
+// The status line reads context_window, rate_limits.seven_day and effort.level
+// by those names, and a near miss is a different, unread field.
+func TestThePayloadNamesAreTheOnesRead(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	isolate(t)
+	build := func(data payload.Map) string {
+		return strings.Join(render.Build(data, "/home/me", 200, clock), "\n")
+	}
+	meter := map[string]any{"used_percentage": 40.0}
+	got := build(payload.Map{"rate_limits": map[string]any{"seven_day": meter}})
+	if !strings.Contains(got, "📅 7d") {
+		t.Errorf("rate_limits.seven_day was not read: %q", got)
+	}
+	for _, name := range []string{"sevenDay", "seven-day", "7d", "weekly"} {
+		if got := build(payload.Map{"rate_limits": map[string]any{name: meter}}); got != "" {
+			t.Errorf("rate_limits.%s was read: %q", name, got)
+		}
+	}
+
+	size := map[string]any{"context_window_size": 200000.0, "used_percentage": 40.0}
+	got = build(payload.Map{"context_window": size})
+	if !strings.Contains(got, "(40% consumed)") {
+		t.Errorf("context_window was not read: %q", got)
+	}
+	for _, name := range []string{"contextWindow", "context"} {
+		if got := build(payload.Map{name: size}); got != "" {
+			t.Errorf("%s was read: %q", name, got)
+		}
+	}
+
+	model := map[string]any{"display_name": "Opus 5"}
+	effort := map[string]any{"level": "high"}
+	got = build(payload.Map{"model": model, "effort": effort})
+	if !strings.Contains(got, "Opus 5 - high") {
+		t.Errorf("effort.level was not read: %q", got)
+	}
+	for _, data := range []payload.Map{
+		{"model": model, "effort": map[string]any{"mode": "high"}},
+		{"model": model, "reasoning": map[string]any{"level": "high"}},
+	} {
+		if got := build(data); strings.Contains(got, "high") {
+			t.Errorf("a near miss for effort.level was read: %q", got)
 		}
 	}
 }
 
 // COVERS FR-2.3 | property
 //
-// A percentage the status line prints is computed by the SAME formula as the
-// percentage the payload supplies, so the two halves of a segment agree. Where
-// the payload states one, that is the one printed, rather than a second figure
-// derived from the counts.
+// A percentage the payload states is printed as stated and is not recomputed
+// from the counts beside it, so the two can disagree and the percentage is the
+// payload's.
 func TestPrintedPercentageIsThePayloadsOwn(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	// Counts that would give 25% if recomputed, beside a stated 48%.

@@ -2,6 +2,7 @@ package render_test
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -217,7 +218,7 @@ func TestEmptyCellsAndRailShareOneColourAndNoBackground(t *testing.T) {
 			"context_window_size": 200000.0, "used_percentage": 20.0,
 		},
 		"rate_limits": map[string]any{
-			"five_hour": map[string]any{"used_percentage": 30.0},
+			"seven_day": map[string]any{"used_percentage": 30.0},
 		},
 	}, "/home/me", 120, clock)
 	if !strings.HasPrefix(rows[0], "\033[38;2;12;90;102m") {
@@ -258,16 +259,16 @@ func TestOnlyConnectiveWordsAreDimmed(t *testing.T) {
 func TestPaceColoursTheGaugeByWhereItLands(t *testing.T) {
 	colourful(t)
 	// Half the window elapsed, half of it spent: lands exactly full.
-	onRate := render.LimitSegment(wideGauge("5hr", 5*3600), payload.Map{
-		"used_percentage": 50.0, "resets_at": at(5 * 3600 / 2),
+	onRate := render.LimitSegment(wideGauge("7d", week), payload.Map{
+		"used_percentage": 50.0, "resets_at": at(week / 2),
 	}, clock)
 	// Same elapsed, far more spent: empties early.
-	hot := render.LimitSegment(wideGauge("5hr", 5*3600), payload.Map{
-		"used_percentage": 90.0, "resets_at": at(5 * 3600 / 2),
+	hot := render.LimitSegment(wideGauge("7d", week), payload.Map{
+		"used_percentage": 90.0, "resets_at": at(week / 2),
 	}, clock)
 	// Same elapsed, barely touched: goes unspent.
-	cold := render.LimitSegment(wideGauge("5hr", 5*3600), payload.Map{
-		"used_percentage": 5.0, "resets_at": at(5 * 3600 / 2),
+	cold := render.LimitSegment(wideGauge("7d", week), payload.Map{
+		"used_percentage": 5.0, "resets_at": at(week / 2),
 	}, clock)
 
 	green, warm, blue := firstFG(t, onRate), firstFG(t, hot), firstFG(t, cold)
@@ -291,11 +292,12 @@ func TestPaceColoursTheGaugeByWhereItLands(t *testing.T) {
 func TestVerdictFadesInAgainstGreen(t *testing.T) {
 	colourful(t)
 	// The same overspend, judged early and late in the window.
-	early := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
-		"used_percentage": 20.0, "resets_at": at(5*3600 - 5*60),
+	// A sixtieth of the window in, and a sixtieth from the end.
+	early := firstFG(t, render.LimitSegment(wideGauge("w", week), payload.Map{
+		"used_percentage": 20.0, "resets_at": at(week - week/60),
 	}, clock))
-	late := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
-		"used_percentage": 90.0, "resets_at": at(5 * 60),
+	late := firstFG(t, render.LimitSegment(wideGauge("w", week), payload.Map{
+		"used_percentage": 90.0, "resets_at": at(week / 60),
 	}, clock))
 
 	// Early is close to green because almost nothing can be said yet.
@@ -306,17 +308,17 @@ func TestVerdictFadesInAgainstGreen(t *testing.T) {
 		t.Errorf("late verdict %v is no warmer than the early one %v", late, early)
 	}
 
-	// A fraction, not a duration: the same position in each window judges the
-	// same overspend identically.
-	fiveHour := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
-		"used_percentage": 80.0, "resets_at": at(5 * 3600 / 2),
+	// A fraction, not a duration: the same position in a gauge of another
+	// length judges the same overspend identically.
+	ofAWeek := firstFG(t, render.LimitSegment(wideGauge("w", week), payload.Map{
+		"used_percentage": 80.0, "resets_at": at(week / 2),
 	}, clock))
-	sevenDay := firstFG(t, render.LimitSegment(wideGauge("w", 7*86400), payload.Map{
-		"used_percentage": 80.0, "resets_at": at(7 * 86400 / 2),
+	ofADay := firstFG(t, render.LimitSegment(wideGauge("w", day), payload.Map{
+		"used_percentage": 80.0, "resets_at": at(day / 2),
 	}, clock))
-	if fiveHour != sevenDay {
-		t.Errorf("windows judged differently at the same fraction: %v vs %v",
-			fiveHour, sevenDay)
+	if ofAWeek != ofADay {
+		t.Errorf("lengths judged differently at the same fraction: %v vs %v",
+			ofAWeek, ofADay)
 	}
 }
 
@@ -328,10 +330,10 @@ func TestPaceClampsBeyondTheEndsOfTheScale(t *testing.T) {
 	colourful(t)
 	// Both project far past the top stop of 150, at the same window position,
 	// so both clamp to the same red.
-	bad := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
+	bad := firstFG(t, render.LimitSegment(wideGauge("w", week), payload.Map{
 		"used_percentage": 200.0, "resets_at": at(60),
 	}, clock))
-	worse := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
+	worse := firstFG(t, render.LimitSegment(wideGauge("w", week), payload.Map{
 		"used_percentage": 400.0, "resets_at": at(60),
 	}, clock))
 	if bad != worse {
@@ -345,7 +347,7 @@ func TestPaceClampsBeyondTheEndsOfTheScale(t *testing.T) {
 // meaning what the context meter's colour means.
 func TestWindowWithNoResetFallsBackToTheConsumptionRamp(t *testing.T) {
 	colourful(t)
-	noReset := firstFG(t, render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
+	noReset := firstFG(t, render.LimitSegment(wideGauge("w", week), payload.Map{
 		"used_percentage": 50.0,
 	}, clock))
 	ramp := rampAt(t, 50)
@@ -365,11 +367,11 @@ func TestPaceArithmeticSurvivesItsEdges(t *testing.T) {
 		name     string
 		resetsAt float64
 	}{
-		{"a moment into the window", at(5*3600 - 1)},
-		{"a reset further out than the window is long", at(9 * 3600)},
+		{"a moment into the window", at(week - 1)},
+		{"a reset further out than the window is long", at(week + 2*day)},
 		{"a reset one second away", at(1)},
 	} {
-		got := render.LimitSegment(wideGauge("w", 5*3600), payload.Map{
+		got := render.LimitSegment(wideGauge("w", week), payload.Map{
 			"used_percentage": 50.0, "resets_at": c.resetsAt,
 		}, clock)
 		if got == "" {
@@ -386,20 +388,81 @@ func TestPaceArithmeticSurvivesItsEdges(t *testing.T) {
 }
 
 // COVERS FR-7.10 | property
-func TestWindowLengthsComeFromTheFieldNames(t *testing.T) {
+//
+// The window is seven days long, taken from its field name. The fixture is one
+// where the colour tells lengths apart: 80% spent, half a week from the reset.
+// At half spent and half elapsed every length gives the same green. The colour
+// is read from the marker onward, because the first colour in a built row is the
+// rail's and says nothing about the gauge.
+func TestSevenDayWindowLengthComesFromItsFieldName(t *testing.T) {
 	colourful(t)
 	isolate(t)
+	entry := payload.Map{"used_percentage": 80.0, "resets_at": at(week / 2)}
 	rows := render.Build(payload.Map{
-		"rate_limits": map[string]any{
-			// Half of five hours, and half of seven days.
-			"five_hour": map[string]any{"used_percentage": 50.0, "resets_at": at(5 * 3600 / 2)},
-			"seven_day": map[string]any{"used_percentage": 50.0, "resets_at": at(7 * 86400 / 2)},
-		},
+		"rate_limits": map[string]any{"seven_day": map[string]any(entry)},
 	}, "/home/me", 200, clock)
-	// Both are at the same point in their own window, so both read the same
-	// verdict despite the durations differing by a factor of thirty-three.
-	parts := strings.Split(strip(rows[len(rows)-1]), "📅")
-	if len(parts) != 2 {
-		t.Fatalf("both windows did not render: %q", rows)
+	meters := rows[len(rows)-1]
+	from := strings.Index(meters, "📅")
+	if from < 0 {
+		t.Fatalf("the seven day window did not render: %q", rows)
+	}
+	got := firstFG(t, meters[from:])
+	colourOf := func(span int) [3]int {
+		return firstFG(t, render.LimitSegment(wideGauge("w", span), entry, clock))
+	}
+	if want := colourOf(week); got != want {
+		t.Errorf("built colour %v is not a seven day gauge's %v", got, want)
+	}
+	for _, wrong := range []int{day, 2 * week} {
+		if got == colourOf(wrong) {
+			t.Errorf("built colour %v is also what a %d second window reads", got, wrong)
+		}
+	}
+}
+
+// COVERS FR-7.10 | negative
+//
+// No other window is read: a five_hour entry, whether null, zero or carrying a
+// percentage and a reset time, renders nothing. Absent is the same payload with
+// no entry at all.
+func TestFiveHourEntryRendersNothing(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	isolate(t)
+	for name, limits := range map[string]map[string]any{
+		"absent": {},
+		"null":   {"five_hour": nil},
+		"zero":   {"five_hour": map[string]any{"used_percentage": 0.0}},
+		"spent": {"five_hour": map[string]any{
+			"used_percentage": 34.0, "resets_at": at(3600),
+		}},
+	} {
+		joined := strings.Join(render.Build(payload.Map{"rate_limits": limits},
+			"/home/me", 200, clock), "\n")
+		for _, shown := range []string{"⏳", "5hr", "34%", "1h00m"} {
+			if strings.Contains(joined, shown) {
+				t.Errorf("%s: %q rendered from a five_hour entry:\n%s", name, shown, joined)
+			}
+		}
+	}
+}
+
+// COVERS FR-7.10 | regression
+//
+// A five_hour entry beside the seven day one changes nothing else that is
+// rendered, at a wide, a middling and a narrow pane, colour on.
+func TestFiveHourEntryChangesNothingElse(t *testing.T) {
+	colourful(t)
+	isolate(t)
+	without := full()
+	with := full()
+	with["rate_limits"].(map[string]any)["five_hour"] = map[string]any{
+		"used_percentage": 34.0, "resets_at": at(3600),
+	}
+	for _, width := range []int{200, 120, 80} {
+		a := render.Build(without, "/home/me", width, clock)
+		b := render.Build(with, "/home/me", width, clock)
+		if !slices.Equal(a, b) {
+			t.Errorf("width %d: a five_hour entry changed the rows:\n%q\n%q", width, a, b)
+		}
 	}
 }

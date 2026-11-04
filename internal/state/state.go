@@ -65,9 +65,9 @@ type Window struct {
 // Figures returns the context window, or false when it cannot be said at all.
 //
 // current_usage is the authority when present and total_input_tokens is the
-// fallback, matching used_percentage's own formula. Where the counts are absent
-// and a percentage is present, the count is derived from it, so the two halves
-// agree rather than reporting a literal zero that reads as a bug.
+// fallback. A percentage that is stated is kept as stated. Where the counts are
+// absent and a percentage is present, the count is derived from it, so the two
+// halves agree rather than reporting a literal zero that reads as a bug.
 func Figures(cw payload.Map) (Window, bool) {
 	size, ok := cw.Num("context_window_size")
 	if !ok || size == 0 {

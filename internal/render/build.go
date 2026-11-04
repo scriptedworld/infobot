@@ -63,30 +63,18 @@ func sessionPart(data payload.Map) string {
 	return "⟨" + id + "⟩"
 }
 
-// limitParts is the two rate limit windows, each dropped when its data is
-// absent.
+// limitParts is the seven day rate limit window, dropped when its data is
+// absent. It is the only window read.
 //
-// `reading` is whether there is room to print the percentage beside each bar.
-// It is decided from the WIDTH alone and never from whether compaction
-// happened, so the gauges do not depend on a decision taken after they are
-// built.
+// `reading` is whether there is room to print the percentage beside the bar. It
+// is decided from the WIDTH alone and never from whether compaction happened, so
+// the gauge does not depend on a decision taken after it is built.
 func (p palette) limitParts(data payload.Map, compact, reading bool, now time.Time) []string {
-	limits := data.Obj("rate_limits")
-	var parts []string
-	for _, window := range []struct {
-		label string
-		key   string
-		span  int
-	}{
-		{hourglass + " 5hr", "five_hour", fiveHour},
-		{calendar + " 7d", "seven_day", sevenDay},
-	} {
-		g := Gauge{Label: window.label, Span: window.span, Compact: compact, Reading: reading}
-		if seg := p.limitSegment(g, limits.Obj(window.key), now); seg != "" {
-			parts = append(parts, seg)
-		}
+	g := Gauge{Label: calendar + " 7d", Span: sevenDay, Compact: compact, Reading: reading}
+	if seg := p.limitSegment(g, data.Obj("rate_limits").Obj("seven_day"), now); seg != "" {
+		return []string{seg}
 	}
-	return parts
+	return nil
 }
 
 // placeContext puts the context segment on whichever row can hold it, bar sized

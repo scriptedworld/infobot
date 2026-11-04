@@ -192,7 +192,7 @@ func TestTheClockIsASeam(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	data := payload.Map{
 		"rate_limits": map[string]any{
-			"five_hour": map[string]any{"used_percentage": 34.0, "resets_at": at(3 * 3600)},
+			"seven_day": map[string]any{"used_percentage": 34.0, "resets_at": at(3 * 3600)},
 		},
 	}
 	for _, c := range []struct {
@@ -206,7 +206,8 @@ func TestTheClockIsASeam(t *testing.T) {
 	} {
 		got := strings.Join(render.Build(data, "/home/me", 200, clock.Add(c.advance)), "\n")
 		if c.want == "" {
-			if strings.Contains(got, "m") && strings.Contains(got, "h") {
+			// Past the reset nothing follows the percentage.
+			if !strings.HasSuffix(strings.TrimRight(strip(got), " "), "%") {
 				t.Errorf("+%v still printed a countdown: %q", c.advance, got)
 			}
 			continue

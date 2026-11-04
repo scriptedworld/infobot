@@ -23,7 +23,6 @@ func full() payload.Map {
 		},
 		"context_window": window(48),
 		"rate_limits": map[string]any{
-			"five_hour": map[string]any{"used_percentage": 34.0, "resets_at": at(3600)},
 			"seven_day": map[string]any{"used_percentage": 62.0, "resets_at": at(86400)},
 		},
 	}
@@ -75,7 +74,7 @@ func TestRowShapeIsMarkersAndAClosingSessionId(t *testing.T) {
 		t.Errorf("identity row does not close with the session id: %q", got[0])
 	}
 	for marker, what := range map[string]string{
-		"🧠": "context", "⏳": "five hour", "📅": "seven day",
+		"🧠": "context", "📅": "seven day",
 	} {
 		if !strings.Contains(strings.Join(got, "\n"), marker) {
 			t.Errorf("%s segment carries no marker", what)
@@ -210,19 +209,20 @@ func TestBarTakesWhatTheRowHasLeft(t *testing.T) {
 
 // COVERS FR-5.5 | property
 //
-// The rate limit gauges are a FIXED ten cells rather than a share of the slack,
-// so the row below does not move under them as the bar above grows.
+// The rate limit gauge is a FIXED ten cells rather than a share of the slack,
+// so the row below does not move under it as the bar above grows.
 func TestGaugesAreFixedAtTenCells(t *testing.T) {
-	// No context window, so the meter row carries the two gauges and nothing
-	// else and the count is theirs alone.
-	windows := payload.Map{"rate_limits": full()["rate_limits"]}
+	// No context window, so the meter row carries the one gauge and nothing
+	// else and the count is its alone.
+	windows := payload.Map{"rate_limits": map[string]any{
+		"seven_day": map[string]any{"used_percentage": 62.0, "resets_at": at(86400)},
+	}}
 	for _, width := range []int{120, 160, 200, 250} {
 		got := rows(t, windows, width)
 		meters := got[len(got)-1]
 		cells := strings.Count(meters, "▰") + strings.Count(meters, "▱")
-		if cells != 20 {
-			t.Errorf("width %d: %d gauge cells, want 10 per window whatever the slack",
-				width, cells)
+		if cells != 10 {
+			t.Errorf("width %d: %d gauge cells, want 10 whatever the slack", width, cells)
 		}
 	}
 }

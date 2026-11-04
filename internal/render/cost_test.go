@@ -54,7 +54,7 @@ func priced(t *testing.T, records string) payload.Map {
 		"model":          map[string]any{"display_name": "Opus 5"},
 		"context_window": window(20),
 		"rate_limits": map[string]any{
-			"five_hour": map[string]any{"used_percentage": 34.0, "resets_at": at(3600)},
+			"seven_day": map[string]any{"used_percentage": 34.0, "resets_at": at(3600)},
 		},
 	}
 }
@@ -166,10 +166,9 @@ func costForm(t *testing.T, data payload.Map, width int) form {
 // boundary depends on how wide the meter row already is.
 func TestCostShortensThenDropsAsTheRowNarrows(t *testing.T) {
 	data := priced(t, usageLine(`"cache_read_input_tokens":100000000`))
-	// Both windows, so the meter row is wide enough that the cost has to
-	// compete for the slack rather than always fitting.
+	// The meter row holds the one gauge, so the shortened form is held to a
+	// narrow band of widths; the ordering across the widths is what is asserted.
 	data["rate_limits"] = map[string]any{
-		"five_hour": map[string]any{"used_percentage": 34.0, "resets_at": at(3600)},
 		"seven_day": map[string]any{"used_percentage": 62.0, "resets_at": at(86400)},
 	}
 
@@ -226,7 +225,6 @@ func TestCostKeepsThreeColumnsOfClearSpace(t *testing.T) {
 func TestBothCostFormsCarryTheSameTotal(t *testing.T) {
 	data := priced(t, usageLine(`"cache_read_input_tokens":100000000`))
 	data["rate_limits"] = map[string]any{
-		"five_hour": map[string]any{"used_percentage": 34.0, "resets_at": at(3600)},
 		"seven_day": map[string]any{"used_percentage": 62.0, "resets_at": at(86400)},
 	}
 

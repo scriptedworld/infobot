@@ -34,6 +34,13 @@ func isolate(t *testing.T) {
 	t.Setenv("HERDR_PANE_ID", "")
 }
 
+// The lengths a hand-built gauge is given, in seconds. week is the one window
+// the status line reads; day is a wrong length to compare it against.
+const (
+	day  = 86400
+	week = 7 * day
+)
+
 // wideGauge is a rate-limit window drawn in full, its number beside the bar.
 func wideGauge(label string, span int) render.Gauge {
 	return render.Gauge{Label: label, Span: span, Reading: true}
@@ -162,7 +169,7 @@ func TestNoColorLeavesNoEscapeAnywhere(t *testing.T) {
 		"workspace":      map[string]any{"current_dir": "/tmp/x"},
 		"context_window": window(48),
 		"rate_limits": map[string]any{
-			"five_hour": map[string]any{"used_percentage": 34.0, "resets_at": at(3600)},
+			"seven_day": map[string]any{"used_percentage": 34.0, "resets_at": at(3600)},
 		},
 	}
 	for _, row := range render.Build(data, "/tmp", 120, clock) {
@@ -194,7 +201,7 @@ func TestRailCornersMatchTheRowCount(t *testing.T) {
 		"session_id":     "a5e58a4d-0000-4000-8000-000000000000",
 		"context_window": window(20),
 		"rate_limits": map[string]any{
-			"five_hour": map[string]any{"used_percentage": 34.0},
+			"seven_day": map[string]any{"used_percentage": 34.0},
 		},
 	}, "/tmp", 120, clock)
 	if len(two) != 2 {
@@ -231,7 +238,7 @@ func TestAbsentDataIsDroppedNotZeroed(t *testing.T) {
 		"model":      map[string]any{"display_name": "Opus 5"},
 	}, "/tmp", 120, clock)
 	joined := strings.Join(rows, "\n")
-	for _, absent := range []string{"0%", "0/", "🧠", "⏳", "📅"} {
+	for _, absent := range []string{"0%", "0/", "🧠", "📅"} {
 		if strings.Contains(joined, absent) {
 			t.Errorf("%q rendered for absent data:\n%s", absent, joined)
 		}
@@ -309,10 +316,10 @@ func TestProjectRootHiddenWhenItMatchesTheWorkingDirectory(t *testing.T) {
 //
 // The width a row is fitted to is the pane less the three columns Claude Code
 // keeps, and what exceeds it is cut rather than wrapped.
-// Below about 70 columns two rate limit windows cannot be made to fit even
-// once their gauges are given up for the percentages, so the row runs over and
-// the terminal cuts it. That is FR-3.6 working, not a fitting bug, so the
-// fitting assertion starts where fitting is achievable.
+// Below about 50 columns this payload cannot be made to fit even once the rate
+// limit gauge is given up for its percentage, so the row runs over and the
+// terminal cuts it. That is FR-3.6 working, not a fitting bug, so the fitting
+// assertion starts where fitting is achievable.
 func TestRowsFitInsideTheBudget(t *testing.T) {
 	isolate(t)
 	for _, width := range []int{80, 120, 191, 223} {
@@ -322,7 +329,6 @@ func TestRowsFitInsideTheBudget(t *testing.T) {
 			"workspace":      map[string]any{"current_dir": "/home/me/.projects/demo"},
 			"context_window": window(48),
 			"rate_limits": map[string]any{
-				"five_hour": map[string]any{"used_percentage": 34.0, "resets_at": at(3600)},
 				"seven_day": map[string]any{"used_percentage": 62.0, "resets_at": at(86400)},
 			},
 		}, "/home/me", width, clock)
@@ -410,25 +416,55 @@ func TestUnknownWidthDrawsAFiftyCellBar(t *testing.T) {
 
 // COVERS FR-2.2 | property
 //
-// rate_limits carries a percentage and a reset time and NOTHING ELSE, so no
-// token counts appear there.
+// A rate limit gauge shows a percentage and a countdown, and no token count.
 func TestLimitSegmentShowsNoTokenCounts(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
-	got := render.LimitSegment(wideGauge("⏳ 5hr", 5*3600), payload.Map{
+	got := render.LimitSegment(wideGauge("📅 7d", week), payload.Map{
 		"used_percentage": 34.0, "resets_at": at(3600),
 	}, clock)
 	if strings.Contains(got, "/") || strings.Contains(got, "consumed") {
-		t.Errorf("counts appeared in a window that carries none: %q", got)
+		t.Errorf("counts appeared in a window that shows none: %q", got)
 	}
 	if !strings.Contains(got, "1h00m") {
 		t.Errorf("countdown missing: %q", got)
 	}
 }
 
+// COVERS FR-2.2 | negative
+//
+// Whatever else the entry holds, the gauge shows no count: the same entry that
+// would give a context segment its counts gives the gauge none. A compact count
+// reads as digits followed by k or M.
+func TestAGaugeShowsNoCountWhateverItsEntryHolds(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	isolate(t)
+	entry := map[string]any{
+		"used_percentage": 34.0, "resets_at": at(3600),
+		"context_window_size": 200000.0, "total_input_tokens": 123456.0,
+		"input_tokens": 5000.0, "used_tokens": 70000.0,
+		"current_usage": map[string]any{"input_tokens": 50000.0},
+	}
+	compact := regexp.MustCompile(`[0-9][kM]`)
+	built := render.Build(payload.Map{"rate_limits": map[string]any{"seven_day": entry}},
+		"/home/me", 200, clock)
+	for name, shown := range map[string]string{
+		"LimitSegment": render.LimitSegment(wideGauge("📅 7d", week), entry, clock),
+		"Build":        strings.Join(built, "\n"),
+	} {
+		if strings.Contains(shown, "/") || strings.Contains(shown, "consumed") ||
+			compact.MatchString(shown) {
+			t.Errorf("%s showed a count from the entry: %q", name, shown)
+		}
+		if !strings.Contains(shown, "34%") {
+			t.Errorf("%s lost the percentage: %q", name, shown)
+		}
+	}
+}
+
 // COVERS FR-1.3 | negative
 func TestLimitSegmentDroppedWithoutAPercentage(t *testing.T) {
 	for _, w := range []payload.Map{nil, {}, {"resets_at": at(3600)}} {
-		if got := render.LimitSegment(wideGauge("⏳ 5hr", 5*3600), w, clock); got != "" {
+		if got := render.LimitSegment(wideGauge("📅 7d", week), w, clock); got != "" {
 			t.Errorf("LimitSegment(%v) = %q, want empty", w, got)
 		}
 	}
@@ -441,7 +477,7 @@ func TestLimitSegmentDroppedWithoutAPercentage(t *testing.T) {
 func TestCompactGaugesReplaceBarsWhenTheRowIsTight(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	spent := payload.Map{"used_percentage": 34.0}
-	gauge := wideGauge("⏳ 5hr", 5*3600)
+	gauge := wideGauge("📅 7d", week)
 	wide := render.LimitSegment(gauge, spent, clock)
 	gauge.Compact = true
 	tight := render.LimitSegment(gauge, spent, clock)
@@ -468,7 +504,7 @@ func TestOneBadFieldCostsOnlyItsSegment(t *testing.T) {
 	rows := render.Build(payload.Map{
 		"model": map[string]any{"display_name": "Opus 5"},
 		"rate_limits": map[string]any{
-			"five_hour": map[string]any{"used_percentage": 11.0, "resets_at": "BAD-ISO"},
+			"seven_day": map[string]any{"used_percentage": 11.0, "resets_at": "BAD-ISO"},
 		},
 	}, "/home/me", 120, clock)
 
@@ -478,11 +514,12 @@ func TestOneBadFieldCostsOnlyItsSegment(t *testing.T) {
 	if !strings.Contains(rows[0], "Opus 5") {
 		t.Errorf("identity row lost to another segment's bad field: %q", rows[0])
 	}
-	if !strings.Contains(rows[1], "⏳ 5hr") {
+	if !strings.Contains(rows[1], "📅 7d") {
 		t.Errorf("the window itself was dropped rather than its countdown: %q", rows[1])
 	}
-	// The countdown is what could not be read, so it is what goes.
-	if strings.Contains(rows[1], "h") && strings.Contains(rows[1], "m") {
+	// The countdown is what could not be read, so it is what goes: nothing
+	// follows the percentage.
+	if !strings.HasSuffix(strings.TrimRight(strip(rows[1]), " "), "%") {
 		t.Errorf("a countdown was rendered from an unreadable timestamp: %q", rows[1])
 	}
 }

@@ -1,6 +1,7 @@
 package state_test
 
 import (
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -197,6 +198,33 @@ func TestFiguresDerivesWhicheverHalfIsMissing(t *testing.T) {
 	})
 	if fromCounts.Percent != 25 {
 		t.Errorf("Percent = %v, want 25 derived from the counts", fromCounts.Percent)
+	}
+}
+
+// COVERS FR-2.3 | positive
+//
+// A percentage worked out from counts is the counts over the window size, times
+// 100. The inputs are not round, so a formula that only agrees at one round
+// figure fails here. The expected values are written out and compared within a
+// tolerance, not computed with the code's own expression, so a bug that shares
+// the expression cannot pass and an equal rewrite of the arithmetic cannot fail
+// on the last digit.
+func TestPercentageFromCountsIsOverTheSizeTimesAHundred(t *testing.T) {
+	for _, c := range []struct{ used, size, want float64 }{
+		{33000, 200000, 16.5},
+		{1, 3, 33.333333333333336},
+		{999999, 1000000, 99.9999},
+	} {
+		got, ok := state.Figures(payload.Map{
+			"context_window_size": c.size,
+			"current_usage":       map[string]any{"input_tokens": c.used},
+		})
+		if !ok {
+			t.Fatalf("Figures said %v of %v could not be measured", c.used, c.size)
+		}
+		if math.Abs(got.Percent-c.want) > 1e-9 {
+			t.Errorf("%v of %v: Percent = %v, want %v", c.used, c.size, got.Percent, c.want)
+		}
 	}
 }
 

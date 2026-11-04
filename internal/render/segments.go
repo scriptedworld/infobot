@@ -12,7 +12,6 @@ import (
 
 const (
 	brain     = "🧠"
-	hourglass = "⏳"
 	calendar  = "📅"
 	money     = "💵"
 	bullseye  = "🎯"
@@ -74,11 +73,8 @@ const (
 	costGutter = 3
 )
 
-// The window lengths come from the payload's own field names.
-const (
-	fiveHour = 5 * 3600
-	sevenDay = 7 * 86400
-)
+// The length of the one window read, taken from its field name.
+const sevenDay = 7 * 86400
 
 const (
 	// paceConfident is how much of a window has to elapse before its verdict is
