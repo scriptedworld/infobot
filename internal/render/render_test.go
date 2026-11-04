@@ -472,8 +472,8 @@ func TestLimitSegmentDroppedWithoutAPercentage(t *testing.T) {
 
 // COVERS FR-5.6 | property
 //
-// A meter row over budget gives up its gauges for the percentages they were
-// drawing before anything is cut.
+// A meter row over budget gives up its gauge for the percentage it was drawing
+// before anything is cut.
 func TestCompactGaugesReplaceBarsWhenTheRowIsTight(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	spent := payload.Map{"used_percentage": 34.0}

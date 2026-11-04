@@ -56,11 +56,11 @@ const (
 	// save a bar that at 12% a cell was not saying much.
 	barMin = 8
 	// windowCells is fixed rather than a share of the slack. The rate limit
-	// windows are checked occasionally, not watched, so 10% a cell is enough
-	// resolution, and a fixed width keeps the row from moving under them as the
+	// window is checked occasionally, not watched, so 10% a cell is enough
+	// resolution, and a fixed width keeps the row from moving under it as the
 	// context bar above grows.
 	windowCells = 10
-	// readingMin is the width at which the percentage is printed beside each
+	// readingMin is the width at which the percentage is printed beside the
 	// gauge. Below it the row renders as it always has: the number is declined
 	// where there is no room to hold it, rather than shown and then truncated.
 	readingMin = 80
@@ -104,7 +104,7 @@ func (p palette) sep() string {
 // it can be read as a number rather than found among the parallelograms.
 //
 // A tint overrides the fade and paints every filled cell one colour. The rate
-// limit gauges use it to mean something the fade cannot: not where each cell
+// limit gauge uses it to mean something the fade cannot: not where each cell
 // sits, but whether the whole reading is a problem.
 //
 // Bar draws in the seed palette; the rows Main prints use the configured one.
@@ -256,10 +256,10 @@ func join(parts ...string) string {
 // cells of 0 drops the bar and keeps the numbers, which is both what a pane too
 // narrow to carry a bar gets and how the row measures the room for one.
 //
-// The WHOLE span is coloured here, while the rate-limit segments colour only
-// their number. That asymmetry is deliberate: the context window is watched
-// constantly while working and the other two are infrequent details, so the one
-// watched constantly carries the wider block of colour.
+// The WHOLE span is coloured here, while the rate-limit segment colours only
+// its number. That asymmetry is deliberate: the context window is watched
+// constantly while working and the rate limit is an infrequent detail, so the
+// one watched constantly carries the wider block of colour.
 //
 // ContextSegment draws in the seed palette; Main uses the configured one.
 func ContextSegment(cw payload.Map, cells int) string {
@@ -329,12 +329,11 @@ func elapsedFraction(resetsAt float64, span int, now time.Time) (float64, bool) 
 	return num.Clamp(1-remaining/float64(span), 0, 1), true
 }
 
-// LimitSegment is a gauge and a countdown. No token counts exist for these
-// windows.
+// LimitSegment is a gauge and a countdown. It shows no token count.
 //
 // The percentage is drawn AND printed. The bar is the same one the context
 // window uses, on the same ramp, so 80% is the same shade wherever it appears
-// and one glance reads all three meters.
+// and one glance reads both meters.
 //
 // The number is there because a bar stops discriminating exactly where it
 // matters most: near its end, one cell covers several points, so 91% and 99%

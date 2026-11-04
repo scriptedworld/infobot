@@ -126,7 +126,7 @@ func (l look) compose(
 // Claude Code renders each printed line as its own row. The context window is
 // the meter watched constantly while working, so it rides the top row with the
 // model and the path, and its bar is given every column the row has left over.
-// The rate-limit windows are the infrequent detail and go below.
+// The rate-limit window is the infrequent detail and goes below.
 //
 // The session id closes the top row, which puts the bar between two fixed
 // things and makes "the rest of the line" an arithmetic question rather than a
@@ -143,11 +143,11 @@ func Build(data payload.Map, home string, width int, now time.Time) []string {
 }
 
 func (l look) build(data payload.Map, home string, width int, now time.Time) []string {
-	// An unknown width takes the compact form for the gauges outright. There
-	// is nothing to fit against, so they give way to the percentages they draw
-	// rather than being drawn at a guessed length and cut by the host.
+	// An unknown width takes the compact form for the gauge outright. There is
+	// nothing to fit against, so it gives way to the percentage it draws rather
+	// than being drawn at a guessed length and cut by the host.
 	rows := l.compose(data, home, width, width == 0, now)
-	// The gauges give way to the percentages they draw rather than letting the
+	// The gauge gives way to the percentage it draws rather than letting the
 	// row run past the budget, which is the rule the context bar follows too.
 	// Measured after composing rather than before, because the context segment
 	// relocates onto this row when row one cannot hold it, and that is exactly

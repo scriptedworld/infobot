@@ -133,7 +133,7 @@ func TestAlarmBoundaryHasNothingToShow(t *testing.T) {
 //
 // The band is the top tenth of the bar, so its resolution is the cell count: 11
 // cells of 103, 5 of 40, and 1 at BAR_MIN, where it is a step rather than a
-// fade. The gauges are fixed at 10 cells so their band is 2.
+// fade. The gauge is fixed at 10 cells so its band is 2.
 func TestAlarmResolutionIsTheCellCount(t *testing.T) {
 	colourful(t)
 	for _, c := range []struct {
@@ -401,6 +401,9 @@ func TestSevenDayWindowLengthComesFromItsFieldName(t *testing.T) {
 	rows := render.Build(payload.Map{
 		"rate_limits": map[string]any{"seven_day": map[string]any(entry)},
 	}, "/home/me", 200, clock)
+	if len(rows) == 0 {
+		t.Fatal("the seven day window did not render: no rows")
+	}
 	meters := rows[len(rows)-1]
 	from := strings.Index(meters, "📅")
 	if from < 0 {
